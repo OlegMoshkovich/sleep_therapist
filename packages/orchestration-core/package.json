@@ -1,0 +1,27 @@
+{
+  "name": "@airlab/orchestration-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./agent-template-references": "./src/agent-template-references.ts",
+    "./agent-template-catalog": "./src/agent-template-catalog.ts",
+    "./external-episodes": "./src/external-episodes.ts",
+    "./general-orchestration": "./src/general-orchestration.ts",
+    "./general-orchestration-daemon-config": "./src/general-orchestration-daemon-config.ts",
+    "./general-orchestration-daemon-draft-store": "./src/general-orchestration-daemon-draft-store.ts",
+    "./general-orchestration-daemon-drafts": "./src/general-orchestration-daemon-drafts.ts",
+    "./general-orchestration-daemon-published-demos": "./src/general-orchestration-daemon-published-demos.ts",
+    "./interaction-protocol": "./src/interaction-protocol.ts",
+    "./orchestration-project-storage": "./src/orchestration-project-storage.ts",
+    "./project-agent-template-materialization": "./src/project-agent-template-materialization.ts"
+  },
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "@airlab/canvas-compiler": "^0.1.0",
+    "@airlab/canvas-core": "^0.1.0",
+    "@airlab/canvas-planner": "^0.1.0",
+    "@airlab/canvas-rules": "^0.1.0"
+  }
+}

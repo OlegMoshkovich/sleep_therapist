@@ -1,0 +1,22 @@
+{
+  "name": "@airlab/chat-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./chat-window": "./src/ChatWindow.tsx",
+    "./conversation-sidebar": "./src/ConversationSidebar.tsx",
+    "./expert-dashboard": "./src/ExpertDashboard.tsx",
+    "./message-input": "./src/MessageInput.tsx",
+    "./message-list": "./src/MessageList.tsx",
+    "./runtime": "./src/runtime.ts"
+  },
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.0.0"
+  }
+}

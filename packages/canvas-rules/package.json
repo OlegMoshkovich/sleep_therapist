@@ -1,0 +1,19 @@
+{
+  "name": "@airlab/canvas-rules",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./canvas-rule-diagnostics": "./src/canvas-rule-diagnostics.ts",
+    "./canvas-code-action-autotag": "./src/canvas-code-action-autotag.ts",
+    "./node-warnings": "./src/node-warnings.ts",
+    "./canvas-rule-registry-extraction": "./src/canvas-rule-registry-extraction.ts"
+  },
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "@airlab/canvas-compiler": "^0.1.0",
+    "@airlab/canvas-core": "^0.1.0",
+    "@airlab/canvas-planner": "^0.1.0"
+  }
+}

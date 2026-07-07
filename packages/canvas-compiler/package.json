@@ -1,0 +1,20 @@
+{
+  "name": "@airlab/canvas-compiler",
+  "version": "0.1.2",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./compiler": "./src/compiler.ts",
+    "./stateCompiler": "./src/stateCompiler.ts",
+    "./node-io": "./src/node-io.ts",
+    "./node-declared-inputs": "./src/node-declared-inputs.ts",
+    "./tool-types": "./src/tool-types.ts",
+    "./types": "./src/types.ts"
+  },
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "@airlab/canvas-core": "^0.1.0",
+    "@airlab/openclaw-runtime": "^0.1.0"
+  }
+}

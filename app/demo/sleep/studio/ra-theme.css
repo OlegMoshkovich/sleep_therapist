@@ -1,0 +1,979 @@
+/* ra-theme.css — editorial "AIR LAB" look for the Sleep Studio experience.
+   Ported from the Research Assistant Hi-Fi handoff prototype.
+
+   Two scopes live here:
+   - `.ra-scope`  — the chat surface (light editorial theme, forest-green accent).
+   - `.sysconf`   — the System Configuration console (its own self-contained palette).
+
+   The default look is the light "greige paper" theme. Resolved token values
+   (derived in the prototype from base #d8d6c7) are hard-coded below so we don't
+   need the JS palette derivation. Transitions are restricted to transform/opacity
+   only — token-driven color/background changes apply instantly (see handoff note).
+
+   Typography follows the rest of the site: no serif faces. The roles that were
+   serif in the prototype (headings, assistant name, message body) use the site
+   sans (American Grotesk, exposed by globals.css as --font-sans). */
+
+/* ============================== CHAT SCOPE ============================== */
+.ra-scope{
+  --bg:#c2c0b3;
+  --frame:#d8d6c7;
+  --panel:var(--frame);
+  --rail:#c9c7b9;
+  --surface:#c9c7b9;
+  --surface-2:#bcbaad;
+  --elevated:#ffffff;
+  --line:#a8a698;
+  --line-soft:#bcbaad;
+  --text:#1f1d18;
+  --text-2:#56534b;
+  --text-3:#86806f;
+  --text-4:#b1ab9b;
+  --accent:#c2611f;
+  --accent-ink:#f6f7f2;
+  --accent-soft:rgba(194,97,31,.13);
+  --danger:#e0826f;
+  --ui:var(--font-sans),system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --serif:var(--font-sans),system-ui,-apple-system,sans-serif;
+  --radius:16px;
+
+  position:fixed;inset:0;background:var(--bg);color:var(--text);
+  font-family:var(--ui);font-size:15px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+.ra-scope *{box-sizing:border-box;}
+/* var-driven props freeze mid-transition on theme swap — restrict to transform/opacity */
+.ra-scope *{transition-property:transform,opacity !important;}
+/* Exclude the shared canvas editor (.rf-canvas) — its buttons carry their own
+   Tailwind button styling that this reset would otherwise flatten to plain text. */
+.ra-scope button:not(.rf-canvas *){font-family:inherit;color:inherit;cursor:pointer;border:none;background:none;}
+.ra-scope input{font-family:inherit;}
+.ra-scope ::selection{background:var(--accent-soft);}
+.ra-scope ::-webkit-scrollbar{width:10px;height:10px;}
+.ra-scope ::-webkit-scrollbar-thumb{background:#d3cdbf;border-radius:20px;border:3px solid transparent;background-clip:padding-box;}
+.ra-scope ::-webkit-scrollbar-thumb:hover{background:#bfb8a7;background-clip:padding-box;border:3px solid transparent;}
+.ra-scope ::-webkit-scrollbar-track{background:transparent;}
+
+@keyframes ra-fadeUp{from{transform:translateY(8px);}to{transform:none;}}
+@keyframes ra-blink{0%,100%{opacity:.25;}50%{opacity:1;}}
+@keyframes ra-popIn{from{transform:translateY(6px) scale(.985);}to{transform:none;}}
+
+/* ---------- frame & chrome ---------- */
+.ra-scope .app-frame{position:fixed;inset:0;background:var(--frame);border:none;
+  border-radius:0;display:flex;flex-direction:column;overflow:hidden;box-shadow:none;}
+.ra-scope .topbar{height:52px;flex:0 0 52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;border-bottom:1px solid var(--line-soft);}
+.ra-scope .topbar-back{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:14.5px;padding:6px 8px;border-radius:8px;text-decoration:none;}
+.ra-scope .topbar-back:hover{color:var(--text);background:var(--surface);}
+.ra-scope .topbar-left{display:flex;align-items:center;gap:14px;}
+.ra-scope .brandmark{display:grid;grid-template-columns:repeat(3,11px);grid-auto-rows:11px;flex:0 0 auto;}
+.ra-scope .brandmark span{display:flex;align-items:center;justify-content:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-weight:700;font-size:6px;}
+.ra-scope .brandmark .blk{background:#111;color:#fff;}
+.ra-scope .brandmark .wht{background:#fbfbf8;color:#111;}
+.ra-scope .topbar-right{display:flex;align-items:center;gap:10px;}
+.ra-scope .brand-chip{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:13px;font-family:var(--serif);font-style:normal;}
+.ra-scope .online-dot{width:7px;height:7px;border-radius:50%;background:#f0a35e;box-shadow:0 0 8px #f0a35e88;}
+
+.ra-scope .body{flex:1;display:flex;min-height:0;position:relative;}
+
+/* ---------- drawer resize handles ---------- */
+/* Absolutely positioned over a drawer's inner edge (left/right set inline from
+   the live width). Invisible until hovered/dragged, then shows an accent rule. */
+.ra-scope .resize-handle{position:absolute;top:0;bottom:0;width:10px;z-index:28;cursor:col-resize;
+  display:flex;justify-content:center;touch-action:none;}
+.ra-scope .resize-handle::before{content:"";width:2px;height:100%;background:transparent;border-radius:2px;}
+.ra-scope .resize-handle:hover::before,.ra-scope .resize-handle.active::before{background:var(--accent);}
+/* during an active drag, lock the cursor and suppress selection document-wide */
+body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:none !important;}
+
+/* ---------- sidebar ---------- */
+.ra-scope .sidebar{width:var(--side-w,300px);flex:0 0 var(--side-w,300px);background:var(--panel);border-right:1px solid var(--line-soft);
+  display:flex;flex-direction:column;padding:16px 14px 14px;min-height:0;}
+.ra-scope .side-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 2px;}
+/* size the collapse button to the title line height and top-align it,
+   so its icon centers on the "Sleep Assistant" title line */
+.ra-scope .side-title{line-height:28px;}
+.ra-scope .side-close{margin-left:auto;flex:0 0 auto;align-self:flex-start;width:28px;height:28px;margin-top:0;}
+.ra-scope .topbar-toggle{padding:6px;}
+
+/* compact rail (collapsed sidebar) */
+.ra-scope .sidebar.rail{width:64px;flex:0 0 64px;align-items:center;padding:16px 0 14px;gap:8px;}
+/* collapsed right drawer rail — mirror of .sidebar.rail, docked on the right */
+.ra-scope .right-rail{width:64px;flex:0 0 64px;background:var(--panel);border-left:1px solid var(--line-soft);
+  display:flex;flex-direction:column;align-items:center;padding:16px 0 14px;gap:8px;min-height:0;}
+.ra-scope .rail-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:12px;color:var(--text-2);border:1px solid transparent;}
+.ra-scope .rail-flip svg{transform:rotate(180deg);}
+.ra-scope .rail-btn:hover{background:var(--surface);color:var(--text);}
+.ra-scope .rail-btn.accent{border:1px solid transparent;background:transparent;color:var(--accent);}
+.ra-scope .rail-btn.accent:hover{background:var(--surface);}
+.ra-scope .rail-div{display:flex;color:var(--text-3);padding:6px 0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);width:32px;justify-content:center;}
+.ra-scope .rail-spacer{flex:1;}
+.ra-scope .side-title{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:.2px;white-space:nowrap;}
+.ra-scope .side-sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);}
+
+.ra-scope .newbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:11px;font-size:14.5px;color:var(--text);white-space:nowrap;}
+.ra-scope .newbtn:hover{background:var(--surface-2);}
+.ra-scope .newbtn .nb-ic{color:var(--accent);display:flex;}
+
+.ra-scope .searchwrap{position:relative;margin-top:12px;}
+.ra-scope .search-ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-3);display:flex;pointer-events:none;}
+.ra-scope .side-search{width:100%;height:38px;background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:0 12px 0 34px;color:var(--text);font-size:14px;outline:none;}
+.ra-scope .side-search::placeholder{color:var(--text-3);}
+.ra-scope .side-search:focus{background:var(--surface-2);}
+
+.ra-scope .recent-head{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:10.5px;margin:18px 4px 8px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:1.4px;text-transform:uppercase;white-space:nowrap;}
+.ra-scope .recent-head .chev{margin-left:2px;opacity:.7;}
+
+.ra-scope .conv-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0;margin:0 -4px;padding:0 4px;}
+.ra-scope .conv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:var(--text-3);padding:20px;}
+.ra-scope .conv-empty .ce-orb{width:38px;height:38px;border-radius:50%;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--text-4);}
+.ra-scope .conv-empty p{margin:0;font-size:13px;line-height:1.35;}
+
+.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;
+  position:relative;color:var(--text-2);}
+.ra-scope .conv-item:hover{background:var(--surface);color:var(--text);}
+.ra-scope .conv-item.active{background:var(--surface);color:var(--text);}
+.ra-scope .conv-item.active::before{content:"";position:absolute;left:2px;top:9px;bottom:9px;width:2.5px;border-radius:3px;background:var(--accent);}
+.ra-scope .conv-title{flex:1;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .conv-rename{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--text);
+  background:var(--elevated);border:1px solid var(--accent);border-radius:6px;padding:3px 7px;outline:none;}
+.ra-scope .conv-lock{color:var(--text-4);display:flex;flex:0 0 auto;}
+.ra-scope .conv-kebab{opacity:0;color:var(--text-3);display:flex;border-radius:6px;padding:2px;}
+.ra-scope .conv-item:hover .conv-kebab{opacity:1;}
+.ra-scope .conv-kebab:hover{background:var(--surface-2);color:var(--text);}
+.ra-scope .conv-kebab.open{opacity:1;background:var(--surface-2);color:var(--text);}
+.ra-scope .conv-menu{position:absolute;top:34px;right:8px;z-index:30;min-width:138px;
+  background:var(--elevated);border:1px solid var(--line);border-radius:10px;padding:5px;
+  box-shadow:0 10px 28px rgba(0,0,0,.18);}
+
+/* ---------- sidebar bottom ---------- */
+.ra-scope .side-bottom{margin-top:auto;padding-top:12px;position:relative;}
+.ra-scope .avatar{flex:0 0 auto;border-radius:50%;overflow:hidden;position:relative;
+  background:radial-gradient(circle at 32% 26%, #d9d4c8, #b9b3a4 75%);}
+.ra-scope .avatar.assistant{background:radial-gradient(circle at 33% 27%, #ffffff 0%, #ece8df 48%, #d8d3c6 100%);}
+.ra-scope .avatar.assistant::after{content:"";position:absolute;inset:0;border-radius:50%;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.05), inset -4px -5px 10px rgba(0,0,0,.06);}
+.ra-scope .avatar.ring{box-shadow:0 0 0 1.5px var(--accent), 0 0 14px -3px var(--accent-soft);}
+.ra-scope .avatar .mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);font-size:13px;color:#6c6759;letter-spacing:.5px;}
+
+.ra-scope .acct{display:flex;align-items:center;gap:10px;padding-top:11px;border-top:1px solid var(--line-soft);}
+.ra-scope .acct-meta{min-width:0;flex:1;}
+.ra-scope .acct-name{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .acct-sub{font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:6px;margin-top:1px;}
+.ra-scope .role-pill{font-size:10px;letter-spacing:.4px;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:0 5px;}
+.ra-scope .icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;
+  color:var(--text-3);flex:0 0 auto;}
+.ra-scope .icon-btn:hover{background:var(--surface);color:var(--text);}
+/* Active/pressed state — e.g. the panel toggle while the drawer is open. */
+.ra-scope .icon-btn.on{background:var(--accent);color:var(--accent-ink);}
+.ra-scope .icon-btn.on:hover{background:var(--accent);color:var(--accent-ink);filter:brightness(.97);}
+
+/* account menu popover */
+.ra-scope .acct-chip{display:flex;align-items:center;gap:10px;width:100%;background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;padding:9px 11px;text-align:left;}
+.ra-scope .acct-chip:hover{background:var(--surface-2);}
+.ra-scope .acct-chip .chev{margin-left:auto;color:var(--text-3);transition:transform .18s;}
+.ra-scope .acct-chip.open .chev{transform:rotate(180deg);}
+.ra-scope .popover{position:absolute;left:0;right:0;bottom:62px;background:var(--elevated);border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 18px 40px -12px rgba(40,36,28,.35);padding:7px;z-index:30;animation:ra-popIn .16s ease;}
+.ra-scope .pop-label{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--text-3);padding:8px 9px 5px;}
+.ra-scope .pop-label.adm{color:var(--accent);}
+.ra-scope .pop-label .pill{font-size:9.5px;border:1px solid var(--accent);border-radius:6px;padding:0 5px;text-transform:none;letter-spacing:.3px;}
+.ra-scope .pop-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 9px;border-radius:9px;font-size:14px;color:var(--text);text-align:left;}
+.ra-scope .pop-row:hover{background:var(--surface);}
+.ra-scope .pop-row .ic{color:var(--text-3);display:flex;flex:0 0 auto;}
+.ra-scope .pop-adm .pop-row .ic{color:var(--accent);opacity:.9;}
+.ra-scope .pop-row.danger{color:var(--danger);}
+.ra-scope .pop-row.danger .ic{color:var(--danger);}
+.ra-scope .pop-div{border-top:1px solid var(--line);margin:5px 6px;}
+
+/* ---------- observability panel ---------- */
+/* Mirrors the sidebar's editorial treatment (panel tan, soft border, serif
+   title + monospace-uppercase subtitle) so the drawer reads as the same family
+   as the left rail. Docks as a flex sibling of .main on desktop; full-screen
+   overlay on mobile. */
+.ra-scope .obs-panel{width:var(--obs-w,400px);flex:0 0 var(--obs-w,400px);background:var(--panel);border-left:1px solid var(--line-soft);
+  display:flex;flex-direction:column;min-height:0;}
+.ra-scope .obs-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line-soft);}
+.ra-scope .obs-meta{flex:1;min-width:0;}
+.ra-scope .obs-title{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:.2px;line-height:28px;white-space:nowrap;}
+.ra-scope .obs-sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--text-3);margin-top:2px;}
+.ra-scope .obs-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto;align-self:flex-start;}
+.ra-scope .obs-clear{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--text-3);white-space:nowrap;}
+.ra-scope .obs-clear:hover{background:var(--surface);color:var(--text);}
+.ra-scope .obs-setup{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--line-soft);}
+.ra-scope .obs-setup-chip{display:flex;align-items:center;justify-content:center;gap:6px;flex:1 1 0;min-width:0;
+  border:1px solid var(--line);border-radius:9px;padding:7px 6px;background:var(--surface);
+  color:var(--text-2);font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .obs-setup-chip:hover{background:var(--surface-2);color:var(--text);}
+.ra-scope .obs-setup-chip svg{flex:0 0 auto;color:var(--accent);}
+/* Active chip while its section is docked inline below. */
+.ra-scope .obs-setup-chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.ra-scope .obs-setup-chip.on svg{color:var(--accent-ink);}
+.ra-scope .obs-body{flex:1;overflow-y:auto;padding:16px;min-height:0;}
+
+/* Docked inline section (Knowledge/State/Policy embedded in the drawer). It
+   fills the pane below the chips; the floating window reuses .sc-modal.
+   We keep the `.sysconf` class for its palette vars + descendant styles, but
+   the base `.sysconf` rule is a fixed full-screen overlay (position:fixed;
+   inset:0) — undo that here so the component stays inside the drawer. */
+.ra-scope .obs-docked{position:static;inset:auto;z-index:auto;
+  display:flex;flex-direction:column;flex:1;min-height:0;background:var(--sc-bg);}
+.ra-scope .obs-docked .obs-docked-bar{padding:10px 14px;}
+.ra-scope .obs-docked .obs-docked-body{flex:1;min-height:0;overflow:auto;padding:4px 14px 16px;}
+.ra-scope .obs-docked .obs-docked-body .sc-pane-inner{max-width:none;}
+.ra-scope .obs-docked .obs-docked-body .sc-pane-head{display:none;}
+.ra-scope .obs-docked .obs-docked-body .sc-pane-fill{min-height:100%;}
+/* In the narrow drawer the canvas inspector stacks below the board. The canvas
+   keys its board/inspector split off the `lg:` viewport breakpoint (≥1024px),
+   which is wrong inside a ~420px drawer — force the stacked, full-width layout
+   so the board isn't squeezed beside the 288px inspector. Pop out for the wide
+   side-by-side editing view. */
+.ra-scope .obs-docked .sc-stage{grid-template-columns:1fr;}
+.ra-scope .obs-docked .rf-canvas-body{flex-direction:column;}
+.ra-scope .obs-docked .rf-canvas-body > *{width:100%;max-width:none;}
+/* Board is flex-1 in the original row layout; stacked in a column it has no
+   height to fill and collapses, so pin it to a usable preview height. */
+.ra-scope .obs-docked .rf-canvas-surface{flex:none;height:340px;min-height:340px;}
+/* Pop-out / dock toggle button: icon + label, matches the mono .sc-close. */
+.sysconf .obs-dock-toggle{display:inline-flex;align-items:center;gap:5px;}
+.sysconf .obs-dock-toggle svg{flex:0 0 auto;}
+/* Drag the popped-out window by its title bar (buttons still click normally). */
+.sysconf .sc-modal-bar--draggable{cursor:move;user-select:none;touch-action:none;}
+.sysconf .sc-modal-bar--draggable button{cursor:pointer;}
+
+/* Non-modal popped-out window: no full-screen backdrop, so the chat behind it
+   stays visible and interactive. The base `.sysconf` rule is a fixed, opaque,
+   full-screen layer — neutralize it here so the scope adds only the palette,
+   then float the window itself with fixed positioning (centered + drag-offset
+   via its inline transform). */
+/* Global (not .ra-scope scoped) because the floating window is portaled to
+   document.body so it survives tab switches — see SetupBar. */
+/* `.sysconf.obs-float-scope` (two classes on the same element) outranks the
+   base `.sysconf` rule, which is a fixed, opaque, full-screen overlay. Without
+   the higher specificity the scope re-blocks the whole screen and you can't
+   interact with anything behind the popped-out window. */
+.sysconf.obs-float-scope{position:static;inset:auto;z-index:auto;background:transparent;display:block;}
+/* Geometry (left/top/width/height) is driven from JS so the window can be both
+   dragged and resized; override the fixed sheet sizing. */
+.sysconf .sc-modal.obs-float{position:fixed;z-index:85;max-width:none;max-height:none;}
+/* Bottom-right resize grip. */
+.sysconf .sc-modal.obs-float .obs-float-resize{
+  position:absolute;right:0;bottom:0;width:18px;height:18px;z-index:3;
+  cursor:nwse-resize;touch-action:none;
+  background:linear-gradient(135deg,transparent 0 46%,var(--sc-ink-3) 46% 54%,transparent 54% 72%,var(--sc-ink-3) 72% 80%,transparent 80%);
+}
+/* Stack the inspector UNDER the canvas in the popped-out window (the canvas
+   defaults to side-by-side at wide viewports via lg:flex-row). */
+.sysconf .sc-modal.obs-float .rf-canvas-body{flex-direction:column;}
+.sysconf .sc-modal.obs-float .rf-canvas-surface{width:100%;flex:1 1 auto;height:auto;min-height:240px;}
+.sysconf .sc-modal.obs-float .rf-canvas-body > aside{width:100%;max-width:none;flex:0 0 auto;height:auto;max-height:42%;}
+
+/* ===== Policy traversal animation (CanvasFireSignal) =====
+   When a chat turn completes, the Policy canvas walks the flow node-by-node.
+   These classes are applied to the ReactFlow node/edge wrappers (global, not
+   .ra-scope scoped, so they work in the docked drawer and the floating window).
+   - active: the node lit right now (pulsing accent ring)
+   - done:   nodes already passed (steady accent ring)
+   - real:   tool nodes confirmed by the trace (green = measured, not inferred) */
+.react-flow__node.rf-fire-done,
+.react-flow__node.rf-fire-active{border-radius:9px;transition:box-shadow .25s ease;}
+.react-flow__node.rf-fire-done{box-shadow:0 0 0 2px rgba(194,97,31,.55);}
+.react-flow__node.rf-fire-active{box-shadow:0 0 0 3px #c2611f,0 0 18px 3px rgba(194,97,31,.45);
+  animation:rfFirePulse 1s ease-in-out infinite;z-index:6;}
+.react-flow__node.rf-fire-real{box-shadow:0 0 0 2.5px #2f8076,0 0 14px 2px rgba(47,128,118,.4);}
+.react-flow__node.rf-fire-active.rf-fire-real{box-shadow:0 0 0 3px #2f8076,0 0 18px 3px rgba(47,128,118,.5);}
+@keyframes rfFirePulse{
+  0%,100%{box-shadow:0 0 0 3px #c2611f,0 0 14px 2px rgba(194,97,31,.35);}
+  50%{box-shadow:0 0 0 4px #c2611f,0 0 22px 5px rgba(194,97,31,.6);}
+}
+.react-flow__edge.rf-fire-edge .react-flow__edge-path{stroke:#c2611f;stroke-width:2.4;}
+.react-flow__edge.rf-fire-edge .react-flow__edge-text{fill:#c2611f;font-weight:600;}
+/* Expert chat side drawer — reuses the observability panel shell (.obs-panel) */
+.ra-scope .expert-head-meta{display:flex;align-items:center;gap:11px;flex:1;min-width:0;}
+.ra-scope .expert-body{display:flex;flex-direction:column;gap:16px;}
+.ra-scope .expert-empty{color:var(--text-3);font-family:var(--serif);font-size:14.5px;line-height:1.55;padding:8px 2px;}
+.ra-scope .expert-composer{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:12px 14px;border-top:1px solid var(--line-soft);}
+.ra-scope .expert-composer .comp-input{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14.5px;}
+.ra-scope .expert-send{flex:0 0 auto;padding:9px 16px;border-radius:10px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:600;}
+.ra-scope .expert-send:hover{filter:brightness(1.05);}
+.ra-scope .expert-send:disabled{opacity:.45;cursor:default;}
+/* Upload sleep data side drawer — reuses the observability panel shell */
+.ra-scope .upload-body{display:flex;flex-direction:column;gap:14px;}
+.ra-scope .upload-drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;
+  padding:34px 18px;border:1.5px dashed var(--line);border-radius:14px;background:var(--surface);cursor:pointer;
+  transition:border-color .15s, background .15s;}
+.ra-scope .upload-drop:hover{border-color:var(--accent);background:var(--surface-2);}
+.ra-scope .upload-drop.dragging{border-color:var(--accent);background:var(--accent-soft,var(--surface-2));}
+.ra-scope .upload-ico{color:var(--accent);margin-bottom:2px;}
+.ra-scope .upload-drop-title{font-family:var(--serif);font-size:16px;color:var(--text);}
+.ra-scope .upload-drop-sub{font-size:12.5px;color:var(--text-3);}
+.ra-scope .upload-list{display:flex;flex-direction:column;gap:8px;}
+.ra-scope .upload-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);}
+.ra-scope .upload-item-ic{flex:0 0 auto;color:var(--text-3);display:flex;}
+.ra-scope .upload-item-meta{flex:1;min-width:0;display:flex;flex-direction:column;}
+.ra-scope .upload-item-name{font-size:13.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .upload-item-size{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10.5px;color:var(--text-3);margin-top:1px;}
+.ra-scope .upload-item-x{flex:0 0 auto;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:7px;color:var(--text-3);}
+.ra-scope .upload-item-x:hover{background:var(--surface-2);color:var(--text);}
+/* Shared right drawer — tab strip when multiple panels are open */
+/* Tab bar: the scrollable tab row plus a pinned "close panel" button. */
+.ra-scope .drawer-tabbar{flex:0 0 auto;display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);}
+/* Tabs stay on ONE line and scroll horizontally (never vertically). The
+   scrollbar is hidden — scroll with trackpad / shift-wheel. */
+.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;gap:2px;padding:0 8px;
+  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;}
+.ra-scope .drawer-tabs::-webkit-scrollbar{display:none;}
+/* Close the whole drawer in one click (no need to × each tab). */
+.ra-scope .drawer-collapse{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:42px;
+  color:var(--text-3);border-left:1px solid var(--line-soft);cursor:pointer;}
+.ra-scope .drawer-collapse:hover{background:var(--surface);color:var(--text);}
+.ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:13px 11px 11px;cursor:pointer;white-space:nowrap;
+  color:var(--text-3);font-family:var(--serif);font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.ra-scope .drawer-tab:hover{color:var(--text-2);}
+.ra-scope .drawer-tab.on{color:var(--text);border-bottom-color:var(--accent);}
+.ra-scope .drawer-tab-x{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
+  border-radius:5px;color:var(--text-3);font-size:10px;line-height:1;}
+.ra-scope .drawer-tab-x:hover{background:var(--surface-2);color:var(--text);}
+.ra-scope .drawer-pane-wrap{flex:1;min-height:0;flex-direction:column;}
+.ra-scope .drawer-pane{display:flex;flex-direction:column;flex:1;min-height:0;}
+/* The sheet drag-handle is mobile-only; the media query re-shows it. */
+.ra-scope .drawer-grabber-wrap{display:none;}
+/* Chats/Account panes (unified mobile drawer): pad the body and let the
+   conversation list scroll within the pane. */
+.ra-scope .drawer-pane > .newbtn,
+.ra-scope .drawer-pane > .searchwrap,
+.ra-scope .drawer-pane > .recent-head,
+.ra-scope .drawer-pane > .acct-chip,
+.ra-scope .drawer-pane > .pop-label,
+.ra-scope .drawer-pane > .pop-adm,
+.ra-scope .drawer-pane > .pop-row{margin-left:14px;margin-right:14px;}
+/* New conversation: a compact accent primary action in the drawer (the neutral
+   full-block look reads as a placeholder). */
+/* account header is an info card here, not a button: fit within the pane
+   margins (not the base width:100%, which overflowed) and drop the hover. */
+.ra-scope .drawer-pane > .acct-chip{width:auto;cursor:default;margin-top:14px;
+  /* gap below the card before the "Admin · admin only" section */
+  margin-bottom:18px;padding:14px;gap:13px;}
+.ra-scope .drawer-pane > .acct-chip:hover{background:var(--surface);}
+.ra-scope .drawer-pane > .acct-chip .acct-name{font-size:14.5px;}
+.ra-scope .drawer-pane > .acct-chip .acct-sub{margin-top:4px;}
+/* email + ADMIN tag on one line; "signed in" sits below */
+.ra-scope .acct-name-row{display:flex;align-items:center;gap:8px;min-width:0;}
+.ra-scope .acct-name-row .acct-name{min-width:0;}
+.ra-scope .acct-name-row .role-pill{flex:0 0 auto;}
+.ra-scope .drawer-pane > .newbtn{margin-top:14px;padding:9px 12px;font-size:14px;
+  /* width:auto (not the base 100%) so the side margins don't push it past the
+     pane — the flex column stretches it to fill the remaining width. */
+  width:auto;
+  background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.ra-scope .drawer-pane > .newbtn:hover{background:var(--accent);filter:brightness(.96);}
+.ra-scope .drawer-pane > .newbtn .nb-ic{color:var(--accent-ink);}
+.ra-scope .drawer-pane > .conv-list{flex:1;min-height:0;overflow-y:auto;margin-left:14px;margin-right:14px;padding:0;}
+.ra-scope .drawer-subhead{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:11px 16px;border-bottom:1px solid var(--line-soft);}
+.ra-scope .drawer-subhead .obs-sub{margin-top:0;}
+/* retone the shared TraceView (Tailwind grays) to the warm palette — scoped to
+   the panel so the sandbox page is untouched. Higher specificity beats the
+   single-class utilities without !important. */
+.ra-scope .obs-body .text-gray-500{color:var(--text-3);}
+.ra-scope .obs-body .text-gray-600{color:var(--text-2);}
+.ra-scope .obs-body .text-gray-800{color:var(--text);}
+
+/* ---------- main ---------- */
+.ra-scope .main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;}
+.ra-scope .thread-head{display:flex;align-items:center;gap:13px;padding:14px 22px;border-bottom:1px solid var(--line-soft);}
+.ra-scope .th-meta{flex:1;min-width:0;overflow:hidden;}
+.ra-scope .th-name{font-family:var(--serif);font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;}
+.ra-scope .th-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;color:var(--text-3);font-style:italic;font-family:var(--serif);}
+.ra-scope .th-actions{display:flex;align-items:center;gap:4px;}
+
+.ra-scope .thread{flex:1;overflow-y:auto;padding:26px 26px 8px;display:flex;flex-direction:column;gap:22px;min-height:0;}
+.ra-scope .thread-inner{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
+.ra-scope .day-divider{display:flex;align-items:center;gap:14px;color:var(--text-4);font-size:11px;letter-spacing:1.6px;}
+.ra-scope .day-divider::before,.ra-scope .day-divider::after{content:"";flex:1;height:1px;background:var(--line-soft);}
+
+.ra-scope .msg-ai{display:flex;gap:13px;align-self:stretch;animation:ra-fadeUp .35s ease both;}
+.ra-scope .msg-ai .avatar{width:28px;height:28px;margin-top:2px;}
+.ra-scope .msg-ai .bubble{flex:1;font-family:var(--serif);font-size:16.5px;line-height:1.62;color:var(--text);}
+.ra-scope .msg-actions{display:flex;gap:4px;margin-top:8px;opacity:0;}
+.ra-scope .msg-ai:hover .msg-actions{opacity:1;}
+.ra-scope .mini-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:7px;color:var(--text-4);}
+.ra-scope .mini-btn:hover{background:var(--surface);color:var(--text-2);}
+
+.ra-scope .msg-user{align-self:flex-end;max-width:74%;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:15px;padding:11px 15px;font-size:15px;line-height:1.5;color:var(--text);animation:ra-fadeUp .3s ease both;}
+
+.ra-scope .typing{display:flex;gap:13px;align-self:stretch;}
+.ra-scope .typing .avatar{width:28px;height:28px;}
+.ra-scope .typing-dots{display:flex;align-items:center;gap:5px;height:28px;}
+.ra-scope .typing-dots span{width:6px;height:6px;border-radius:50%;background:var(--text-3);animation:ra-blink 1.2s infinite;}
+.ra-scope .typing-dots span:nth-child(2){animation-delay:.2s;}
+.ra-scope .typing-dots span:nth-child(3){animation-delay:.4s;}
+
+/* empty state */
+.ra-scope .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;}
+.ra-scope .empty-orb{width:60px;height:60px;border-radius:50%;}
+.ra-scope .empty-title{font-family:var(--serif);font-size:27px;color:var(--text-2);font-weight:400;white-space:nowrap;}
+.ra-scope .empty-sub{color:var(--text-3);font-size:14.5px;max-width:380px;text-align:center;margin:2px 0 4px;line-height:1.5;}
+.ra-scope .suggests{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:480px;}
+.ra-scope .sug-chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;
+  padding:9px 15px;font-size:13.5px;color:var(--text-2);background:transparent;white-space:nowrap;}
+.ra-scope .sug-chip:hover{background:var(--surface);border-color:var(--accent-soft);color:var(--text);}
+.ra-scope .sug-chip .ic{color:var(--text-3);display:flex;}
+.ra-scope .sug-chip:hover .ic{color:var(--accent);}
+
+/* composer */
+.ra-scope .composer-wrap{padding:14px 22px 18px;border-top:1px solid var(--line-soft);display:flex;flex-direction:column;gap:12px;}
+.ra-scope .composer-inner{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px;}
+.ra-scope .action-chips{display:flex;flex-wrap:wrap;gap:9px;}
+.ra-scope .act-chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;
+  padding:7px 14px;font-size:13px;color:var(--text-2);background:transparent;white-space:nowrap;}
+.ra-scope .act-chip:hover{background:var(--surface);color:var(--text);}
+.ra-scope .act-chip .ic{color:var(--text-3);display:flex;}
+.ra-scope .composer-row{display:flex;align-items:center;gap:11px;}
+.ra-scope .composer{flex:1;display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:6px 8px 6px 6px;}
+.ra-scope .composer:focus-within{background:var(--surface-2);}
+.ra-scope .comp-plus{width:36px;height:36px;flex:0 0 auto;border-radius:50%;background:var(--surface-2);color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;}
+.ra-scope .comp-plus:hover{background:#b3b1a3;color:var(--text);}
+.ra-scope .comp-send{width:36px;height:36px;flex:0 0 auto;border-radius:50%;background:var(--surface-2);color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;}
+.ra-scope .comp-send:hover{background:#b3b1a3;color:var(--text);}
+.ra-scope .comp-send:disabled{opacity:.45;cursor:default;}
+.ra-scope .comp-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;padding:0 4px;}
+.ra-scope .comp-input::placeholder{color:var(--text-3);}
+.ra-scope .comp-mic{width:34px;height:34px;flex:0 0 auto;border-radius:50%;color:var(--text-3);display:flex;align-items:center;justify-content:center;}
+.ra-scope .comp-mic:hover{color:var(--text);background:var(--surface-2);}
+.ra-scope .voice-btn{width:46px;height:46px;flex:0 0 auto;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+  display:flex;align-items:center;justify-content:center;transition:transform .14s, box-shadow .2s;
+  box-shadow:0 0 0 1px rgba(0,0,0,.2), 0 6px 18px -6px var(--accent);}
+.ra-scope .voice-btn:hover{transform:scale(1.06);}
+.ra-scope .voice-btn:active{transform:scale(.96);}
+
+/* mobile-only chrome — hidden on desktop */
+.ra-scope .topbar-mobile{display:none;align-items:center;gap:4px;}
+.ra-scope .sheet-scrim{display:none;}
+.ra-scope .sidebar-sheet{display:none;}
+
+/* ---------- responsive (mobile) ----------
+   Bumped to 900px: below this the fixed 300px sidebar + 400px right drawer leave
+   too little room for the chat column, so the three docked panels crush/overlap
+   (see narrow-tablet/landscape-phone widths ~760–900). Collapse to the single
+   chat column + topbar icons + bottom sheets instead. */
+@media (max-width:900px){
+  /* no sidebar in the layout — its actions move to the navbar, and the full
+     list comes up from the bottom as a sheet when triggered */
+  .ra-scope .body > .sidebar{display:none !important;}
+  .ra-scope .main{min-width:0;}
+
+  /* no collapsed right rail on mobile — its actions move to the navbar */
+  .ra-scope .right-rail{display:none;}
+
+  /* the unified drawer (chats / observability / expert / upload / account)
+     comes up from the bottom as a sheet — not a full-screen overlay — so the
+     chat stays visible behind it. Drag the grabber down to close, up to expand. */
+  .ra-scope .obs-panel{position:fixed;left:0;right:0;bottom:0;top:auto;z-index:120;
+    width:auto;flex:none;border-left:none;
+    /* fixed height so the sheet doesn't resize when you switch tabs (each pane
+       scrolls its own body); flick the grabber up for full height. */
+    height:70vh;max-height:70vh;
+    border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+    box-shadow:0 -10px 40px -12px rgba(40,36,28,.45);
+    transition:transform .26s ease, max-height .26s ease, height .26s ease, border-radius .2s ease;}
+  /* dragged/flicked up → full height */
+  .ra-scope .obs-panel.full{max-height:100dvh;height:100dvh;border-radius:0;}
+  /* drag handle — only shown in the bottom-sheet (mobile) layout */
+  .ra-scope .drawer-grabber-wrap{display:flex;justify-content:center;align-items:center;
+    flex:0 0 auto;padding:9px 0 5px;touch-action:none;cursor:grab;}
+  .ra-scope .drawer-grabber-wrap:active{cursor:grabbing;}
+  .ra-scope .drawer-grabber{width:40px;height:4px;border-radius:3px;background:var(--line);}
+
+  /* no edge-dragging on touch layouts */
+  .ra-scope .resize-handle{display:none;}
+  .ra-scope .topbar-mobile{display:flex;}
+  .ra-scope .topbar-right .brand-chip{display:none;}
+
+  /* let headings wrap instead of forcing width */
+  .ra-scope .empty-title{white-space:normal;text-align:center;font-size:23px;line-height:1.25;}
+  .ra-scope .side-title,.ra-scope .empty-sub{white-space:normal;}
+  .ra-scope .thread{padding:18px 14px 8px;}
+  .ra-scope .composer-wrap{padding:12px 14px 16px;}
+  .ra-scope .empty{padding:24px 18px;}
+
+  /* bottom sheet */
+  .ra-scope .sheet-scrim{display:block;position:fixed;inset:0;z-index:39;
+    background:rgba(30,28,22,.4);opacity:0;pointer-events:none;transition:opacity .26s ease;}
+  .ra-scope .sheet-scrim.show{opacity:1;pointer-events:auto;}
+  .ra-scope .sidebar-sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:40;
+    max-height:84vh;background:var(--panel);border-top:1px solid var(--line);
+    border-radius:18px 18px 0 0;box-shadow:0 -10px 40px -12px rgba(40,36,28,.45);
+    overflow:hidden;transform:translateY(100%);transition:transform .28s ease;}
+  .ra-scope .sidebar-sheet.open{transform:translateY(0);}
+  .ra-scope .sheet-grabber{width:40px;height:4px;border-radius:3px;background:var(--line);margin:9px auto 2px;}
+  .ra-scope .sidebar-sheet .sidebar{width:100%;flex:none;height:auto;max-height:78vh;
+    border-right:none;background:transparent;padding-top:8px;}
+}
+
+/* ========================= SYSTEM CONFIG SCOPE ========================= */
+.sysconf{
+  --sc-bg:#d8d6c7;
+  --sc-panel:#e0ded0;
+  --sc-panel-2:#dad8c9;
+  --sc-input:#cbc9b8;
+  --sc-input-line:#b3b09e;
+  --sc-line:#bdbaa9;
+  --sc-line-soft:#cac7b7;
+  --sc-ink:#1c1b16;
+  --sc-ink-2:#56544a;
+  --sc-ink-3:#8a8779;
+  --sc-faint:#9b9889;
+  --sc-green:#3a2113;
+  --sc-board:#e9e7d8;
+  --sc-accent:#c2611f;
+  --sc-sans:var(--font-sans),-apple-system,system-ui,"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --sc-serif:var(--font-sans),-apple-system,system-ui,sans-serif;
+  --sc-mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;
+  background:var(--sc-bg);color:var(--sc-ink);
+  font-family:var(--sc-sans);font-size:14px;line-height:1.5;
+}
+.sysconf *{box-sizing:border-box;}
+.sysconf button:not(.rf-canvas *){font-family:inherit;color:inherit;cursor:pointer;background:none;border:none;}
+.sysconf a{color:inherit;text-decoration:none;}
+.sysconf ::-webkit-scrollbar{width:10px;height:10px;}
+.sysconf ::-webkit-scrollbar-thumb{background:#bfbcab;border-radius:20px;border:3px solid transparent;background-clip:padding-box;}
+.sysconf .sc-lbl{font-family:var(--sc-mono);font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--sc-faint);}
+
+/* top bar */
+.sysconf .sc-bar{height:54px;flex:0 0 54px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--sc-line);}
+.sysconf .sc-logo{display:grid;grid-template-columns:repeat(3,11px);grid-auto-rows:11px;}
+.sysconf .sc-logo span{display:flex;align-items:center;justify-content:center;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-weight:700;font-size:6px;}
+.sysconf .sc-logo .blk{background:#111;color:#fff;}.sysconf .sc-logo .wht{background:#fbfbf8;color:#111;}
+.sysconf .sc-bar-title{font-family:var(--sc-serif);font-size:16px;white-space:nowrap;}
+.sysconf .sc-bar-title b{font-weight:600;}
+.sysconf .sc-bar-title .sep{color:var(--sc-ink-3);margin:0 8px;}
+.sysconf .sc-bar-title .dim{color:var(--sc-ink-2);}
+.sysconf .sc-bar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.sysconf .sc-save{display:flex;align-items:center;gap:7px;font-family:var(--sc-mono);font-size:11px;letter-spacing:.5px;color:var(--sc-ink-3);white-space:nowrap;}
+.sysconf .sc-save .dot{width:7px;height:7px;border-radius:50%;background:var(--sc-accent);}
+.sysconf .sc-close{font-family:var(--sc-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--sc-input-line);
+  border-radius:7px;padding:7px 13px;color:var(--sc-ink);white-space:nowrap;}
+.sysconf .sc-close:hover{background:var(--sc-input);}
+
+/* body: nav + content */
+.sysconf .sc-body{flex:1;display:flex;min-height:0;}
+.sysconf .sc-nav{width:236px;flex:0 0 236px;border-right:1px solid var(--sc-line);padding:18px 14px;display:flex;flex-direction:column;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;}
+.sysconf .sc-nav::-webkit-scrollbar{display:none;}
+.sysconf .sc-back{display:block;width:100%;text-align:left;border:1px solid var(--sc-input-line);border-radius:10px;padding:11px 12px;background:var(--sc-panel);margin-bottom:18px;cursor:pointer;}
+.sysconf .sc-back:hover{background:#e4e2d4;}
+.sysconf .sc-back .row{display:flex;align-items:center;justify-content:space-between;}
+.sysconf .sc-back .nm{font-family:var(--sc-sans);font-weight:700;font-size:15px;color:var(--sc-ink);}
+.sysconf .sc-back .cv{display:flex;color:var(--sc-ink-3);transform:rotate(90deg);}
+.sysconf .sc-nav-ver + .sc-nav-ver{margin-top:18px;}
+.sysconf .sc-nav-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-family:var(--sc-mono);font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--sc-ink-3);
+  padding-bottom:9px;margin-bottom:14px;border-bottom:1px solid var(--sc-line);}
+.sysconf .sc-nav-pub{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:24px;height:24px;
+  border-radius:6px;color:var(--sc-ink-3);background:transparent;border:1px solid transparent;cursor:pointer;
+  transition:color .12s, background .12s, border-color .12s;}
+.sysconf .sc-nav-pub:hover{color:var(--sc-accent);background:var(--sc-input);border-color:var(--sc-input-line);}
+.sysconf .sc-agentgroup{margin-bottom:14px;}
+.sysconf .sc-agentpick{display:block;width:100%;text-align:left;border:1px solid var(--sc-line);border-radius:10px;padding:11px 12px;background:var(--sc-panel);cursor:pointer;}
+.sysconf .sc-agentpick.open{background:#e4e2d4;}
+.sysconf .sc-agentpick.current{background:#e4e2d4;border-color:var(--sc-accent);box-shadow:inset 2px 0 0 var(--sc-accent);}
+.sysconf .sc-agentpick:hover{background:#e4e2d4;}
+.sysconf .sc-agentpick .row{display:flex;align-items:center;justify-content:space-between;}
+.sysconf .sc-agentpick .nm{font-family:var(--sc-sans);font-weight:700;font-size:15px;}
+.sysconf .sc-agentpick .cv{color:var(--sc-ink-3);transition:transform .18s;}
+.sysconf .sc-agentpick:not(.open) .cv{transform:rotate(-90deg);}
+.sysconf .sc-navlist{display:flex;flex-direction:column;gap:3px;margin-top:8px;}
+.sysconf .sc-navitem{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:9px;text-align:left;color:var(--sc-ink-2);width:100%;}
+.sysconf .sc-navitem:hover{background:var(--sc-panel-2);color:var(--sc-ink);}
+.sysconf .sc-navitem.on{background:var(--sc-panel);color:var(--sc-ink);box-shadow:inset 2px 0 0 var(--sc-accent);}
+.sysconf .sc-navitem .ico{flex:0 0 18px;display:flex;color:var(--sc-ink-3);}
+.sysconf .sc-navitem.on .ico{color:var(--sc-accent);}
+.sysconf .sc-navitem .tt{flex:1;min-width:0;}
+.sysconf .sc-navitem .tt .nm{display:block;font-size:14px;font-weight:600;}
+.sysconf .sc-navitem .tt .st{display:block;font-family:var(--sc-mono);font-size:10px;letter-spacing:.4px;color:var(--sc-faint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sysconf .sc-navitem .chk{font-size:13px;color:var(--sc-accent);}
+.sysconf .sc-navitem .chk.empty{color:var(--sc-faint);opacity:.5;}
+.sysconf .sc-nav-foot{margin-top:auto;padding-top:16px;}
+.sysconf .sc-ready{border:1px solid var(--sc-line);border-radius:9px;padding:11px 12px;background:var(--sc-panel-2);}
+.sysconf .sc-ready .sc-lbl{display:block;margin-bottom:8px;}
+.sysconf .sc-ready .bar{height:5px;border-radius:4px;background:var(--sc-input);overflow:hidden;margin-bottom:7px;}
+.sysconf .sc-ready .bar i{display:block;height:100%;background:var(--sc-accent);border-radius:4px;}
+.sysconf .sc-ready .txt{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-2);}
+
+/* content pane */
+.sysconf .sc-pane{flex:1;overflow-y:auto;padding:16px 34px 60px;}
+.sysconf .sc-pane-inner{max-width:880px;}
+.sysconf .sc-pane-head{margin-bottom:14px;}
+.sysconf .sc-pane-head .sc-lbl{display:block;margin-bottom:2px;}
+.sysconf .sc-pane-head h1{font-family:var(--sc-sans);font-weight:800;font-size:20px;letter-spacing:-.4px;margin:0 0 3px;}
+.sysconf .sc-pane-head p{margin:0;font-family:var(--sc-serif);font-size:13.5px;color:var(--sc-ink-2);max-width:none;white-space:nowrap;}
+
+/* overview */
+.sysconf .sc-ovgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-bottom:26px;}
+.sysconf .sc-ovcard{border:1px solid var(--sc-line);border-radius:12px;background:var(--sc-panel);padding:16px;cursor:pointer;text-align:left;width:100%;display:flex;flex-direction:column;}
+.sysconf .sc-ovcard:hover{border-color:#8f8c79;background:#e4e2d4;}
+.sysconf .sc-ovcard .top{display:flex;align-items:center;gap:9px;margin-bottom:4px;}
+.sysconf .sc-ovcard .chips{margin-top:auto;}
+.sysconf .sc-ovcard .top .ico{display:flex;color:var(--sc-accent);}
+.sysconf .sc-ovcard h3{font-family:var(--sc-sans);font-weight:700;font-size:16px;margin:0;flex:1;}
+.sysconf .sc-ovcard .stat{display:block;font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);white-space:nowrap;margin:auto 0 8px;}
+.sysconf .sc-ovcard .desc{font-family:var(--sc-serif);font-size:13.5px;color:var(--sc-ink-2);margin:0 0 6px;line-height:1.4;}
+.sysconf .sc-ovcard .chips{display:flex;flex-wrap:wrap;gap:6px;}
+.sysconf .sc-chip{font-family:var(--sc-mono);font-size:11px;background:var(--sc-input);border:1px solid var(--sc-input-line);border-radius:6px;padding:3px 8px;color:var(--sc-ink-2);}
+.sysconf .sc-thumb{width:100%;height:118px;border:1px solid var(--sc-line);border-radius:8px;background:var(--sc-board);
+  background-image:radial-gradient(#cbc8b6 1px,transparent 1px);background-size:14px 14px;overflow:hidden;}
+.sysconf .sc-check{border:1px solid var(--sc-line);border-radius:12px;background:var(--sc-panel-2);padding:6px 16px;}
+.sysconf .sc-check .ci{display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--sc-line-soft);}
+.sysconf .sc-check .ci:last-child{border-bottom:none;}
+.sysconf .sc-check .mark{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto;}
+.sysconf .sc-check .mark.done{background:var(--sc-accent);color:#fff;}
+.sysconf .sc-check .mark.todo{border:1.5px dashed var(--sc-input-line);color:var(--sc-faint);}
+.sysconf .sc-check .ci .nm{font-size:14px;flex:1;}
+.sysconf .sc-check .ci .meta{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);}
+
+/* form bits */
+.sysconf .sc-field-lbl{display:block;margin:20px 0 8px;}
+.sysconf .sc-input,.sysconf .sc-select,.sysconf .sc-textarea{background:var(--sc-input);border:1px solid var(--sc-input-line);border-radius:7px;
+  font-family:var(--sc-mono);font-size:13px;color:var(--sc-ink);padding:8px 10px;outline:none;}
+.sysconf .sc-input:focus,.sysconf .sc-textarea:focus,.sysconf .sc-select:focus{border-color:#8f8c79;}
+.sysconf .sc-textarea{width:100%;min-height:64px;resize:vertical;line-height:1.5;}
+.sysconf .sc-textarea.serif{font-family:var(--sc-serif);font-size:14px;}
+.sysconf .sc-select-wrap{position:relative;}
+.sysconf .sc-select{width:100%;appearance:none;-webkit-appearance:none;padding-right:28px;}
+.sysconf .sc-select-wrap::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;border-right:1.5px solid var(--sc-ink-3);
+  border-bottom:1.5px solid var(--sc-ink-3);transform:translateY(-70%) rotate(45deg);pointer-events:none;}
+.sysconf .sc-btn{font-family:var(--sc-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--sc-input-line);
+  border-radius:7px;padding:8px 12px;color:var(--sc-ink);background:var(--sc-input);white-space:nowrap;}
+.sysconf .sc-btn:hover{background:#bfbdac;border-color:#8f8c79;}
+.sysconf .sc-btn.ghost{background:transparent;}
+.sysconf .sc-btn.primary{background:var(--sc-accent);border-color:var(--sc-accent);color:#fff;}
+.sysconf .sc-btn.primary:hover{filter:brightness(1.06);background:var(--sc-accent);}
+
+/* knowledge */
+.sysconf .sc-drop{border:1.4px dashed var(--sc-input-line);border-radius:9px;padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;
+  text-align:center;color:var(--sc-ink-2);font-family:var(--sc-serif);font-size:14px;}
+.sysconf .sc-drop.drag{border-color:var(--sc-accent);background:rgba(194,97,31,.06);}
+.sysconf .sc-drop .browse{text-decoration:underline;text-underline-offset:3px;cursor:pointer;color:var(--sc-ink);}
+.sysconf .sc-drop .fmts{font-family:var(--sc-mono);font-size:10px;letter-spacing:1.2px;color:var(--sc-faint);margin-left:6px;}
+.sysconf .sc-files{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px;}
+.sysconf .sc-file{display:flex;align-items:center;gap:7px;background:var(--sc-input);border:1px solid var(--sc-input-line);border-radius:7px;padding:5px 9px;font-family:var(--sc-mono);font-size:11px;}
+.sysconf .sc-file button{color:var(--sc-ink-3);font-size:13px;line-height:1;}
+.sysconf .sc-list-head{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;}
+.sysconf .sc-list-head .sc-lbl{margin:0;}
+.sysconf .sc-ds{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);margin-bottom:10px;overflow:hidden;}
+.sysconf .sc-ds-row{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;}
+.sysconf .sc-ds-row:hover{background:#e4e2d4;}
+.sysconf .sc-ds-row .nm{font-family:var(--sc-sans);font-weight:700;font-size:15px;}
+.sysconf .sc-ds-row .meta{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);white-space:nowrap;}
+.sysconf .sc-ds-row .sp{flex:1;}
+.sysconf .sc-ds-row .cv{color:var(--sc-ink-3);}
+.sysconf .sc-ds.open .sc-ds-row .cv{transform:rotate(180deg);}
+.sysconf .sc-ds-body{padding:4px 15px 16px;border-top:1px solid var(--sc-line-soft);}
+.sysconf .sc-cols{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:6px;}
+.sysconf .sc-col{display:grid;grid-template-columns:1fr 130px;gap:8px;}
+.sysconf .sc-col .sc-input{width:100%;}
+.sysconf .sc-mini-lbl{display:block;margin:14px 0 7px;}
+.sysconf .sc-rec-empty{border:1px solid var(--sc-line-soft);border-radius:7px;padding:12px 14px;margin-top:6px;color:var(--sc-ink-3);font-family:var(--sc-serif);font-size:13.5px;}
+
+/* state schema */
+/* Current extracted state values (age, gender, …) shown atop the State pane. */
+.sysconf .sc-curstate{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);padding:12px 14px;margin-bottom:14px;}
+.sysconf .sc-curstate > .sc-lbl{display:block;margin-bottom:9px;}
+.sysconf .sc-curstate-rows{display:flex;flex-wrap:wrap;gap:8px;}
+.sysconf .sc-curstate-row{display:flex;align-items:baseline;gap:8px;border:1px solid var(--sc-line);border-radius:8px;padding:5px 11px;background:var(--sc-panel-2);}
+.sysconf .sc-curstate-k{font-family:var(--sc-mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--sc-ink-3);}
+.sysconf .sc-curstate-v{font-family:var(--sc-serif);font-size:13.5px;color:var(--sc-ink);font-weight:600;}
+.sysconf .sc-curstate-row.unset{opacity:.5;}
+.sysconf .sc-curstate-row.unset .sc-curstate-v{font-weight:400;}
+.sysconf .sc-schema{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);overflow:hidden;}
+.sysconf .sc-schema-h,.sysconf .sc-schema-r{display:grid;grid-template-columns:1.4fr 150px 1fr 30px;gap:12px;align-items:center;padding:9px 14px;}
+.sysconf .sc-schema-h{background:var(--sc-panel-2);border-bottom:1px solid var(--sc-line);}
+.sysconf .sc-schema-r{border-bottom:1px solid var(--sc-line-soft);}
+.sysconf .sc-schema-r:last-child{border-bottom:none;}
+/* Compact layout when the schema lives in the narrow inspector tab: the field
+   name spans the full width, then type / initial / remove sit on the row below. */
+.sysconf .sc-schema-tab .sc-schema-h{display:none;}
+.sysconf .sc-schema-tab .sc-schema-r{grid-template-columns:minmax(118px,1.4fr) minmax(48px,1fr) auto;gap:6px 8px;padding:8px 10px;}
+.sysconf .sc-schema-tab .sc-schema-r > :first-child{grid-column:1 / -1;border-bottom:1px solid var(--sc-line-soft);}
+.sysconf .sc-schema-tab .sc-select{padding-left:10px;}
+.sysconf .sc-init{font-family:var(--sc-mono);font-size:12.5px;color:var(--sc-ink-3);}
+.sysconf .sc-init.null{color:var(--sc-faint);}
+.sysconf .sc-row-x{color:var(--sc-faint);font-size:15px;text-align:center;}
+.sysconf .sc-row-x:hover{color:var(--sc-ink-2);}
+
+/* collapsible block */
+.sysconf .sc-block{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);margin-top:14px;overflow:hidden;}
+.sysconf .sc-block-h{display:flex;align-items:center;gap:10px;padding:13px 15px;cursor:pointer;}
+.sysconf .sc-block-h:hover{background:#e4e2d4;}
+.sysconf .sc-block-h .nm{font-family:var(--sc-sans);font-weight:700;font-size:14px;flex:1;}
+.sysconf .sc-block-h .meta{font-family:var(--sc-mono);font-size:10.5px;color:var(--sc-ink-3);}
+.sysconf .sc-block-h .cv{color:var(--sc-ink-3);}
+.sysconf .sc-block-b{padding:4px 15px 16px;border-top:1px solid var(--sc-line-soft);}
+
+/* flow card */
+.sysconf .sc-flow{border:1px solid var(--sc-line);border-radius:12px;background:var(--sc-panel);overflow:hidden;margin-top:14px;}
+.sysconf .sc-flow-h{display:flex;align-items:flex-start;gap:12px;padding:15px 16px 13px;}
+.sysconf .sc-flow-h .tt{flex:1;}
+.sysconf .sc-flow-h .tt .sc-lbl{display:block;margin-bottom:4px;}
+.sysconf .sc-flow-h .tt h4{font-family:var(--sc-sans);font-weight:800;font-size:17px;margin:0 0 2px;}
+.sysconf .sc-flow-h .tt .sub{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);}
+.sysconf .sc-flow-map{margin:0 16px;border:1px solid var(--sc-line);border-radius:8px;background:var(--sc-board);
+  background-image:radial-gradient(#cbc8b6 1px,transparent 1px);background-size:15px 15px;overflow:hidden;}
+.sysconf .sc-flow-foot{display:flex;align-items:center;gap:14px;padding:13px 16px;}
+.sysconf .sc-flow-foot .stat{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);white-space:nowrap;}
+.sysconf .sc-flow-foot .sp{flex:1;}
+
+/* focused canvas editor overlay */
+.sysconf .sc-editor{position:fixed;inset:0;z-index:80;background:var(--sc-bg);display:flex;flex-direction:column;}
+.sysconf .sc-editor-bar{height:56px;flex:0 0 56px;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--sc-line);background:var(--sc-green);color:#eef3ef;}
+.sysconf .sc-editor-bar .sc-lbl{color:#d8a982;}
+.sysconf .sc-editor-bar h4{font-family:var(--sc-sans);font-weight:800;font-size:18px;margin:0;color:#fff;white-space:nowrap;}
+.sysconf .sc-editor-bar .sub{font-family:var(--sc-mono);font-size:11px;color:#c79667;white-space:nowrap;}
+.sysconf .sc-editor-bar .done{margin-left:auto;font-family:var(--sc-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;
+  border:1px solid #6b4a3f;border-radius:7px;padding:8px 15px;color:#f3ede8;}
+.sysconf .sc-editor-bar .done:hover{background:#502f23;}
+.sysconf .sc-editor-body{flex:1;overflow:auto;padding:18px 22px 30px;}
+
+/* canvas toolbar + board */
+.sysconf .sc-tabs{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.sysconf .sc-tab{font-family:var(--sc-mono);font-size:11px;letter-spacing:1px;padding:6px 11px;border-radius:7px;color:var(--sc-ink-2);}
+.sysconf .sc-tab.on{background:var(--sc-input);border:1px solid var(--sc-input-line);color:var(--sc-ink);}
+.sysconf .sc-tab-count{margin-left:auto;font-family:var(--sc-mono);font-size:10px;letter-spacing:1.4px;color:var(--sc-faint);}
+.sysconf .sc-tools{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;align-items:center;}
+.sysconf .sc-pill{font-family:var(--sc-mono);font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;border:1.4px solid;border-radius:8px;padding:7px 11px;background:transparent;}
+.sysconf .sc-pill.ctrl{border-color:#caa83f;color:#9c7d1d;}.sysconf .sc-pill.act{border-color:#6f9fd8;color:#3f72bd;}
+.sysconf .sc-pill.end{border-color:#d98aa0;color:#bf5b78;}.sysconf .sc-pill.exp{border-color:#c2611f;background:#c2611f;color:#fff;}
+.sysconf .sc-pill.async{border-color:#7d8ad0;color:#5a64bf;}.sysconf .sc-pill.patch{border-color:#5fb0a6;color:#2f8076;}
+.sysconf .sc-pill.err{border-color:#d98aa0;color:#bf5b78;}.sysconf .sc-pill.muted{border-color:var(--sc-input-line);color:var(--sc-ink-3);}
+.sysconf .sc-tools-sep{width:1px;height:20px;background:var(--sc-line);margin:0 2px;}
+.sysconf .sc-reset{font-family:var(--sc-mono);font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;border:1px solid var(--sc-input-line);border-radius:8px;padding:7px 11px;color:var(--sc-ink-2);margin-bottom:14px;}
+.sysconf .sc-stage{display:grid;grid-template-columns:1fr 280px;gap:16px;}
+.sysconf .sc-board{position:relative;background:var(--sc-board);border:1px solid var(--sc-line);border-radius:10px;overflow:auto;
+  background-image:radial-gradient(#cbc8b6 1px,transparent 1px);background-size:18px 18px;min-height:600px;}
+.sysconf .sc-board-inner{position:relative;width:1000px;height:760px;}
+.sysconf .sc-edges{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+.sysconf .sc-edges path{fill:none;stroke:#8f8c7a;stroke-width:1.3;}
+.sysconf .sc-edge-lbl{font-family:var(--sc-mono);font-size:10px;fill:var(--sc-ink-2);}
+.sysconf .sc-edge-lbl-bg{fill:var(--sc-board);}
+.sysconf .sc-node{position:absolute;border-radius:7px;border:1.5px solid;padding:8px 10px;background:#fff;box-shadow:0 1px 0 rgba(0,0,0,.05);cursor:grab;user-select:none;}
+.sysconf .sc-node:active{cursor:grabbing;}
+.sysconf .sc-node.sel{box-shadow:0 0 0 2px #c2611f,0 1px 0 rgba(0,0,0,.05);}
+.sysconf .sc-node-handle{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);width:11px;height:11px;border-radius:50%;background:#fff;border:1.5px solid #8f8c7a;cursor:crosshair;opacity:0;transition:opacity .12s;}
+.sysconf .sc-node:hover .sc-node-handle,.sysconf .sc-node.sel .sc-node-handle{opacity:1;}
+.sysconf .sc-node-handle:hover{background:#c2611f;border-color:#c2611f;}
+.sysconf .sc-edges path.sc-edge-pending{stroke:#c2611f;stroke-width:1.6;stroke-dasharray:5 4;}
+.sysconf .sc-insp-type{display:inline-block;font-family:var(--sc-mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--sc-ink-3);}
+.sysconf .sc-node .nt{font-family:var(--sc-mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;display:block;text-align:center;margin-bottom:4px;}
+.sysconf .sc-node .nx{font-family:var(--sc-serif);font-size:12px;line-height:1.32;color:var(--sc-ink);text-align:center;display:block;white-space:pre-line;}
+.sysconf .sc-node.start{border-color:#5aa86f;background:#e7f1ea;}.sysconf .sc-node.start .nt{color:#3a7d5a;}
+.sysconf .sc-node.iff{border-color:#caa83f;background:#f6efd6;}.sysconf .sc-node.iff .nt{color:#9c7d1d;}
+.sysconf .sc-node.prompt{border-color:#6f9fd8;background:#e9f0f9;}.sysconf .sc-node.prompt .nt{color:#3f72bd;}
+.sysconf .sc-node.transform{border-color:#d98a4a;background:#f8ead9;}.sysconf .sc-node.transform .nt{color:#c8722e;}
+.sysconf .sc-node.tool{border-color:#a98ad0;background:#f0e9f7;}.sysconf .sc-node.tool .nt{color:#8a6abf;}
+.sysconf .sc-node.display{border-color:#5aa86f;background:#e7f1ea;}.sysconf .sc-node.display .nt{color:#3a7d5a;}
+.sysconf .sc-node.endn{border-color:#d98aa0;background:#f7e7ed;border-radius:999px;padding:7px 16px;}.sysconf .sc-node.endn .nt{display:none;}
+.sysconf .sc-node.endn .nx{font-family:var(--sc-mono);font-size:12px;color:#bf5b78;}
+.sysconf .sc-group{position:absolute;border:1.5px dashed var(--sc-input-line);border-radius:12px;}
+.sysconf .sc-group .gl{position:absolute;top:-9px;left:14px;background:var(--sc-board);padding:0 7px;font-family:var(--sc-mono);font-size:9px;letter-spacing:1px;color:var(--sc-ink-3);}
+.sysconf .sc-zoom{position:absolute;left:12px;bottom:12px;display:flex;flex-direction:column;gap:1px;background:#fff;border:1px solid var(--sc-line);border-radius:8px;overflow:hidden;}
+.sysconf .sc-zoom button{width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--sc-ink-2);border-bottom:1px solid var(--sc-line-soft);font-size:15px;}
+.sysconf .sc-zoom button:last-child{border-bottom:none;}
+.sysconf .sc-zoom button:hover{background:var(--sc-input);}
+.sysconf .sc-insp{background:var(--sc-panel);border:1px solid var(--sc-line);border-radius:10px;padding:16px;height:max-content;}
+.sysconf .sc-insp .sc-lbl{display:block;margin-bottom:10px;}
+.sysconf .sc-insp p{margin:0;font-family:var(--sc-serif);font-size:14px;color:var(--sc-ink-2);line-height:1.5;}
+.sysconf .sc-insp b{color:var(--sc-ink);}
+.sysconf .sc-canvas-host{margin-top:18px;}
+.sysconf .sc-foot{border:1px solid var(--sc-line);border-radius:9px;margin-top:12px;padding:13px 15px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;background:var(--sc-panel);}
+.sysconf .sc-foot .pm{font-size:18px;color:var(--sc-ink-3);}
+
+@media(max-width:760px){
+  .sysconf .sc-nav{display:none;}
+  .sysconf .sc-stage{grid-template-columns:1fr;}
+  /* top bar: keep only the assistant name + Back to chat; drop the rest so it fits */
+  .sysconf .sc-bar{gap:10px;padding:0 12px;}
+  .sysconf .sc-bar-title .sep,.sysconf .sc-bar-title .dim{display:none;}
+  .sysconf .sc-save{display:none;}
+  .sysconf .sc-close{margin-left:auto;}
+  /* tighter content padding */
+  .sysconf .sc-pane{padding:20px 16px 48px;}
+  .sysconf .sc-pane-head h1{font-size:22px;}
+  .sysconf .sc-editor-body{padding:14px 12px 24px;}
+  .sysconf .sc-editor-bar{gap:8px;padding:0 12px;}
+  .sysconf .sc-editor-bar .sub{display:none;}
+}
+
+/* Floating "Talk to main agent" button on the system-configuration screen.
+   Scoped under .sysconf to beat `.sysconf a{color:inherit}`. */
+.sysconf .god-fab{
+  position:fixed; right:26px; bottom:26px; z-index:60;
+  display:inline-flex; align-items:center; gap:10px;
+  padding:13px 21px; border-radius:999px;
+  background:var(--sc-bg); color:var(--sc-ink);
+  font-family:ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size:12.5px; font-weight:500; letter-spacing:.14em; text-transform:uppercase;
+  text-decoration:none; white-space:nowrap;
+  border:1px solid var(--sc-line);
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+  transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.sysconf .god-fab::before{
+  content:""; width:8px; height:8px; border-radius:50%;
+  background:#e07b3a; box-shadow:0 0 0 3px rgba(224,123,58,.22);
+}
+.sysconf .god-fab:hover{
+  transform:translateY(-2px); background:var(--sc-panel);
+  box-shadow:0 12px 30px rgba(0,0,0,.22);
+}
+.sysconf .god-fab:active{ transform:translateY(0); }
+@media (max-width:640px){
+  .sysconf .god-fab{ right:16px; bottom:16px; padding:11px 16px; font-size:11.5px; letter-spacing:.1em; }
+}
+
+/* Overview card pop-out button + floating section modal */
+.sysconf .sc-ovexpand{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:center;
+  padding:4px; border-radius:7px; color:var(--sc-ink-3);
+  background:transparent; border:1px solid transparent;
+  transition:color .12s, background .12s, border-color .12s;
+}
+.sysconf .sc-ovexpand:hover{ color:var(--sc-accent); background:var(--sc-input); border-color:var(--sc-input-line); }
+.sysconf .sc-modal-scrim{
+  position:fixed; inset:0; z-index:80;
+  background:rgba(28,27,23,.46); backdrop-filter:blur(2px);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+}
+.sysconf .sc-modal{
+  display:flex; flex-direction:column;
+  width:calc(100vw - 32px); height:calc(100vh - 32px);
+  background:var(--sc-bg); border:1px solid var(--sc-line); border-radius:16px;
+  box-shadow:0 30px 90px rgba(0,0,0,.42); overflow:hidden;
+}
+/* The Knowledge/State/Policy overlay opened from the chat's Observability tab:
+   80% of the viewport height (centered by the scrim) so the title bar and a
+   clear ✕ Close are always visible, and you can see you're in an overlay. */
+.sysconf .sc-modal--sheet{
+  height:80vh; max-height:80vh;
+  width:min(720px, calc(100vw - 32px));
+}
+.sysconf .sc-modal-x{ font-weight:600; }
+.sysconf .sc-dialog{
+  width:min(460px, 92vw); background:var(--sc-bg); border:1px solid var(--sc-line); border-radius:16px;
+  box-shadow:0 30px 90px rgba(0,0,0,.42); padding:24px 26px 22px;
+}
+.sysconf .sc-dialog-title{font-family:var(--sc-sans);font-weight:800;font-size:21px;letter-spacing:-.3px;margin:6px 0 10px;}
+.sysconf .sc-dialog-text{font-family:var(--sc-serif);font-size:14.5px;line-height:1.6;color:var(--sc-ink-2);margin:0;}
+.sysconf .sc-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px;}
+.sysconf .sc-dialog-training{display:flex;align-items:center;gap:16px;padding:6px 0 4px;}
+.sysconf .sc-dialog-training .sc-dialog-text{margin:0;}
+.sysconf .sc-spinner{flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:3px solid var(--sc-input-line);border-top-color:var(--sc-accent);animation:sc-spin .8s linear infinite;}
+@keyframes sc-spin{to{transform:rotate(360deg);}}
+.sysconf .sc-modal-bar{
+  display:flex; align-items:center; gap:10px;
+  padding:13px 18px; border-bottom:1px solid var(--sc-line); flex:0 0 auto;
+}
+.sysconf .sc-modal-bar .sc-lbl{ text-transform:uppercase; }
+.sysconf .sc-modal-bar .sp{ flex:1; }
+.sysconf .sc-modal-body{ flex:1; min-height:0; overflow:auto; padding:4px 20px 20px; }
+.sysconf .sc-modal-body .sc-pane-inner{ max-width:none; }
+/* The canvas + inspector fill height is driven explicitly from JS (EditorInner
+   measures the row's top against the viewport and sets a constant pixel height),
+   so the height never depends on the inspector tab's content. The `sc-pane-fill`
+   marker just lets the pane grow to the body when its own content is shorter. */
+.sysconf .sc-modal-body .sc-pane-fill{ min-height:100%; }
+/* The modal bar already names the section, so the STEP/title/description
+   header is redundant inside the overlay — drop it to reclaim the space. */
+.sysconf .sc-modal-body .sc-pane-head{ display:none; }
+
+/* ================= READ-ONLY MODEL SETUP (non-admin viewers) =================
+   Regular users can see every Knowledge / State / Policy field but cannot
+   change anything. A disabled <fieldset> natively disables all nested inputs,
+   textareas and buttons; display:contents keeps the pane's own layout intact. */
+.sc-readonly{ display:contents; }
+/* The decision-flow / state canvas is not a form control, so block pointer
+   interaction (node drag, edge connect, inline edits) explicitly. */
+.sc-readonly .rf-canvas-shell,
+.sc-readonly .react-flow{ pointer-events:none; }
+.sc-readonly-note{
+  font-family:var(--sc-mono); font-size:11px; letter-spacing:.5px;
+  text-transform:uppercase; color:var(--sc-ink-2);
+  background:var(--sc-input); border:1px solid var(--sc-input-line);
+  border-radius:8px; padding:7px 10px; margin:0 0 12px;
+}
+
+/* ====================== PER-BUBBLE FEEDBACK (admin) ====================== */
+/* Shown only in "Feedback" mode (admin menu). The chat bubbles are unchanged;
+   a + affordance is added under each bubble to attach the three feedback
+   signals (thumb score, text correction, ideal output). */
+/* wraps each bubble + its feedback row; a flex column so the bubble keeps its
+   align-self (msg-user flex-end / msg-ai stretch) and the feedback row sits
+   directly under it. */
+.ra-scope .msg-block{ display:flex; flex-direction:column; gap:6px; }
+.ra-scope .fb-row{ display:flex; margin:4px 0 2px; }
+.ra-scope .fb-row.right{ justify-content:flex-end; }
+.ra-scope .fb-row.left{ justify-content:flex-start; padding-left:40px; }
+.ra-scope .fb-add{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:26px; height:26px; border-radius:999px; border:1px dashed var(--line);
+  background:transparent; color:var(--text-3); cursor:pointer;
+}
+.ra-scope .fb-add:hover{ color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+.ra-scope .fb-chip{
+  display:inline-flex; align-items:center; gap:6px; max-width:100%;
+  padding:4px 10px; border-radius:999px; border:1px solid var(--line-soft);
+  background:var(--elevated); color:var(--text-2); font-size:12px; cursor:pointer;
+}
+.ra-scope .fb-chip:hover{ border-color:var(--accent); color:var(--text); }
+.ra-scope .fb-editor{
+  width:min(420px,100%); background:var(--elevated); border:1px solid var(--line-soft);
+  border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px;
+  box-shadow:0 6px 24px rgba(0,0,0,.08);
+}
+.ra-scope .fb-thumbs{ display:flex; gap:8px; }
+.ra-scope .fb-thumb{
+  display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px;
+  border:1px solid var(--line-soft); background:var(--surface); color:var(--text-2);
+  font-size:13px; cursor:pointer;
+}
+.ra-scope .fb-thumb.up.active{ border-color:#3f7d4f; background:rgba(63,125,79,.14); color:#2c5c39; }
+.ra-scope .fb-thumb.down.active{ border-color:var(--danger); background:rgba(224,130,111,.16); color:#9a4634; }
+.ra-scope .fb-types{ display:flex; gap:6px; flex-wrap:wrap; }
+.ra-scope .fb-type{
+  padding:3px 9px; border-radius:999px; border:1px solid var(--line-soft);
+  background:transparent; color:var(--text-3); font-size:11px; cursor:pointer;
+}
+.ra-scope .fb-type.active{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+.ra-scope .fb-type.filled:not(.active){ border-color:var(--accent); color:var(--text-2); }
+.ra-scope .fb-textarea{
+  width:100%; resize:vertical; border:1px solid var(--line-soft); border-radius:8px;
+  background:var(--frame); color:var(--text); font:inherit; font-size:13px; padding:8px;
+}
+.ra-scope .fb-textarea:focus{ outline:none; border-color:var(--accent); }
+.ra-scope .fb-actions{ display:flex; align-items:center; gap:8px; }
+.ra-scope .fb-spacer{ flex:1; }
+.ra-scope .fb-btn{
+  padding:5px 12px; border-radius:8px; border:1px solid var(--line-soft);
+  background:var(--surface); color:var(--text-2); font-size:12px; cursor:pointer;
+}
+.ra-scope .fb-btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.ra-scope .fb-btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
+.ra-scope .fb-btn.ghost{ background:transparent; }
+.ra-scope .fb-btn.danger{ background:transparent; border-color:var(--danger); color:#9a4634; }
+.ra-scope .fb-banner{
+  display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:999px;
+  background:var(--accent-soft); color:var(--accent); font-size:12px;
+}
+.ra-scope .fb-banner button{ border:none; background:transparent; color:var(--accent); cursor:pointer; text-decoration:underline; font:inherit; }

@@ -1,0 +1,50 @@
+{
+  "name": "sleep-therapist",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:push": "supabase db push",
+    "db:reset": "supabase db reset"
+  },
+  "dependencies": {
+    "@airlab/canvas-compiler": "file:packages/canvas-compiler",
+    "@airlab/canvas-core": "file:packages/canvas-core",
+    "@airlab/canvas-planner": "file:packages/canvas-planner",
+    "@airlab/canvas-rules": "file:packages/canvas-rules",
+    "@airlab/canvas-ui": "file:packages/canvas-ui",
+    "@airlab/chat-ui": "file:packages/chat-ui",
+    "@airlab/openclaw-discovery": "file:packages/openclaw-discovery",
+    "@airlab/openclaw-runtime": "file:packages/openclaw-runtime",
+    "@airlab/orchestration-core": "file:packages/orchestration-core",
+    "@airlab/orchestration-runtime": "file:packages/orchestration-runtime",
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@clerk/nextjs": "^7.3.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@supabase/ssr": "^0.9.0",
+    "@supabase/supabase-js": "^2.95.3",
+    "@xyflow/react": "^12.10.2",
+    "leaflet": "^1.9.4",
+    "next": "^16.0.8",
+    "openai": "^6.27.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-markdown": "^10.1.0",
+    "wikipedia-mcp": "^1.0.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^16.0.8",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

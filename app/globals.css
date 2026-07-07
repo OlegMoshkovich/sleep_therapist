@@ -1,0 +1,234 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Heavy.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-HeavyItalic.otf") format("opentype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test American Grotesk";
+  src: url("/fonts/Test American Grotesk Collection/Test American Grotesk/TestAmericanGrotesk-BlackItalic.otf") format("opentype");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Styrene A";
+  src: url("/fonts/Styrene_Collection/Styrene_A_Family/StyreneA-Light-Trial.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Styrene A";
+  src: url("/fonts/Styrene_Collection/Styrene_A_Family/StyreneA-Regular-Trial.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Styrene A";
+  src: url("/fonts/Styrene_Collection/Styrene_A_Family/StyreneA-Medium-Trial.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Styrene A";
+  src: url("/fonts/Styrene_Collection/Styrene_A_Family/StyreneA-Bold-Trial.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Styrene A";
+  src: url("/fonts/Styrene_Collection/Styrene_A_Family/StyreneA-RegularItalic-Trial.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test Martina Plantijn";
+  src: url("/fonts/Test Martina Plantijn/TestMartinaPlantijn-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test Martina Plantijn";
+  src: url("/fonts/Test Martina Plantijn/TestMartinaPlantijn-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test Martina Plantijn";
+  src: url("/fonts/Test Martina Plantijn/TestMartinaPlantijn-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test Martina Plantijn";
+  src: url("/fonts/Test Martina Plantijn/TestMartinaPlantijn-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test Martina Plantijn";
+  src: url("/fonts/Test Martina Plantijn/TestMartinaPlantijn-Italic.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Test Martina Plantijn";
+  src: url("/fonts/Test Martina Plantijn/TestMartinaPlantijn-BoldItalic.otf") format("opentype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --background: #E1DECF;
+  --foreground: #171717;
+  --font-american-grotesk: "Test American Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-styrene: "Styrene A", "Test American Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-martina: "Test Martina Plantijn", "Times New Roman", serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-american-grotesk);
+  --font-serif: var(--font-martina);
+  --font-display: var(--font-styrene);
+}
+
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-test-american-grotesk {
+  font-family: var(--font-american-grotesk);
+}
+
+.font-test-martina-plantijn {
+  font-family: var(--font-martina);
+}
+
+html {
+  overflow: hidden;
+  height: 100vh;
+  height: 100dvh;
+  height: calc(var(--vh, 1vh) * 100);
+  overscroll-behavior: none;
+}
+
+/* Prevent iOS Safari viewport shifting */
+@supports (-webkit-touch-callout: none) {
+  html, body {
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+  }
+}

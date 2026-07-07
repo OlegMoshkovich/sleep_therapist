@@ -1,0 +1,17 @@
+{
+  "name": "@airlab/canvas-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./lib/*": "./src/lib/*.ts",
+    "./components/canvas/*": "./src/components/canvas/*.ts",
+    "./components/canvas/internal/*": "./src/components/canvas/internal/*.ts",
+    "./components/setup/*": "./src/components/setup/*.ts"
+  },
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
