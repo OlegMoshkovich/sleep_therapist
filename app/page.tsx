@@ -17,18 +17,6 @@ export default function Home() {
 
       <div className="flex flex-col items-stretch gap-3 sm:flex-row">
         <Link
-          href="/sleep-assessment/hermes"
-          className="rounded-full bg-[#F05025] px-6 py-3 text-center text-sm font-bold text-white transition hover:bg-black"
-        >
-          Start sleep assessment
-        </Link>
-        <Link
-          href="/demo/sleep"
-          className="rounded-full border border-black/20 bg-white px-6 py-3 text-center text-sm font-bold text-black transition hover:bg-black hover:text-white"
-        >
-          Open the chat
-        </Link>
-        <Link
           href="/demo/sleep/studio"
           className="rounded-full border border-black/20 bg-white px-6 py-3 text-center text-sm font-bold text-black transition hover:bg-black hover:text-white"
         >

@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Archivo } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
-import PasswordProtection from "./components/PasswordProtection";
 import PostSignInRedirect from "./components/PostSignInRedirect";
 import { ThemeProvider } from "./context/ThemeContext";
 import NavigationOverlay from "./components/NavigationOverlay";
@@ -74,9 +73,7 @@ export default async function RootLayout({
           <ThemeProvider>
             <NavigationOverlay />
             <PostSignInRedirect />
-            <PasswordProtection>
-              {children}
-            </PasswordProtection>
+            {children}
           </ThemeProvider>
         </body>
       </html>
