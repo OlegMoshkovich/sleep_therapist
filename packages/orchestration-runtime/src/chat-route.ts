@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "node:async_hooks";
 import OpenAI from "openai";
 import { GENERAL_ORCHESTRATION_DAEMON_PUBLISHED_DEMOS_TABLE } from "@airlab/orchestration-core/general-orchestration-daemon-published-demos";
 import {
@@ -1849,6 +1850,45 @@ Do not explain your work.
 Do not add any extra wrapper text.`;
 }
 
+// Live progress for the "thinking" indicator: as each pipeline stage runs, the route
+// (when streaming) forwards a short human description of what the server is doing right
+// now, so the client can show "Reviewing what you told me…" instead of anonymous dots.
+export interface ChatStageEvent {
+  // The internal runPrompt label the stage came from (e.g. "1-state-update").
+  stage: string;
+  // Human-facing description shown in the UI.
+  text: string;
+  ts: number;
+}
+
+// Request-scoped so concurrent turns never cross streams. runPrompt reads it from the
+// async context; the store is unset (getStore() === undefined) on the non-streaming
+// path, so emitting is a no-op there.
+const stageEmitterStore = new AsyncLocalStorage<(event: ChatStageEvent) => void>();
+
+// Map an internal runPrompt label to what the user sees. The three real stages of a
+// turn — state update, the front-of-graph condition checks, and reply generation —
+// read as a natural progression: Reviewing → Checking → Writing.
+function describeStage(label: string | undefined): string {
+  if (label && label.startsWith("1-state")) {
+    return "Reviewing what you told me…";
+  }
+  if (label === "2-policy-extraction") {
+    return "Checking for anything urgent…";
+  }
+  if (label === "2-policy-decision" || (label && label.startsWith("3-"))) {
+    return "Writing a reply…";
+  }
+  return "Thinking…";
+}
+
+function emitChatStage(label: string | undefined): void {
+  const emit = stageEmitterStore.getStore();
+  if (emit) {
+    emit({ stage: label ?? "unknown", text: describeStage(label), ts: Date.now() });
+  }
+}
+
 async function runChatCompletion(
   openai: OpenAI,
   model: string,
@@ -1891,6 +1931,9 @@ async function runPrompt(
   console.log(`\n${"=".repeat(60)}`);
   console.log(`${tag} SYSTEM PROMPT:\n${systemPrompt ?? "(none)"}`);
   console.log(`\n${tag} USER PROMPT:\n${prompt}`);
+
+  // Tell the client what this turn is doing right now, just before the round trip.
+  emitChatStage(label);
 
   const result = await runChatCompletion(openai, model, maxTokens, messages);
 
@@ -3951,6 +3994,68 @@ export function createChatPostHandler(options: CreateChatRouteOptions) {
         orderedHistory,
         promptConfig.stateSchema
       );
+
+      // Streaming path: run the turn while forwarding live stage descriptions ("stage"
+      // events) so the client can show what the server is doing, then emit one final
+      // "result" event carrying the same payload the non-streaming JSON path returns.
+      // Opt-in via `stream: true`, so existing JSON callers are unaffected.
+      if (body?.stream === true) {
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream<Uint8Array>({
+          async start(controller) {
+            const sendEvent = (event: string, payload: unknown) => {
+              controller.enqueue(
+                encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
+              );
+            };
+            try {
+              const turnResult = await stageEmitterStore.run(
+                (stageEvent) => sendEvent("stage", stageEvent),
+                () =>
+                  runStatefulAssistantTurn(
+                    openai,
+                    orderedHistory,
+                    trimmedUserMessage,
+                    knownState,
+                    promptConfig,
+                    conversationId
+                  )
+              );
+              await saveAssistantReply(
+                supabase,
+                conversationId,
+                turnResult.assistantReply,
+                turnResult.nextState,
+                promptConfig.stateSchema
+              );
+              sendEvent("result", {
+                content: turnResult.assistantReply,
+                trace: wantsTrace ? traceSink : [],
+                nodeRefs: turnResult.nodeRefs,
+                state: serializeStateSnapshotForStateUpdate(
+                  turnResult.nextState,
+                  promptConfig.stateSchema
+                ),
+              });
+            } catch (err) {
+              (options.logger ?? console).error("Chat route stream error:", err);
+              sendEvent("error", {
+                error: err instanceof Error ? err.message : "Internal server error",
+              });
+            } finally {
+              controller.close();
+            }
+          },
+        });
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream; charset=utf-8",
+            "Cache-Control": "no-cache, no-transform",
+            Connection: "keep-alive",
+          },
+        });
+      }
+
       const turnResult = await runStatefulAssistantTurn(
         openai,
         orderedHistory,

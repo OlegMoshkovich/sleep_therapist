@@ -567,6 +567,7 @@ function MessageRow({
 function Thread({
   messages,
   typing,
+  typingLabel,
   streaming,
   feedbackMode,
   feedbackByIdx,
@@ -577,6 +578,7 @@ function Thread({
 }: {
   messages: Message[];
   typing: boolean;
+  typingLabel: string;
   streaming: string;
   feedbackMode: boolean;
   feedbackByIdx: Record<number, FeedbackEntry[]>;
@@ -613,7 +615,7 @@ function Thread({
         {typing && !streaming && (
           <div className="typing">
             <Avatar kind="assistant" size={28} mono="SA" />
-            <div className="typing-dots"><span /><span /><span /></div>
+            <div className="typing-status">{typingLabel || "Thinking…"}</div>
           </div>
         )}
         <div ref={endRef} />
@@ -736,6 +738,9 @@ function SleepStudioChat() {
   const [streaming, setStreaming] = useState("");
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  // Live description of what the server is doing this turn (streamed stage events),
+  // shown in place of the anonymous typing dots.
+  const [typingLabel, setTypingLabel] = useState("");
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -901,21 +906,62 @@ function SleepStudioChat() {
           await loadConversations();
         }
 
+        setTypingLabel("Thinking…");
         const res = await fetch("/api/chat/sleep/base", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversationId, userMessage: trimmed, trace: true }),
+          body: JSON.stringify({
+            conversationId,
+            userMessage: trimmed,
+            trace: true,
+            stream: true,
+          }),
         });
-        if (!res.ok) {
+        if (!res.ok || !res.body) {
           throw new Error(`Chat request failed (HTTP ${res.status}).`);
         }
 
-        const data = (await res.json()) as {
+        // Read the SSE stream: "stage" events update the live description while the
+        // turn runs; the single "result" event carries the final answer + trace.
+        type ResultPayload = {
           content?: string;
           trace?: TimedTraceEvent[];
           state?: Record<string, unknown>;
           nodeRefs?: { nodeId: string; canvasId?: string }[];
         };
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let data: ResultPayload | null = null;
+        let streamError: string | null = null;
+        readLoop: while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let sep: number;
+          while ((sep = buffer.indexOf("\n\n")) >= 0) {
+            const rawEvent = buffer.slice(0, sep);
+            buffer = buffer.slice(sep + 2);
+            const eventName = /^event: (.+)$/m.exec(rawEvent)?.[1];
+            const dataLine = /^data: (.+)$/m.exec(rawEvent)?.[1];
+            if (!dataLine) continue;
+            const payload = JSON.parse(dataLine);
+            if (eventName === "stage") {
+              setTypingLabel(payload.text ?? "");
+            } else if (eventName === "result") {
+              data = payload as ResultPayload;
+            } else if (eventName === "error") {
+              streamError = payload.error ?? "Chat request failed.";
+              break readLoop;
+            }
+          }
+        }
+        if (streamError) {
+          throw new Error(streamError);
+        }
+        if (!data) {
+          throw new Error("Chat request ended without a response.");
+        }
         const answer = data.content ?? "";
         // Prefer the server-provided wall-clock (ts) so each row shows true
         // per-call latency; fall back to arrival time for older payloads.
@@ -954,6 +1000,7 @@ function SleepStudioChat() {
         });
       } finally {
         setTyping(false);
+        setTypingLabel("");
       }
     },
     [activeId, typing, loadConversations]
@@ -1114,6 +1161,7 @@ function SleepStudioChat() {
               <Thread
                 messages={messages}
                 typing={typing}
+                typingLabel={typingLabel}
                 streaming={streaming}
                 feedbackMode={feedbackMode}
                 feedbackByIdx={feedbackByIdx}
