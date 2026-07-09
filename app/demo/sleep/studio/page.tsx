@@ -11,10 +11,28 @@ import {
   SUGGESTIONS,
 } from "./sleep-data";
 import { RightDrawer, DRAWER_LABEL, type DrawerId } from "./RightDrawer";
+import { SetupBar } from "./config/page";
 import { FeedbackControls, type FeedbackEntry, type FeedbackSignal } from "./FeedbackControls";
 import type { Turn, TimedTraceEvent } from "../../../components/trace/TraceView";
 import { AuthProvider, useAuth } from "../../../context/AuthContext";
 import AuthModal from "../../../components/AuthModal";
+import { useVoiceRecorder, useTTS } from "./useVoice";
+
+const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
+
+/** Strip common markdown so the TTS voice reads clean sentences instead of asterisks and backticks. */
+function stripMarkdownForSpeech(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/^\s*#+\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 interface Message {
   role: "user" | "ai";
@@ -592,12 +610,28 @@ const MOBILE_NAV: Array<{ id: DrawerId; icon: IconName }> = [
 function MobileNav({
   onOpen,
   isAdmin,
+  autoSpeak,
+  onToggleAutoSpeak,
+  isSpeaking,
+  onStopSpeaking,
 }: {
   onOpen: (id: DrawerId) => void;
   isAdmin: boolean;
+  autoSpeak: boolean;
+  onToggleAutoSpeak: () => void;
+  isSpeaking: boolean;
+  onStopSpeaking: () => void;
 }) {
   return (
     <nav className="mobile-railnav" aria-label="Panels">
+      <VoiceReplyButton
+        className="mrail-btn"
+        iconSize={15}
+        autoSpeak={autoSpeak}
+        onToggleAutoSpeak={onToggleAutoSpeak}
+        isSpeaking={isSpeaking}
+        onStopSpeaking={onStopSpeaking}
+      />
       {MOBILE_NAV.filter(
         (n) => isAdmin || !ADMIN_ONLY_DRAWERS.includes(n.id)
       ).map((n) => {
@@ -619,12 +653,35 @@ function MobileNav({
 }
 
 /* ---------------- compact (collapsed) right drawer rail ---------------- */
-function RightRail({ onOpen }: { onOpen: (id: DrawerId) => void }) {
+function RightRail({
+  onOpen,
+  isAdmin,
+  autoSpeak,
+  onToggleAutoSpeak,
+  isSpeaking,
+  onStopSpeaking,
+}: {
+  onOpen: (id: DrawerId) => void;
+  isAdmin: boolean;
+  autoSpeak: boolean;
+  onToggleAutoSpeak: () => void;
+  isSpeaking: boolean;
+  onStopSpeaking: () => void;
+}) {
   return (
     <aside className="right-rail">
-      <button className="rail-btn" title="Model Setup" onClick={() => onOpen("modelsetup")}>
-        <Ic.Panel size={18} />
-      </button>
+      {isAdmin && (
+        <button className="rail-btn" title="Model Setup" onClick={() => onOpen("modelsetup")}>
+          <Ic.Panel size={18} />
+        </button>
+      )}
+      <VoiceReplyButton
+        className="rail-btn"
+        autoSpeak={autoSpeak}
+        onToggleAutoSpeak={onToggleAutoSpeak}
+        isSpeaking={isSpeaking}
+        onStopSpeaking={onStopSpeaking}
+      />
     </aside>
   );
 }
@@ -639,6 +696,62 @@ function ThreadHeader() {
         <div className="th-sub">Here to help you rest</div>
       </div>
     </div>
+  );
+}
+
+/* Speaker (voice-reply) toggle used inside the docked right rail and mobile nav.
+   `className` is passed in so it inherits the surrounding rail's button style
+   (`.rail-btn` on desktop, `.mrail-btn` on mobile) — same 12px rounded square
+   as the neighbouring Panel button. */
+function VoiceReplyButton({
+  autoSpeak,
+  onToggleAutoSpeak,
+  isSpeaking,
+  onStopSpeaking,
+  className,
+  iconSize = 18,
+}: {
+  autoSpeak: boolean;
+  onToggleAutoSpeak: () => void;
+  isSpeaking: boolean;
+  onStopSpeaking: () => void;
+  className: string;
+  iconSize?: number;
+}) {
+  return (
+    <button
+      type="button"
+      className={className}
+      title={autoSpeak ? "Voice replies on — click to mute" : "Voice replies off — click to enable"}
+      aria-label={autoSpeak ? "Turn off voice replies" : "Turn on voice replies"}
+      aria-pressed={autoSpeak}
+      onClick={() => {
+        if (isSpeaking) onStopSpeaking();
+        onToggleAutoSpeak();
+      }}
+      style={autoSpeak ? { color: "var(--accent, #F05025)" } : undefined}
+    >
+      {autoSpeak ? (
+        isSpeaking ? (
+          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          </svg>
+        ) : (
+          <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          </svg>
+        )
+      ) : (
+        <svg width={iconSize} height={iconSize} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      )}
+    </button>
   );
 }
 
@@ -779,6 +892,9 @@ function Composer({
   inputRef,
   onExpertChat,
   onUpload,
+  onMicToggle,
+  isRecording,
+  isTranscribing,
 }: {
   value: string;
   setValue: (v: string) => void;
@@ -786,12 +902,20 @@ function Composer({
   inputRef: React.RefObject<HTMLInputElement | null>;
   onExpertChat: () => void;
   onUpload: () => void;
+  onMicToggle: () => void;
+  isRecording: boolean;
+  isTranscribing: boolean;
 }) {
   const submit = () => {
     const v = value.trim();
     if (!v) return;
     onSend(v);
   };
+  const micTitle = isRecording
+    ? "Stop recording"
+    : isTranscribing
+      ? "Transcribing…"
+      : "Speak your message";
   return (
     <div className="composer-wrap">
       <div className="composer-inner">
@@ -825,7 +949,13 @@ function Composer({
             <input
               ref={inputRef}
               className="comp-input"
-              placeholder="Type a message…"
+              placeholder={
+                isRecording
+                  ? "Listening… tap the mic to stop"
+                  : isTranscribing
+                    ? "Transcribing…"
+                    : "Type a message or tap the mic to speak"
+              }
               value={value}
               onChange={(e) => setValue(e.target.value)}
               onKeyDown={(e) => {
@@ -834,12 +964,46 @@ function Composer({
                   submit();
                 }
               }}
+              disabled={isRecording || isTranscribing}
             />
+            <button
+              type="button"
+              className="comp-mic"
+              title={micTitle}
+              aria-label={micTitle}
+              aria-pressed={isRecording}
+              disabled={isTranscribing}
+              onClick={onMicToggle}
+              style={
+                isRecording
+                  ? {
+                      color: "#fff",
+                      background: "#F05025",
+                      animation: "voice-pulse 1.2s ease-in-out infinite",
+                    }
+                  : isTranscribing
+                    ? { opacity: 0.55 }
+                    : undefined
+              }
+            >
+              {isTranscribing ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 1a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              )}
+            </button>
             <button
               className="comp-send"
               title="Send"
               aria-label="Send"
-              disabled={!value.trim()}
+              disabled={!value.trim() || isRecording || isTranscribing}
               onClick={submit}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -849,6 +1013,12 @@ function Composer({
           </div>
         </div>
       </div>
+      <style jsx>{`
+        @keyframes voice-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(240, 80, 37, 0.55); }
+          50% { box-shadow: 0 0 0 8px rgba(240, 80, 37, 0); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -862,6 +1032,16 @@ function SleepStudioChat() {
   const [streaming, setStreaming] = useState("");
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  // Voice: TTS auto-play preference (persisted to localStorage) and hooks.
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const autoSpeakRef = useRef(autoSpeak);
+  useEffect(() => {
+    autoSpeakRef.current = autoSpeak;
+  }, [autoSpeak]);
+  // Set true right before we kick off a send() so the next assistant message
+  // triggers TTS. Cleared on conversation switch so historical loads don't play.
+  const speakNextAssistantRef = useRef(false);
+  const { speak, stop: stopSpeaking, isSpeaking } = useTTS();
   // Live description of what the server is doing this turn (streamed stage events),
   // shown in place of the anonymous typing dots.
   const [typingLabel, setTypingLabel] = useState("");
@@ -873,6 +1053,13 @@ function SleepStudioChat() {
   // Secondary right-side panels share ONE drawer; multiple open ones become tabs.
   const [openDrawers, setOpenDrawers] = useState<DrawerId[]>([]);
   const [activeDrawer, setActiveDrawer] = useState<DrawerId | null>(null);
+  // The Model Setup pane's container inside the drawer. The page-level SetupBar
+  // portals its docked view here; keeping SetupBar mounted at the page level (not
+  // inside the drawer) lets its popped-out floating window survive drawer close.
+  const [modelSetupSlot, setModelSetupSlot] = useState<HTMLElement | null>(null);
+  // Height reserved at the top of the frame for the top-docked Model Setup window
+  // so the chat and side panels reflow below it instead of hiding behind it.
+  const [topDockH, setTopDockH] = useState(0);
   const openDrawer = useCallback((id: DrawerId) => {
     // Non-admins can never open the internal panels, even if some stray caller
     // asks for one.
@@ -925,6 +1112,77 @@ function SleepStudioChat() {
     localStorage.setItem("ra-obs-w", String(obsWidth));
   }, [obsWidth]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Hydrate TTS preference from localStorage on mount.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      setAutoSpeak(window.localStorage.getItem(TTS_PREF_KEY) === "1");
+    } catch {
+      // localStorage may throw in private mode — safe to ignore.
+    }
+  }, []);
+
+  // Persist TTS preference; stop any playing audio when the user turns it off.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(TTS_PREF_KEY, autoSpeak ? "1" : "0");
+    } catch {
+      // ignore
+    }
+    if (!autoSpeak) stopSpeaking();
+  }, [autoSpeak, stopSpeaking]);
+
+  // Play the newest assistant reply when speakNextAssistantRef was armed by send().
+  // The flag ensures we only speak fresh replies, not history loaded on convo switch.
+  useEffect(() => {
+    if (!speakNextAssistantRef.current) return;
+    if (messages.length === 0) return;
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== "ai") return;
+    speakNextAssistantRef.current = false;
+    if (!autoSpeakRef.current) return;
+    const clean = stripMarkdownForSpeech(last.text);
+    if (clean) void speak(clean);
+  }, [messages, speak]);
+
+  // Voice input: browser SpeechRecognition streams interim text live while the
+  // user speaks, MediaRecorder + Whisper produces the final canonical transcript
+  // on stop, and any pre-existing typed input is preserved as a prefix.
+  const voiceBaselineRef = useRef("");
+  const joinVoice = (base: string, spoken: string) => {
+    const b = base.trim();
+    const s = spoken.trim();
+    if (!b) return s;
+    if (!s) return b;
+    return `${b} ${s}`;
+  };
+  const { isRecording, isTranscribing, toggle: toggleMicInner } = useVoiceRecorder({
+    onInterim: (text) => {
+      setInput(joinVoice(voiceBaselineRef.current, text));
+    },
+    onTranscript: (text) => {
+      const combined = joinVoice(voiceBaselineRef.current, text);
+      voiceBaselineRef.current = "";
+      void send(combined);
+    },
+    onError: (msg) => {
+      // Roll the input back to whatever they had typed before hitting the mic
+      // so a failed voice attempt doesn't destroy their draft.
+      setInput(voiceBaselineRef.current);
+      voiceBaselineRef.current = "";
+      setMessages((prev) => [...prev, { role: "ai", text: `Voice input: ${msg}` }]);
+    },
+  });
+  const toggleMic = useCallback(() => {
+    // Snapshot the current typed input before we start recording so we can
+    // (a) prefix live interim text with it, and (b) restore it on error.
+    if (!isRecording) {
+      voiceBaselineRef.current = input;
+    }
+    toggleMicInner();
+  }, [isRecording, input, toggleMicInner]);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -994,6 +1252,10 @@ function SleepStudioChat() {
       const trimmed = text.trim();
       if (!trimmed || typing) return;
       setInput("");
+      // Any in-flight TTS should stop when the user sends a new message.
+      stopSpeaking();
+      // If voice replies are on, mark the next assistant message to be spoken.
+      speakNextAssistantRef.current = autoSpeakRef.current;
 
       // Show the user message and open an observability turn up front, so even
       // a failure before the chat call (e.g. creating the conversation) is
@@ -1129,7 +1391,7 @@ function SleepStudioChat() {
         setTypingLabel("");
       }
     },
-    [activeId, typing, loadConversations]
+    [activeId, typing, loadConversations, stopSpeaking]
   );
 
   const onNew = () => {
@@ -1140,12 +1402,16 @@ function SleepStudioChat() {
     setMenuOpen(false);
     setFeedbackByIdx({});
     setEditingIdx(null);
+    speakNextAssistantRef.current = false;
+    stopSpeaking();
     setTimeout(() => inputRef.current?.focus(), 30);
   };
   const onSelect = (id: string) => {
     setActiveId(id);
     setStreaming("");
     setEditingIdx(null);
+    speakNextAssistantRef.current = false;
+    stopSpeaking();
     loadMessages(id);
     loadFeedback(id);
     setMenuOpen(false);
@@ -1237,7 +1503,7 @@ function SleepStudioChat() {
         if (infoOpen) setInfoOpen(false);
       }}
     >
-      <div className="app-frame">
+      <div className="app-frame" style={topDockH ? { paddingTop: topDockH } : undefined}>
         <div className="body">
           {sidebarOpen ? (
             <>
@@ -1307,12 +1573,41 @@ function SleepStudioChat() {
             ) : (
               <EmptyState onSuggest={send} />
             )}
-            <Composer value={input} setValue={setInput} onSend={send} inputRef={inputRef} onExpertChat={() => openDrawer("expert")} onUpload={() => openDrawer("upload")} />
+            <Composer
+              value={input}
+              setValue={setInput}
+              onSend={send}
+              inputRef={inputRef}
+              onExpertChat={() => openDrawer("expert")}
+              onUpload={() => openDrawer("upload")}
+              onMicToggle={toggleMic}
+              isRecording={isRecording}
+              isTranscribing={isTranscribing}
+            />
           </main>
 
-          {/* The collapsed right rail only opens Model Setup, so it is admin-only. */}
-          {openDrawers.length === 0 && isAdmin && <RightRail onOpen={openDrawer} />}
-          {openDrawers.length === 0 && <MobileNav onOpen={openDrawer} isAdmin={isAdmin} />}
+          {/* Collapsed right rail: everyone gets the voice-reply toggle; only
+              admins get the Model Setup panel button next to it. */}
+          {openDrawers.length === 0 && (
+            <RightRail
+              onOpen={openDrawer}
+              isAdmin={isAdmin}
+              autoSpeak={autoSpeak}
+              onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
+              isSpeaking={isSpeaking}
+              onStopSpeaking={stopSpeaking}
+            />
+          )}
+          {openDrawers.length === 0 && (
+            <MobileNav
+              onOpen={openDrawer}
+              isAdmin={isAdmin}
+              autoSpeak={autoSpeak}
+              onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
+              isSpeaking={isSpeaking}
+              onStopSpeaking={stopSpeaking}
+            />
+          )}
           {openDrawers.length > 0 && (
             <ResizeHandle
               side="left"
@@ -1356,7 +1651,12 @@ function SleepStudioChat() {
                 onSignOut={signOut}
               />
             }
+            modelSetupContent={<div className="drawer-pane" ref={setModelSetupSlot} />}
           />
+          {/* SetupBar is mounted here (page level), not inside the drawer, so its
+              popped-out floating window survives the drawer closing. It portals
+              its docked view into the drawer's Model Setup slot when open. */}
+          {isAdmin && <SetupBar turns={turns} slot={modelSetupSlot} onTopDockChange={setTopDockH} />}
         </div>
       </div>
     </div>

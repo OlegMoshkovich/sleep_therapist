@@ -272,6 +272,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* Pop-out / dock toggle button: icon + label, matches the mono .sc-close. */
 .sysconf .obs-dock-toggle{display:inline-flex;align-items:center;gap:5px;}
 .sysconf .obs-dock-toggle svg{flex:0 0 auto;}
+.sysconf .obs-dock-toggle.on{background:var(--sc-accent);border-color:var(--sc-accent);color:#fff;}
 /* Drag the popped-out window by its title bar (buttons still click normally). */
 .sysconf .sc-modal-bar--draggable{cursor:move;user-select:none;touch-action:none;}
 .sysconf .sc-modal-bar--draggable button{cursor:pointer;}
@@ -291,6 +292,9 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* Geometry (left/top/width/height) is driven from JS so the window can be both
    dragged and resized; override the fixed sheet sizing. */
 .sysconf .sc-modal.obs-float{position:fixed;z-index:85;max-width:none;max-height:none;}
+/* Snapped to the top of the screen: full width, flush to the top edge, only the
+   bottom corners rounded (height stays resizable via the bottom-right grip). */
+.sysconf .sc-modal.obs-float.obs-float--top{border-radius:0 0 14px 14px;border-top:none;box-shadow:none;}
 /* Bottom-right resize grip. */
 .sysconf .sc-modal.obs-float .obs-float-resize{
   position:absolute;right:0;bottom:0;width:18px;height:18px;z-index:3;

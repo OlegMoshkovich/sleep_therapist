@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Turn } from "../../../components/trace/TraceView";
 import { ObservabilityContent } from "./ObservabilityPanel";
-import { ModelSetupContent } from "./ModelSetupPanel";
 import { ExpertChatContent } from "./ExpertChatPanel";
 import { UploadContent } from "./UploadPanel";
 
@@ -73,6 +72,7 @@ export function RightDrawer({
   width,
   chatsContent,
   accountContent,
+  modelSetupContent,
   onDismiss,
   isAdmin = false,
 }: {
@@ -86,6 +86,12 @@ export function RightDrawer({
   /** Mobile-only panes; on desktop these tabs are never opened. */
   chatsContent?: React.ReactNode;
   accountContent?: React.ReactNode;
+  /**
+   * The Model Setup pane's container. The actual SetupBar is mounted at the page
+   * level and portals its docked view into this element, so the popped-out
+   * floating window survives the drawer closing.
+   */
+  modelSetupContent?: React.ReactNode;
   /** Close the whole drawer (mobile: flick the sheet down past the threshold). */
   onDismiss?: () => void;
   /** Non-admins never see the internal Model Setup / Observability panels. */
@@ -245,7 +251,7 @@ export function RightDrawer({
           {id === "observability" && (
             <ObservabilityContent turns={turns} onClear={onClearTurns} />
           )}
-          {id === "modelsetup" && <ModelSetupContent turns={turns} />}
+          {id === "modelsetup" && modelSetupContent}
           {id === "expert" && <ExpertChatContent active={activeId === "expert"} />}
           {id === "upload" && <UploadContent />}
           {id === "account" && accountContent}

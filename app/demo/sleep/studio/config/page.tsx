@@ -809,7 +809,6 @@ function PolicyPane({
             seedDoc={POLICY_SEED_DOC}
             nodeKinds={DEFAULT_POLICY_NODE_KINDS}
             inspectorContext={{ executionPhase: "policy", runtimeProfile: "default" }}
-            hideInspector
             fillHeight={fillHeight}
             graphTag={movedToWeights ? "Moved into the weights" : undefined}
             fireSignal={fireSignal}
@@ -1435,12 +1434,27 @@ function traceToolNames(trace: TimedTraceEvent[]): string[] {
 export function SetupBar({
   onDockedChange,
   turns,
+  slot,
+  onTopDockChange,
 }: {
   /** Notifies the host (Observability pane) when a section is docked inline so it
    *  can yield space (e.g. hide the trace) to the embedded component. */
   onDockedChange?: (docked: boolean) => void;
   /** Chat turns; the latest completed one drives the policy traversal animation. */
   turns?: Turn[];
+  /**
+   * DOM node inside the drawer's Model Setup pane to portal the docked (inline)
+   * view into. SetupBar itself is mounted at the page level so the popped-out
+   * floating window (portaled to <body>) survives the drawer closing; the docked
+   * chrome only renders when this slot exists (i.e. the drawer is open).
+   */
+  slot?: HTMLElement | null;
+  /**
+   * Reports the height (px) occupied by the top-docked window, or 0 when it's not
+   * top-docked. The host pads the app frame by this amount so the chat and side
+   * panels reflow below the docked window instead of hiding behind it.
+   */
+  onTopDockChange?: (height: number) => void;
 } = {}) {
   const setup = useSleepSetup();
   // `active` is the open section. `floating` toggles between the docked-inline
@@ -1489,9 +1503,14 @@ export function SetupBar({
     onDockedChange?.(docked);
   }, [docked, onDockedChange]);
 
+  // When true, the popped-out window snaps to a full-width bar across the top of
+  // the screen instead of free-floating at `win` geometry.
+  const [topDocked, setTopDocked] = useState(false);
+
   const close = () => {
     setActive(null);
     setFloating(false);
+    setTopDocked(false);
   };
   const label = active ? OPTS.find((o) => o.id === active)?.label ?? active : "";
 
@@ -1502,6 +1521,14 @@ export function SetupBar({
   const dragRef = React.useRef<{ sx: number; sy: number; bx: number; by: number } | null>(null);
   const sizeRef = React.useRef<{ sx: number; sy: number; bw: number; bh: number } | null>(null);
   const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+  // Tell the host how much vertical space the top-docked window occupies so it
+  // can pad the app frame (chat + side panels reflow below it). 0 = not docked.
+  const topDockHeight = topDocked && floating && win ? win.h : 0;
+  React.useEffect(() => {
+    onTopDockChange?.(topDockHeight);
+    return () => onTopDockChange?.(0);
+  }, [topDockHeight, onTopDockChange]);
 
   const FLOAT_MIN_W = 360;
   const FLOAT_MIN_H = 280;
@@ -1521,7 +1548,8 @@ export function SetupBar({
 
   const onBarPointerDown = (e: React.PointerEvent) => {
     // Let the Save/Dock/Close buttons work normally — only drag from empty bar.
-    if ((e.target as HTMLElement).closest("button") || !win) return;
+    // When snapped to the top it isn't a free window, so dragging is disabled.
+    if ((e.target as HTMLElement).closest("button") || !win || topDocked) return;
     dragRef.current = { sx: e.clientX, sy: e.clientY, bx: win.x, by: win.y };
     e.currentTarget.setPointerCapture?.(e.pointerId);
   };
@@ -1582,7 +1610,11 @@ export function SetupBar({
     <span className="sc-lbl" style={{ opacity: 0.6 }}>Read-only</span>
   );
 
-  return (
+  // The docked chrome (section chips + inline pane) lives inside the drawer via
+  // the `slot` portal target. The floating window is portaled to <body> and is
+  // owned by this page-level SetupBar, so it stays present when the drawer — and
+  // thus the slot — is closed.
+  const dockedChrome = (
     <>
       <div className="obs-setup">
         {OPTS.map((o) => {
@@ -1632,21 +1664,32 @@ export function SetupBar({
           </div>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <>
+      {/* Docked chrome renders into the drawer's slot when the drawer is open. */}
+      {slot ? createPortal(dockedChrome, slot) : null}
 
       {/* Popped out: a non-modal floating window — no dimming backdrop, so the
           chat behind it stays visible and usable. Drag by the title bar to move,
           drag the bottom-right handle to resize; Dock returns it to the drawer.
-          Portaled to <body> so it survives switching drawer tabs (the inactive
-          tab pane is display:none, which would otherwise hide it). */}
+          Portaled to <body> and owned by the page-level SetupBar, so it stays
+          present when the drawer (and thus the slot) is closed. */}
       {active && floating && win && typeof document !== "undefined" &&
         createPortal(
         <div className="sysconf obs-float-scope">
           <div
-            className="sc-modal sc-modal--sheet obs-float"
-            style={{ left: win.x, top: win.y, width: win.w, height: win.h }}
+            className={"sc-modal sc-modal--sheet obs-float" + (topDocked ? " obs-float--top" : "")}
+            style={
+              topDocked
+                ? { left: 0, right: 0, top: 0, width: "auto", height: win.h }
+                : { left: win.x, top: win.y, width: win.w, height: win.h }
+            }
           >
             <div
-              className="sc-modal-bar sc-modal-bar--draggable"
+              className={"sc-modal-bar" + (topDocked ? "" : " sc-modal-bar--draggable")}
               onPointerDown={onBarPointerDown}
               onPointerMove={onBarPointerMove}
               onPointerUp={onBarPointerUp}
@@ -1656,10 +1699,19 @@ export function SetupBar({
               <span className="sp" />
               {SaveBtn}
               <button
+                className={"sc-close obs-dock-toggle" + (topDocked ? " on" : "")}
+                aria-label={topDocked ? "Unsnap from the top" : "Dock to the top of the screen"}
+                title={topDocked ? "Unsnap from the top" : "Dock to the top of the screen"}
+                aria-pressed={topDocked}
+                onClick={() => setTopDocked((t) => !t)}
+              >
+                <Ic.Expand size={13} /> Top
+              </button>
+              <button
                 className="sc-close obs-dock-toggle"
                 aria-label="Dock back into the side drawer"
                 title="Dock back into the side drawer"
-                onClick={() => setFloating(false)}
+                onClick={() => { setTopDocked(false); setFloating(false); }}
               >
                 <Ic.Panel size={13} /> Dock
               </button>
