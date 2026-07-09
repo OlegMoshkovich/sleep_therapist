@@ -38,6 +38,41 @@ const ADMIN_ITEMS = [
   { icon: "Sliders", label: "Model setup", href: "/demo/sleep/studio/config" },
 ] as const;
 
+// Copy for the bottom-left "How to use the studio" help panel. Each section maps to a
+// real part of the studio an expert works with, so the guidance stays accurate.
+const HELP_SECTIONS: Array<{ title: string; body: React.ReactNode }> = [
+  {
+    title: "Conversations",
+    body:
+      "Start a fresh chat with “New conversation.” Search, rename, or delete past ones in the list — each keeps its own memory of what was said.",
+  },
+  {
+    title: "Chatting",
+    body:
+      "Type a message and press Enter. While the assistant works, the indicator shows what it’s doing in real time — “Reviewing what you told me” → “Checking for anything urgent” → “Writing a reply” — the actual steps the system runs that turn.",
+  },
+  {
+    title: "What the assistant tracks",
+    body:
+      "Every turn it updates a structured profile (age, gender, sleep concern, and more) and uses what’s still missing to decide what to ask next before giving advice.",
+  },
+  {
+    title: "Feedback mode",
+    body:
+      "Turn on Feedback from the account menu, then annotate any reply: give it a Score (±1), a Note, a Text correction, or the Ideal output. Each is saved on that message and feeds model improvement.",
+  },
+  {
+    title: "Observability & trace",
+    body:
+      "Open Observability to inspect a turn step by step — every model round trip, how long each took, and the raw trace. Use it to see exactly what ran and where the time went.",
+  },
+  {
+    title: "Model setup",
+    body:
+      "Open Model Setup to edit the state schema, prompts, and the policy canvas — the flowchart of conditions and replies that decides how the assistant behaves.",
+  },
+];
+
 /* ---------------- sidebar ---------------- */
 /**
  * Drag handle living on a drawer's inner edge to resize it. Rendered as an
@@ -226,6 +261,8 @@ function Sidebar({
   setQuery,
   menuOpen,
   setMenuOpen,
+  infoOpen,
+  setInfoOpen,
   onClose,
   onOpenObservability,
   onToggleFeedbackMode,
@@ -246,6 +283,8 @@ function Sidebar({
   setQuery: (v: string) => void;
   menuOpen: boolean;
   setMenuOpen: (fn: (o: boolean) => boolean) => void;
+  infoOpen: boolean;
+  setInfoOpen: (fn: (o: boolean) => boolean) => void;
   onClose: () => void;
   onOpenObservability: () => void;
   onToggleFeedbackMode: () => void;
@@ -303,6 +342,40 @@ function Sidebar({
 
       {/* account menu (admin popover) */}
       <div className="side-bottom">
+        {infoOpen && (
+          <div
+            className="help-popover"
+            role="dialog"
+            aria-label="How to use the studio"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="help-head">
+              <span className="help-title">
+                <span className="ic"><Ic.Info size={15} /></span>How to use the studio
+              </span>
+              <button
+                className="help-close"
+                title="Close"
+                aria-label="Close"
+                onClick={() => setInfoOpen(() => false)}
+              >
+                <Ic.Close size={15} />
+              </button>
+            </div>
+            <div className="help-body">
+              <p className="help-intro">
+                This studio is where you talk to the assistant and shape how it behaves.
+                Here’s what each part does.
+              </p>
+              {HELP_SECTIONS.map((s) => (
+                <div className="help-section" key={s.title}>
+                  <div className="help-section-title">{s.title}</div>
+                  <div className="help-section-body">{s.body}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {menuOpen && (
           <div className="popover" role="menu" onClick={(e) => e.stopPropagation()}>
             {isAdmin && (
@@ -349,20 +422,34 @@ function Sidebar({
             </button>
           </div>
         )}
-        <button
-          className={"acct-chip" + (menuOpen ? " open" : "")}
-          onClick={(e) => { e.stopPropagation(); setMenuOpen((o) => !o); }}
-        >
-          <Avatar kind="user" size={32} src={userImage} mono={(userEmail || "?").charAt(0).toUpperCase()} />
-          <div className="acct-meta">
-            <div className="acct-name-row">
-              <span className="acct-name">{userEmail || "Account"}</span>
-              {isAdmin && <span className="role-pill">ADMIN</span>}
+        <div className="side-bottom-row">
+          <button
+            className={"help-btn" + (infoOpen ? " open" : "")}
+            title="How to use the studio"
+            aria-label="How to use the studio"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(() => false);
+              setInfoOpen((o) => !o);
+            }}
+          >
+            <Ic.Info size={18} />
+          </button>
+          <button
+            className={"acct-chip" + (menuOpen ? " open" : "")}
+            onClick={(e) => { e.stopPropagation(); setInfoOpen(() => false); setMenuOpen((o) => !o); }}
+          >
+            <Avatar kind="user" size={32} src={userImage} mono={(userEmail || "?").charAt(0).toUpperCase()} />
+            <div className="acct-meta">
+              <div className="acct-name-row">
+                <span className="acct-name">{userEmail || "Account"}</span>
+                {isAdmin && <span className="role-pill">ADMIN</span>}
+              </div>
+              <div className="acct-sub">signed in</div>
             </div>
-            <div className="acct-sub">signed in</div>
-          </div>
-          <span className="chev"><Ic.Chevron size={16} /></span>
-        </button>
+            <span className="chev"><Ic.Chevron size={16} /></span>
+          </button>
+        </div>
       </div>
     </aside>
   );
@@ -743,6 +830,8 @@ function SleepStudioChat() {
   const [typingLabel, setTypingLabel] = useState("");
   const [query, setQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  // "How to use the studio" help panel, anchored bottom-left of the sidebar.
+  const [infoOpen, setInfoOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Secondary right-side panels share ONE drawer; multiple open ones become tabs.
   const [openDrawers, setOpenDrawers] = useState<DrawerId[]>([]);
@@ -1104,7 +1193,13 @@ function SleepStudioChat() {
   };
 
   return (
-    <div className="ra-scope" onClick={() => menuOpen && setMenuOpen(false)}>
+    <div
+      className="ra-scope"
+      onClick={() => {
+        if (menuOpen) setMenuOpen(false);
+        if (infoOpen) setInfoOpen(false);
+      }}
+    >
       <div className="app-frame">
         <div className="body">
           {sidebarOpen ? (
@@ -1120,6 +1215,8 @@ function SleepStudioChat() {
                 setQuery={setQuery}
                 menuOpen={menuOpen}
                 setMenuOpen={setMenuOpen}
+                infoOpen={infoOpen}
+                setInfoOpen={setInfoOpen}
                 onClose={() => setSidebarOpen(false)}
                 onOpenObservability={() => openDrawer("observability")}
                 onToggleFeedbackMode={() => setFeedbackMode((m) => !m)}
