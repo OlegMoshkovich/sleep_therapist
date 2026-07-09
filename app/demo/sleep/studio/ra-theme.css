@@ -304,8 +304,16 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* Stack the inspector UNDER the canvas in the popped-out window (the canvas
    defaults to side-by-side at wide viewports via lg:flex-row). */
 .sysconf .sc-modal.obs-float .rf-canvas-body{flex-direction:column;}
-.sysconf .sc-modal.obs-float .rf-canvas-surface{width:100%;flex:1 1 auto;height:auto;min-height:240px;}
-.sysconf .sc-modal.obs-float .rf-canvas-body > aside{width:100%;max-width:none;flex:0 0 auto;height:auto;max-height:42%;}
+.sysconf .sc-modal.obs-float .rf-canvas-surface{width:100%;flex:1 1 auto;height:auto;min-height:320px;}
+/* Give the canvas the lion's share; the inspector stays compact + scrolls. */
+.sysconf .sc-modal.obs-float .rf-canvas-body > aside{width:100%;max-width:none;flex:0 0 auto;height:auto;max-height:30%;}
+
+/* Top-docked bar is full width, so lay the canvas and inspector SIDE BY SIDE —
+   the graph then uses the full height of the bar instead of sharing it top/bottom
+   with the inspector, making the canvas itself much bigger. */
+.sysconf .sc-modal.obs-float--top .rf-canvas-body{flex-direction:row;}
+.sysconf .sc-modal.obs-float--top .rf-canvas-surface{min-height:0;}
+.sysconf .sc-modal.obs-float--top .rf-canvas-body > aside{width:320px;max-width:340px;max-height:none;height:auto;align-self:stretch;overflow:auto;}
 
 /* ===== Policy traversal animation (CanvasFireSignal) =====
    When a chat turn completes, the Policy canvas walks the flow node-by-node.
@@ -478,8 +486,8 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .comp-send:disabled{opacity:.45;cursor:default;}
 .ra-scope .comp-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;padding:0 4px;}
 .ra-scope .comp-input::placeholder{color:var(--text-3);}
-.ra-scope .comp-mic{width:34px;height:34px;flex:0 0 auto;border-radius:50%;color:var(--text-3);display:flex;align-items:center;justify-content:center;}
-.ra-scope .comp-mic:hover{color:var(--text);background:var(--surface-2);}
+.ra-scope .comp-mic{width:34px;height:34px;flex:0 0 auto;border-radius:50%;color:var(--text-2);opacity:.5;display:flex;align-items:center;justify-content:center;}
+.ra-scope .comp-mic:hover{color:var(--text);background:var(--surface-2);opacity:1;}
 .ra-scope .voice-btn{width:46px;height:46px;flex:0 0 auto;border-radius:50%;background:var(--accent);color:var(--accent-ink);
   display:flex;align-items:center;justify-content:center;transition:transform .14s, box-shadow .2s;
   box-shadow:0 0 0 1px rgba(0,0,0,.2), 0 6px 18px -6px var(--accent);}

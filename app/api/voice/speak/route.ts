@@ -5,7 +5,7 @@ import { auth } from "@clerk/nextjs/server";
 export const runtime = "nodejs";
 
 const TTS_MODEL = process.env.AIRLAB_OPENAI_TTS_MODEL ?? "tts-1";
-const TTS_VOICE = process.env.AIRLAB_OPENAI_TTS_VOICE ?? "nova";
+const TTS_VOICE = process.env.AIRLAB_OPENAI_TTS_VOICE ?? "onyx";
 // Guardrail: keep any single utterance small enough to feel responsive.
 const MAX_INPUT_CHARS = 4000;
 
@@ -87,7 +87,7 @@ function normalizeVoice(voice: string): OpenAI.Audio.SpeechCreateParams["voice"]
   const v = voice.toLowerCase().trim();
   return (ALLOWED_VOICES.has(v)
     ? v
-    : "nova") as OpenAI.Audio.SpeechCreateParams["voice"];
+    : "onyx") as OpenAI.Audio.SpeechCreateParams["voice"];
 }
 
 function mimeFor(format: string): string {

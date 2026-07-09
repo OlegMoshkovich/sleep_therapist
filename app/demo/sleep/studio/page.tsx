@@ -16,6 +16,7 @@ import { FeedbackControls, type FeedbackEntry, type FeedbackSignal } from "./Fee
 import type { Turn, TimedTraceEvent } from "../../../components/trace/TraceView";
 import { AuthProvider, useAuth } from "../../../context/AuthContext";
 import AuthModal from "../../../components/AuthModal";
+import SiteLogo from "../../../components/SiteLogo";
 import { useVoiceRecorder, useTTS } from "./useVoice";
 
 const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
@@ -729,7 +730,7 @@ function VoiceReplyButton({
         if (isSpeaking) onStopSpeaking();
         onToggleAutoSpeak();
       }}
-      style={autoSpeak ? { color: "var(--accent, #F05025)" } : undefined}
+      style={autoSpeak ? { color: "var(--accent, #F05025)" } : { opacity: 0.7 }}
     >
       {autoSpeak ? (
         isSpeaking ? (
@@ -979,6 +980,7 @@ function Composer({
                   ? {
                       color: "#fff",
                       background: "#F05025",
+                      opacity: 1,
                       animation: "voice-pulse 1.2s ease-in-out infinite",
                     }
                   : isTranscribing
@@ -1025,7 +1027,10 @@ function Composer({
 
 /* ---------------- page ---------------- */
 function SleepStudioChat() {
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, roleLoaded } = useAuth();
+  // The studio assembles behind the splash overlay; this flag tells the splash
+  // when the initial data (role + conversations) is ready so it can fade out.
+  const [convosLoaded, setConvosLoaded] = useState(false);
   const [convos, setConvos] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -1194,6 +1199,8 @@ function SleepStudioChat() {
       setConvos((conversations ?? []).map((c) => ({ id: c.id, title: c.title })));
     } catch {
       setConvos([]);
+    } finally {
+      setConvosLoaded(true);
     }
   }, []);
 
@@ -1503,6 +1510,8 @@ function SleepStudioChat() {
         if (infoOpen) setInfoOpen(false);
       }}
     >
+      {/* Splash overlay covers the app while it assembles, then fades out. */}
+      <StudioSplash ready={roleLoaded && convosLoaded} />
       <div className="app-frame" style={topDockH ? { paddingTop: topDockH } : undefined}>
         <div className="body">
           {sidebarOpen ? (
@@ -1668,15 +1677,58 @@ function SleepStudioChat() {
 // signed-in user, so gate the studio on real auth instead of faking a signed-in
 // account. Unauthenticated visitors get the sign-in modal rather than a silent
 // 401 the first time they send a message.
+// Shown during the pre-login auth handshake (in StudioGate). Same logo + size +
+// background as the post-login splash, so the brand mark stays put across the
+// auth → setup transition. Matches the landing splash in app/page.tsx (size 120).
+function StudioLoading() {
+  return (
+    <div className="flex flex-1 items-center justify-center bg-[#E1DECF]">
+      <SiteLogo size={120} href="/demo/sleep/studio" />
+    </div>
+  );
+}
+
+// Post-login splash: an overlay that holds the brand logo for at least 3s while
+// the studio assembles behind it, then fades out over 700ms and unmounts —
+// mirroring the landing-page splash so the two feel like one continuous screen.
+function StudioSplash({ ready }: { ready: boolean }) {
+  const [phase, setPhase] = useState<"hold" | "fading" | "gone">("hold");
+  const [minElapsed, setMinElapsed] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setMinElapsed(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== "hold" || !ready || !minElapsed) return;
+    setPhase("fading");
+    const t = setTimeout(() => setPhase("gone"), 700);
+    return () => clearTimeout(t);
+  }, [phase, ready, minElapsed]);
+
+  if (phase === "gone") return null;
+
+  return (
+    <div
+      className={
+        "fixed inset-0 z-[200] flex items-center justify-center transition-opacity duration-700 " +
+        // Block clicks to the still-assembling app while holding; let them pass
+        // through once it starts fading so the revealed UI is immediately usable.
+        (phase === "fading" ? "pointer-events-none opacity-0" : "opacity-100")
+      }
+      style={{ backgroundColor: "#E1DECF" }}
+    >
+      <SiteLogo size={120} href="/demo/sleep/studio" />
+    </div>
+  );
+}
+
 function StudioGate() {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="flex flex-1 items-center justify-center bg-[#E1DECF]">
-        <p className="text-gray-400 text-sm font-serif">Loading…</p>
-      </div>
-    );
+    return <StudioLoading />;
   }
 
   if (!user) {

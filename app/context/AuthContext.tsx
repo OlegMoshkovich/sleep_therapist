@@ -11,6 +11,13 @@ interface AuthContextType {
   expertDemos: string[];
   isAdmin: boolean;
   loading: boolean;
+  /**
+   * True once the `/api/me/role` lookup has settled (so `role`/`isAdmin` are
+   * final). `loading` only covers the auth handshake, which resolves before the
+   * role fetch — consumers that must avoid admin-gated UI popping in should wait
+   * on this too.
+   */
+  roleLoaded: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -20,6 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   expertDemos: [],
   isAdmin: false,
   loading: true,
+  roleLoaded: false,
   signOut: async () => {},
 });
 
@@ -44,6 +52,7 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
   const { signOut: clerkSignOut } = useClerk();
   const [role, setRole] = useState<Role | null>(null);
   const [expertDemos, setExpertDemos] = useState<string[]>([]);
+  const [roleLoaded, setRoleLoaded] = useState(false);
 
   const authUser = isLoaded && user
     ? { id: user.id, email: user.primaryEmailAddress?.emailAddress, imageUrl: user.imageUrl }
@@ -55,9 +64,11 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
     if (!authUserId) {
       setRole(null);
       setExpertDemos([]);
+      setRoleLoaded(true); // no user → nothing to fetch, role is settled
       return;
     }
     let cancelled = false;
+    setRoleLoaded(false);
     (async () => {
       try {
         const res = await fetch("/api/me/role");
@@ -71,6 +82,8 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
         setExpertDemos(data.expertDemos ?? []);
       } catch {
         /* ignore — caller falls back to defaults */
+      } finally {
+        if (!cancelled) setRoleLoaded(true);
       }
     })();
     return () => {
@@ -85,6 +98,7 @@ function ClerkAuthProvider({ children }: { children: ReactNode }) {
       expertDemos,
       isAdmin: role === "admin",
       loading: !isLoaded,
+      roleLoaded: isLoaded && roleLoaded,
       signOut: () => clerkSignOut(),
     }}>
       {children}
@@ -153,6 +167,8 @@ function TestAuthProvider({ children }: { children: ReactNode }) {
         expertDemos,
         isAdmin: role === "admin",
         loading,
+        // In test mode `loading` already stays true until the role fetch settles.
+        roleLoaded: !loading,
         signOut,
       }}
     >
