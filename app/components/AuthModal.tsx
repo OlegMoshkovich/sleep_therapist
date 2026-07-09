@@ -9,7 +9,7 @@ type AuthModalProps = {
   redirectAfterLogin?: string;
 };
 
-const clerkAppearance = {
+export const clerkAppearance = {
   variables: {
     colorPrimary: "#1E2938",
     colorBackground: "#E1DECF",

@@ -5,5 +5,5 @@ import react from '@vitejs/plugin-react'
 // AIRLAB_ALLOWED_ORIGINS / AIRLAB_AUTHORIZED_PARTIES.
 export default defineConfig({
   plugins: [react()],
-  server: { port: 5173 },
+  server: { port: 5173, strictPort: true },
 })
