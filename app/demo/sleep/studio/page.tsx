@@ -29,6 +29,10 @@ interface Conversation {
 // opens the whole set (see openDrawer) so all tabs are visible.
 const PANEL_TABS: DrawerId[] = ["modelsetup", "observability", "expert", "upload"];
 
+// Panels that expose internal wiring (model/prompt setup, step-by-step traces).
+// Only admins may see or open these; non-admins get the plain chat surface.
+const ADMIN_ONLY_DRAWERS: DrawerId[] = ["modelsetup", "observability"];
+
 const ADMIN_ITEMS = [
   // { icon: "Grid", label: "Admin dashboard", href: "/demo/sleep/expert-dashboard" },
   { icon: "Sliders", label: "Model setup", href: "/demo/sleep/studio/config" },
@@ -739,19 +743,26 @@ function SleepStudioChat() {
   const [openDrawers, setOpenDrawers] = useState<DrawerId[]>([]);
   const [activeDrawer, setActiveDrawer] = useState<DrawerId | null>(null);
   const openDrawer = useCallback((id: DrawerId) => {
+    // Non-admins can never open the internal panels, even if some stray caller
+    // asks for one.
+    if (!isAdmin && ADMIN_ONLY_DRAWERS.includes(id)) return;
     // Opening any function panel opens the whole set, so the desktop drawer
-    // always shows all tabs (the clicked one becomes active). Chats/Account are
-    // mobile-only sheet tabs and open on their own.
+    // always shows all tabs (the clicked one becomes active). Non-admins get the
+    // set with the admin-only panels filtered out. Chats/Account are mobile-only
+    // sheet tabs and open on their own.
     if (PANEL_TABS.includes(id)) {
+      const panelTabs = isAdmin
+        ? PANEL_TABS
+        : PANEL_TABS.filter((d) => !ADMIN_ONLY_DRAWERS.includes(d));
       setOpenDrawers((prev) => {
         const extras = prev.filter((d) => !PANEL_TABS.includes(d));
-        return [...PANEL_TABS, ...extras];
+        return [...panelTabs, ...extras];
       });
     } else {
       setOpenDrawers((prev) => (prev.includes(id) ? prev : [...prev, id]));
     }
     setActiveDrawer(id);
-  }, []);
+  }, [isAdmin]);
   const closeDrawer = useCallback((id: DrawerId) => {
     setOpenDrawers((prev) => {
       const next = prev.filter((d) => d !== id);
@@ -1117,7 +1128,8 @@ function SleepStudioChat() {
             <Composer value={input} setValue={setInput} onSend={send} inputRef={inputRef} onExpertChat={() => openDrawer("expert")} onUpload={() => openDrawer("upload")} />
           </main>
 
-          {openDrawers.length === 0 && <RightRail onOpen={openDrawer} />}
+          {/* The collapsed right rail only opens Model Setup, so it is admin-only. */}
+          {openDrawers.length === 0 && isAdmin && <RightRail onOpen={openDrawer} />}
           {openDrawers.length > 0 && (
             <ResizeHandle
               side="left"
@@ -1133,6 +1145,7 @@ function SleepStudioChat() {
             active={activeDrawer}
             setActive={setActiveDrawer}
             onClose={closeDrawer}
+            isAdmin={isAdmin}
             turns={turns}
             onClearTurns={() => setTurns([])}
             width={obsWidth}

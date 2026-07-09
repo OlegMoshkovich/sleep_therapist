@@ -47,6 +47,10 @@ const ALL_TABS: DrawerId[] = [
   "account",
 ];
 
+// Panels that expose internal wiring (model/prompt setup, step-by-step traces).
+// Hidden from non-admins on every surface (desktop tabs and the mobile sheet).
+const ADMIN_ONLY_DRAWERS: DrawerId[] = ["observability", "modelsetup"];
+
 function useIsMobile(): boolean {
   return useSyncExternalStore(
     (cb) => {
@@ -70,6 +74,7 @@ export function RightDrawer({
   chatsContent,
   accountContent,
   onDismiss,
+  isAdmin = false,
 }: {
   open: DrawerId[];
   active: DrawerId | null;
@@ -83,6 +88,8 @@ export function RightDrawer({
   accountContent?: React.ReactNode;
   /** Close the whole drawer (mobile: flick the sheet down past the threshold). */
   onDismiss?: () => void;
+  /** Non-admins never see the internal Model Setup / Observability panels. */
+  isAdmin?: boolean;
 }) {
   // Mobile bottom-sheet drag: flick the grabber down to close (or collapse from
   // full), up to expand to full height. Inert on desktop (the grabber is
@@ -94,9 +101,14 @@ export function RightDrawer({
   const isMobile = useIsMobile();
 
   // Tabs/panes shown: the full function set on mobile (scrollable, switchable),
-  // the opened subset on desktop.
-  const tabIds = isMobile ? ALL_TABS : open;
-  const activeId = active ?? open[0] ?? (isMobile ? ALL_TABS[0] : null);
+  // the opened subset on desktop. Non-admins never get the internal panels on
+  // either surface.
+  const visibleTabIds = (isMobile ? ALL_TABS : open).filter(
+    (id) => isAdmin || !ADMIN_ONLY_DRAWERS.includes(id)
+  );
+  const tabIds = visibleTabIds;
+  const activeId =
+    active && visibleTabIds.includes(active) ? active : visibleTabIds[0] ?? null;
 
   // Escape closes the active tab.
   useEffect(() => {
