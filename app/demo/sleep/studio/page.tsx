@@ -589,11 +589,14 @@ function AccountPane({
 }
 
 /* ---------------- compact (collapsed) sidebar rail ---------------- */
-function SidebarRail({ onExpand }: { onExpand: () => void }) {
+function SidebarRail({ onExpand, onNew }: { onExpand: () => void; onNew: () => void }) {
   return (
     <aside className="sidebar rail">
       <button className="rail-btn rail-flip" title="Expand sidebar" onClick={onExpand}>
         <Ic.Panel size={18} />
+      </button>
+      <button className="rail-btn" title="New conversation" aria-label="New conversation" onClick={onNew}>
+        <Ic.Plus size={18} />
       </button>
     </aside>
   );
@@ -968,6 +971,17 @@ function Composer({
               disabled={isRecording || isTranscribing}
             />
             <button
+              className="comp-send"
+              title="Send"
+              aria-label="Send"
+              disabled={!value.trim() || isRecording || isTranscribing}
+              onClick={submit}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M12 5l7 7-7 7" />
+              </svg>
+            </button>
+            <button
               type="button"
               className="comp-mic"
               title={micTitle}
@@ -1000,17 +1014,6 @@ function Composer({
                   <line x1="8" y1="23" x2="16" y2="23" />
                 </svg>
               )}
-            </button>
-            <button
-              className="comp-send"
-              title="Send"
-              aria-label="Send"
-              disabled={!value.trim() || isRecording || isTranscribing}
-              onClick={submit}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
             </button>
           </div>
         </div>
@@ -1549,7 +1552,7 @@ function SleepStudioChat() {
               />
             </>
           ) : (
-            <SidebarRail onExpand={() => setSidebarOpen(true)} />
+            <SidebarRail onExpand={() => setSidebarOpen(true)} onNew={onNew} />
           )}
           <main className="main">
             {feedbackMode && (activeId || messages.length > 0) ? (
