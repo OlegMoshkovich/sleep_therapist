@@ -1616,41 +1616,34 @@ export function SetupBar({
     <span className="sc-lbl" style={{ opacity: 0.6 }}>Read-only</span>
   );
 
-  // The Save / Pop out / Close controls used in the header bar of the non-canvas
-  // sections (Knowledge, State).
-  const dockControls = (
-    <div className="obs-tabbar-controls">
-      {SaveBtn}
+  // Save + Pop out live on the section nav bar itself (no separate title row).
+  const navActions = active && !floating ? (
+    <div className="obs-setup-actions">
+      {setup.canEdit ? (
+        <button
+          type="button"
+          className="obs-setup-action"
+          onClick={setup.save}
+          disabled={setup.saving || !setup.dirty}
+        >
+          {setup.saving ? "Saving…" : "Save"}
+        </button>
+      ) : (
+        <span className="obs-setup-action" style={{ opacity: 0.6 }}>Read-only</span>
+      )}
       <button
-        className="sc-close obs-dock-toggle"
-        aria-label="Pop out to a floating window"
-        title="Pop out to a floating window"
+        type="button"
+        className="obs-setup-action"
         onClick={popOut}
+        title="Pop out to a floating window"
+        aria-label="Pop out to a floating window"
       >
         <Ic.Expand size={13} /> Pop out
       </button>
-      <button className="sc-close sc-modal-x" aria-label="Close" onClick={close}>
-        ✕
-      </button>
     </div>
-  );
+  ) : null;
 
-  // The Policy section has no header row — only a single borderless Pop out
-  // control docked into the canvas tab bar. Uses the same type styling as the
-  // canvas tabs / Tools toggle so every title in the bar matches.
-  const tabBarPopOut = (
-    <button
-      type="button"
-      className="flex items-center gap-1.5 rounded px-1.5 py-1 text-xs font-sans uppercase tracking-widest text-gray-600 hover:text-gray-900 hover:bg-[#eceadd]"
-      aria-label="Pop out to a floating window"
-      title="Pop out to a floating window"
-      onClick={popOut}
-    >
-      <Ic.Expand size={13} /> Pop out
-    </button>
-  );
-
-  // The docked chrome (section chips + inline pane) lives inside the drawer via
+  // The docked chrome (section nav + inline pane) lives inside the drawer via
   // the `slot` portal target. The floating window is portaled to <body> and is
   // owned by this page-level SetupBar, so it stays present when the drawer — and
   // thus the slot — is closed.
@@ -1658,7 +1651,6 @@ export function SetupBar({
     <>
       <div className="obs-setup">
         {OPTS.map((o) => {
-          const I = Ic[o.ico];
           const on = active === o.id;
           return (
             <button
@@ -1669,31 +1661,22 @@ export function SetupBar({
               onClick={() => (on && !floating ? close() : setActive(o.id))}
               title={on ? `Close ${o.label}` : `Open ${o.label}`}
             >
-              <I size={13} />
               <span>{o.label}</span>
             </button>
           );
         })}
+        {navActions}
       </div>
 
       {/* Docked inline: the actual section component, embedded in the drawer.
-          The Policy section drops the header bar and docks its controls into the
-          canvas tab bar; other sections keep the header row. */}
+          No title row — Save/Pop out are on the nav bar above. */}
       {active && !floating && (
         <div className="sysconf obs-docked">
-          {active !== "policy" && (
-            <div className="sc-modal-bar obs-docked-bar">
-              <span className="sc-lbl">{label}</span>
-              <span className="sp" />
-              {dockControls}
-            </div>
-          )}
           <div className="obs-docked-body">
             {setup.renderSectionPane(active, {
               fillHeight: true,
               fireSignal,
               currentState,
-              tabBarTrailing: active === "policy" ? tabBarPopOut : undefined,
             })}
           </div>
         </div>
@@ -1749,13 +1732,8 @@ export function SetupBar({
               >
                 <Ic.Panel size={13} /> Dock
               </button>
-              <button
-                className="sc-close sc-modal-x"
-                aria-label="Close"
-                onClick={close}
-              >
-                ✕ Close
-              </button>
+              {/* Close removed from the popped-out window — use Dock to return it
+                  to the drawer (and close from there). */}
             </div>
             <div className="sc-modal-body">{setup.renderSectionPane(active, { fillHeight: true, fireSignal, currentState })}</div>
             <div

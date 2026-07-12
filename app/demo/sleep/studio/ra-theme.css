@@ -235,15 +235,29 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-clear{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;
   border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--text-3);white-space:nowrap;}
 .ra-scope .obs-clear:hover{background:var(--surface);color:var(--text);}
-.ra-scope .obs-setup{display:flex;gap:6px;padding:10px 16px;border-bottom:1px solid var(--line-soft);}
-.ra-scope .obs-setup-chip{display:flex;align-items:center;justify-content:center;gap:6px;flex:1 1 0;min-width:0;
-  border:1px solid var(--line);border-radius:9px;padding:7px 6px;background:var(--surface);
-  color:var(--text-2);font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ra-scope .obs-setup-chip:hover{background:var(--surface-2);color:var(--text);}
-.ra-scope .obs-setup-chip svg{flex:0 0 auto;color:var(--accent);}
-/* Active chip while its section is docked inline below. */
-.ra-scope .obs-setup-chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
-.ra-scope .obs-setup-chip.on svg{color:var(--accent-ink);}
+/* Section switcher styled as underline nav tabs (like the drawer tabs above),
+   not filled buttons. Selection is shown with a neutral underline — no accent
+   fill. */
+.ra-scope .obs-setup{display:flex;gap:22px;padding:0 16px;height:46px;align-items:stretch;border-bottom:1px solid var(--line-soft);}
+/* Selectors are scoped under `.obs-setup` so they out-specify the global
+   `.ra-scope button{border:none;color:inherit}` reset — otherwise the underline
+   (a border) and the muted inactive color would be wiped out. */
+.ra-scope .obs-setup .obs-setup-chip{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0;
+  border:none;border-bottom:2px solid transparent;border-radius:0;padding:0 2px;background:none;
+  color:var(--text);font-size:13px;font-weight:400;white-space:nowrap;margin-bottom:-1px;}
+.ra-scope .obs-setup .obs-setup-chip:hover{background:none;color:var(--text);}
+.ra-scope .obs-setup .obs-setup-chip svg{flex:0 0 auto;color:currentColor;}
+/* Active tab while its section is docked inline below. */
+.ra-scope .obs-setup .obs-setup-chip.on{background:none;color:var(--text);border-bottom-color:var(--text);}
+.ra-scope .obs-setup .obs-setup-chip.on svg{color:currentColor;}
+/* Save + Pop out, right-aligned on the nav bar (no separate title row). Scoped
+   under `.obs-setup` to out-specify the global button reset. */
+.ra-scope .obs-setup .obs-setup-actions{margin-left:auto;display:flex;align-items:center;gap:18px;}
+.ra-scope .obs-setup .obs-setup-action{display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--serif);font-size:13px;font-weight:400;color:var(--text);white-space:nowrap;}
+.ra-scope .obs-setup .obs-setup-action:hover{color:var(--text);}
+.ra-scope .obs-setup .obs-setup-action:disabled{opacity:.4;cursor:default;}
+.ra-scope .obs-setup .obs-setup-action svg{flex:0 0 auto;}
 .ra-scope .obs-body{flex:1;overflow-y:auto;padding:16px;min-height:0;}
 
 /* Docked inline section (Knowledge/State/Policy embedded in the drawer). It
@@ -253,7 +267,14 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    inset:0) — undo that here so the component stays inside the drawer. */
 .ra-scope .obs-docked{position:static;inset:auto;z-index:auto;
   display:flex;flex-direction:column;flex:1;min-height:0;background:var(--sc-bg);}
-.ra-scope .obs-docked .obs-docked-bar{padding:10px 14px;}
+.ra-scope .obs-docked .obs-docked-bar{height:46px;padding:0 8px 0 16px;display:flex;align-items:center;}
+/* Header label + controls share the panel's unified 13px, normal weight, and
+   the same ink color as the rest of the labels. The label uses the same
+   proportional font as the nav (not the wider monospace) so it reads at the
+   same size. */
+.ra-scope .obs-docked .obs-docked-bar .sc-lbl{font-size:13px;font-weight:400;color:var(--sc-ink);
+  font-family:var(--serif);letter-spacing:0;}
+.ra-scope .obs-docked .obs-docked-bar .sc-close{font-size:13px;font-weight:400;color:var(--sc-ink);}
 .ra-scope .obs-docked .obs-docked-body{flex:1;min-height:0;overflow:auto;padding:4px 14px 16px;}
 .ra-scope .obs-docked .obs-docked-body .sc-pane-inner{max-width:none;}
 .ra-scope .obs-docked .obs-docked-body .sc-pane-head{display:none;}
@@ -387,8 +408,8 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   color:var(--text-3);border-left:1px solid var(--line-soft);cursor:pointer;}
 .ra-scope .drawer-collapse:hover{background:var(--surface);color:var(--text);}
 .ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:7px 11px;cursor:pointer;white-space:nowrap;
-  color:var(--text-3);font-family:var(--serif);font-size:14px;border-bottom:2px solid transparent;margin-bottom:-1px;}
-.ra-scope .drawer-tab:hover{color:var(--text-2);}
+  color:var(--text);font-family:var(--serif);font-size:13px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.ra-scope .drawer-tab:hover{color:var(--text);}
 .ra-scope .drawer-tab.on{color:var(--text);border-bottom-color:var(--accent);}
 .ra-scope .drawer-tab-x{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
   border-radius:5px;color:var(--text-3);font-size:10px;line-height:1;}
@@ -616,7 +637,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .sysconf a{color:inherit;text-decoration:none;}
 .sysconf ::-webkit-scrollbar{width:10px;height:10px;}
 .sysconf ::-webkit-scrollbar-thumb{background:#bfbcab;border-radius:20px;border:3px solid transparent;background-clip:padding-box;}
-.sysconf .sc-lbl{font-family:var(--sc-mono);font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--sc-faint);}
+.sysconf .sc-lbl{font-family:var(--sc-mono);font-size:10px;letter-spacing:.3px;color:var(--sc-faint);}
 
 /* top bar */
 .sysconf .sc-bar{height:54px;flex:0 0 54px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--sc-line);}
@@ -630,7 +651,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .sysconf .sc-bar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
 .sysconf .sc-save{display:flex;align-items:center;gap:7px;font-family:var(--sc-mono);font-size:11px;letter-spacing:.5px;color:var(--sc-ink-3);white-space:nowrap;}
 .sysconf .sc-save .dot{width:7px;height:7px;border-radius:50%;background:var(--sc-accent);}
-.sysconf .sc-close{font-family:var(--sc-mono);font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--sc-input-line);
+.sysconf .sc-close{font-family:var(--sc-mono);font-size:11px;letter-spacing:.2px;border:1px solid var(--sc-input-line);
   border-radius:7px;padding:7px 13px;color:var(--sc-ink);white-space:nowrap;}
 .sysconf .sc-close:hover{background:var(--sc-input);}
 /* Save / Pop out / Close cluster used in the Knowledge/State header bar. */
@@ -953,7 +974,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   display:flex; align-items:center; gap:10px;
   padding:13px 18px; border-bottom:1px solid var(--sc-line); flex:0 0 auto;
 }
-.sysconf .sc-modal-bar .sc-lbl{ text-transform:uppercase; }
+.sysconf .sc-modal-bar .sc-lbl{ text-transform:none; }
 .sysconf .sc-modal-bar .sp{ flex:1; }
 .sysconf .sc-modal-body{ flex:1; min-height:0; overflow:auto; padding:4px 20px 20px; }
 .sysconf .sc-modal-body .sc-pane-inner{ max-width:none; }

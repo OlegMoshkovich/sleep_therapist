@@ -3378,17 +3378,15 @@ export function EditorInner<TOutput>({
   const renderEditorWorkspace = (fullscreen: boolean) => (
     <div className={fullscreen ? "flex h-full min-h-0 flex-col gap-4" : "flex flex-col gap-4"}>
       {/* Canvas tabs */}
-      <div className={`${fullscreen ? "flex" : "hidden lg:flex"} flex-wrap items-center gap-1 border-b border-[#c8c4b4] pb-1`}>
+      <div className={`${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] items-center gap-1 border-b border-[#c8c4b4]`}>
         {canvases.map((c) => {
           const isActive = c.id === activeId;
           const isRenaming = renamingId === c.id;
           return (
             <div
               key={c.id}
-              className={`group flex items-center gap-1 px-3 py-1.5 rounded-t border-b-2 cursor-pointer text-xs font-sans uppercase tracking-widest ${
-                isActive
-                  ? "bg-[#f3f1e6] border-gray-900 text-gray-900"
-                  : "bg-transparent border-transparent text-gray-500 hover:text-gray-800"
+              className={`group flex items-center self-stretch gap-1 px-3 border-b-2 cursor-pointer text-[13px] font-sans text-[#1c1b16] ${
+                isActive ? "border-[#1c1b16]" : "border-transparent"
               }`}
               onClick={() => selectCanvas(c.id)}
               onDoubleClick={() => setRenamingId(c.id)}
@@ -3406,7 +3404,7 @@ export function EditorInner<TOutput>({
                     }
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-transparent border-b border-gray-500 outline-none text-xs font-sans uppercase tracking-widest px-1 w-32"
+                  className="bg-transparent border-b border-gray-500 outline-none text-[13px] font-sans text-[#1c1b16] px-1 w-32"
                 />
               ) : (
                 <span>{c.name || "Untitled"}</span>
@@ -3430,7 +3428,7 @@ export function EditorInner<TOutput>({
         <button
           type="button"
           onClick={addCanvas}
-          className="px-3 py-1.5 text-xs font-sans uppercase tracking-widest text-gray-600 hover:text-gray-900 hover:bg-[#eceadd] rounded-t"
+          className="px-3 py-1.5 text-[13px] font-sans text-[#1c1b16] hover:bg-[#eceadd] rounded-t"
           title="Add canvas"
         >
           + Canvas
@@ -3442,7 +3440,7 @@ export function EditorInner<TOutput>({
             type="button"
             onClick={() => setToolbarOpen((o) => !o)}
             aria-expanded={toolbarOpen}
-            className="flex items-center gap-1.5 rounded px-1.5 py-1 text-xs font-sans uppercase tracking-widest text-gray-600 hover:text-gray-900 hover:bg-[#eceadd]"
+            className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[13px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -3461,11 +3459,7 @@ export function EditorInner<TOutput>({
           </button>
           {tabBarTrailing ? (
             <div className="flex items-center">{tabBarTrailing}</div>
-          ) : (
-            <span className="text-[10px] font-sans uppercase tracking-widest text-gray-400">
-              {canvases.length} canvas{canvases.length === 1 ? "" : "es"}
-            </span>
-          )}
+          ) : null}
         </div>
       </div>
 

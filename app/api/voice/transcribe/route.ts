@@ -5,6 +5,11 @@ import { auth } from "@clerk/nextjs/server";
 export const runtime = "nodejs";
 
 const WHISPER_MODEL = process.env.AIRLAB_OPENAI_WHISPER_MODEL ?? "whisper-1";
+// Pin the transcription language so Whisper never auto-detects a different one
+// (ambiguous/accented audio was occasionally being transcribed as Arabic, which
+// then made the assistant reply in Arabic). Overridable per-request or via env.
+const DEFAULT_WHISPER_LANGUAGE =
+  process.env.AIRLAB_OPENAI_WHISPER_LANGUAGE ?? "en";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -46,13 +51,21 @@ export async function POST(request: NextRequest) {
     audio instanceof File && audio.name ? audio.name : `voice.${extensionFor(audio.type)}`;
   const file = new File([audio], filename, { type: audio.type || "audio/webm" });
 
+  // Optional per-request override (ISO-639-1, e.g. "en"); falls back to the
+  // pinned default so we never let Whisper guess the language.
+  const langField = form.get("language");
+  const language =
+    typeof langField === "string" && langField.trim()
+      ? langField.trim().toLowerCase()
+      : DEFAULT_WHISPER_LANGUAGE;
+
   try {
     const client = new OpenAI({ apiKey });
     const result = await client.audio.transcriptions.create({
       file,
       model: WHISPER_MODEL,
       response_format: "json",
-      // language: leave unset — Whisper auto-detects
+      language,
     });
     const text = typeof result === "object" && result && "text" in result ? String((result as { text?: unknown }).text ?? "") : "";
     return NextResponse.json({ text });
