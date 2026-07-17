@@ -186,16 +186,15 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 
 /* ---------- sidebar ---------- */
 .ra-scope .sidebar{width:var(--side-w,300px);flex:0 0 var(--side-w,300px);background:var(--panel);border-right:none;
-  display:flex;flex-direction:column;padding:16px 14px 14px;min-height:0;}
+  display:flex;flex-direction:column;padding:0 14px 14px;min-height:0;}
 /* when the menu is open (expanded, not the collapsed rail) show a border on its edge */
 .ra-scope .sidebar:not(.rail){border-right:1px solid var(--line);}
 /* One content column: title, + New, search field edge, Recent, and list titles
    share the same left inset (no extra per-row offsets). */
-.ra-scope .side-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0;}
-/* size the collapse button to the title line height and top-align it,
-   so its icon centers on the "Sleep Assistant" title line */
+/* Same 60px band as Model Setup / Observability + chat thread-head. */
+.ra-scope .side-head{display:flex;align-items:center;gap:10px;height:var(--studio-head-h,60px);margin-bottom:14px;padding:0;}
 .ra-scope .side-title{line-height:1.4;}
-.ra-scope .side-close{margin-left:auto;flex:0 0 auto;align-self:flex-start;width:28px;height:28px;margin-top:0;}
+.ra-scope .side-close{margin-left:auto;flex:0 0 auto;align-self:center;width:28px;height:28px;margin-top:0;}
 .ra-scope .topbar-toggle{padding:6px;}
 /* One type size across the expanded left rail (title, actions, list, account). */
 .ra-scope .sidebar:not(.rail){--side-text:14px;font-size:var(--side-text);}
@@ -640,10 +639,11 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .upload-item-x:hover{background:var(--surface-2);color:var(--text);}
 /* Shared right drawer — tab strip when multiple panels are open */
 /* Tab bar: the scrollable tab row plus a pinned "close panel" button. */
-/* Same 46px height as Knowledge / State / Policy (.obs-setup). */
+/* Align with sidebar "Sleep Assistant" / chat thread-head (not the shorter
+   Knowledge/State/Policy row below). Tabs stretch so labels sit on that midline. */
 /* overflow:visible so the active tab's 2px underline (margin-bottom:-1px) isn't
    clipped to ~1px — must match Knowledge/State/Policy (.obs-setup-chip). */
-.ra-scope .drawer-tabbar{flex:0 0 auto;height:46px;display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);
+.ra-scope .drawer-tabbar{flex:0 0 auto;height:var(--studio-head-h,60px);display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);
   overflow:visible;}
 /* Tabs stay on ONE line and scroll horizontally. Do not set overflow-y:hidden —
    that clipped the Model Setup underline thinner than Knowledge. */
@@ -836,10 +836,12 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 
 /* ---------- main ---------- */
 .ra-scope .main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;}
-.ra-scope .thread-head{display:flex;align-items:center;gap:13px;padding:14px 22px;border-bottom:none;}
+/* Shared header band with the right-drawer Model Setup / Observability tabs. */
+.ra-scope{--studio-head-h:60px;}
+.ra-scope .thread-head{display:flex;align-items:center;gap:13px;height:var(--studio-head-h);padding:0 22px;box-sizing:border-box;border-bottom:none;}
 .ra-scope .th-meta{flex:1;min-width:0;overflow:hidden;}
-.ra-scope .th-name{font-family:var(--serif);font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;}
-.ra-scope .th-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;color:var(--text-3);font-style:italic;font-family:var(--serif);}
+.ra-scope .th-name{font-family:var(--serif);font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;line-height:1.25;}
+.ra-scope .th-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;line-height:1.3;color:var(--text-3);font-style:italic;font-family:var(--serif);}
 .ra-scope .th-actions{display:flex;align-items:center;gap:4px;}
 
 .ra-scope .thread{flex:1;overflow-y:auto;padding:26px 26px 8px;display:flex;flex-direction:column;gap:22px;min-height:0;}
