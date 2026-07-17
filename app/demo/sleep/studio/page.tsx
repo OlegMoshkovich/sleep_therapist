@@ -26,7 +26,8 @@ import {
 } from "@airlab/orchestration-core/general-orchestration";
 
 const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
-const MONO_PREF_KEY = "sleep-studio-mono-theme";
+/* v2: black & white is the default; old key auto-wrote "0" for greige. */
+const MONO_PREF_KEY = "sleep-studio-mono-theme-v2";
 
 /** Strip common markdown so the TTS voice reads clean sentences instead of asterisks and backticks. */
 function stripMarkdownForSpeech(text: string): string {
@@ -1334,17 +1335,16 @@ function SleepStudioChat() {
   const [streaming, setStreaming] = useState("");
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  // Black & white theme preference (persisted). Adds `.ra-mono` to the root
-  // scope, which swaps the palette and grayscales the whole interface.
-  const [monoTheme, setMonoTheme] = useState(false);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  // Black & white theme preference (persisted). Default ON — adds `.ra-mono`
+  // to the root scope. Explicit "0" in localStorage keeps the greige palette.
+  const [monoTheme, setMonoTheme] = useState(() => {
+    if (typeof window === "undefined") return true;
     try {
-      setMonoTheme(window.localStorage.getItem(MONO_PREF_KEY) === "1");
+      return window.localStorage.getItem(MONO_PREF_KEY) !== "0";
     } catch {
-      // localStorage may throw in private mode — safe to ignore.
+      return true;
     }
-  }, []);
+  });
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {

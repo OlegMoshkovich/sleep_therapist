@@ -5,10 +5,10 @@
    - `.ra-scope`  — the chat surface (light editorial theme, forest-green accent).
    - `.sysconf`   — the System Configuration console (its own self-contained palette).
 
-   The default look is the light "greige paper" theme. Resolved token values
-   (derived in the prototype from base #d8d6c7) are hard-coded below so we don't
-   need the JS palette derivation. Transitions are restricted to transform/opacity
-   only — token-driven color/background changes apply instantly (see handoff note).
+   Default UI is black & white (`.ra-mono` on by default in the studio page).
+   The light "greige paper" tokens below are the opt-out theme. Transitions are
+   restricted to transform/opacity only — token-driven color/background changes
+   apply instantly (see handoff note).
 
    Typography follows the rest of the site: no serif faces. The roles that were
    serif in the prototype (headings, assistant name, message body) use the site
@@ -389,10 +389,24 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-docked .obs-docked-body .sc-pane-fill{min-height:100%;display:flex;flex-direction:column;}
 /* Canvas panes (State/Policy) sit flush under the Knowledge/State/Policy nav so
    the canvas tab bar reads as the next stacked row — matching the tight rhythm
-   of the Model Setup / Knowledge rows above. Text panes (Knowledge) keep the
-   18px top breathing room; only panes that actually contain a canvas go flush. */
-.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host){padding-top:0;padding-bottom:0;}
-.ra-scope .obs-docked .obs-docked-body .sc-canvas-host{margin-top:0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+   of the Model Setup / Knowledge rows above. Zero ALL body padding (not just
+   top/bottom): the previous 14px side inset stacked on the tab bar's own px-4
+   and pushed "Main" right of Knowledge / Model Setup. Text panes (Knowledge)
+   keep the 18px/14px breathing room. */
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host){padding:0;}
+/* State-variables block used margin:-14px to cancel the old body inset; with
+   padding:0 that pull is gone — keep its own 16px column. Same for the split. */
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-curstate{
+  margin:0;padding-bottom:0;border-bottom:none;}
+/* sc-vsplit (always mounted on State) is the only line between variables and
+   the canvas tabs — no padding band, no second border. */
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-vsplit{margin-left:0;margin-right:0;}
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .rf-vsplit{margin-left:0;margin-right:0;}
+/* Beat the global `.sysconf .sc-canvas-host{margin-top:18px}` so State/Policy
+   canvas tabs sit flush under the row above (no blank band over "Main"). */
+.ra-scope .obs-docked .obs-docked-body .sc-canvas-host,
+.sysconf.obs-docked .sc-canvas-host{
+  margin-top:0 !important;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
 .ra-scope .obs-docked .obs-docked-body .sc-canvas-host > *,
 .ra-scope .obs-docked .obs-docked-body .sc-canvas-host .rf-canvas-shell{
   flex:1 1 auto;min-height:0;display:flex;flex-direction:column;height:100%;}
@@ -411,17 +425,40 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-docked .rf-canvas-slot{min-height:0;}
 .ra-scope .obs-docked .rf-canvas-slot .rf-canvas-surface{height:100%;min-height:0;max-height:none;}
 .ra-scope .obs-docked .rf-canvas-body > aside{
-  min-height:0;max-height:none;overflow:auto;}
-/* Horizontal drag handle between canvas and inspector / state vars and canvas. */
+  min-height:0;max-height:none;overflow:auto;border:none;}
+/* fillHeight board + inspector: flush panels; only the drag split separates them. */
+.ra-scope .obs-docked .rf-canvas-body,
+.ra-scope .bottom-drawer .rf-canvas-body{gap:0;}
+.ra-scope .obs-docked .rf-canvas-surface,
+.ra-scope .bottom-drawer .rf-canvas-surface{border:none;border-radius:0;}
+.ra-scope .obs-docked .rf-inspector,
+.ra-scope .bottom-drawer .rf-inspector{border:none;border-radius:0;padding:0;}
+/* Inspector/Compiler nav + compiler output: full-bleed under the split — no
+   nested box, no inset padding around the compiled prompt. */
+.ra-scope .obs-docked .rf-inspector-tabs,
+.ra-scope .bottom-drawer .rf-inspector-tabs{
+  width:100%;margin:0;padding-left:16px;padding-right:16px;box-sizing:border-box;}
+.ra-scope .obs-docked .rf-inspector-tabs button,
+.ra-scope .bottom-drawer .rf-inspector-tabs button{
+  border-radius:0 !important;box-shadow:none !important;outline:none !important;
+  background:transparent !important;}
+.ra-scope .obs-docked .rf-compiler-output,
+.ra-scope .bottom-drawer .rf-compiler-output{
+  border:none !important;border-radius:0 !important;background:transparent !important;
+  margin:0 !important;max-height:none !important;padding:16px !important;
+  box-shadow:none !important;}
+/* Drag handle between canvas and inspector / state vars and canvas.
+   Always shows one hairline — the sole separator (no panel borders around it). */
 .rf-vsplit,.sc-vsplit{
-  flex:0 0 9px;position:relative;cursor:row-resize;touch-action:none;z-index:4;
+  flex:0 0 7px;position:relative;cursor:row-resize;touch-action:none;z-index:4;
   margin:0 -14px; /* full-bleed under docked body padding */}
 .rf-vsplit{margin:0;}
 .rf-vsplit::before,.sc-vsplit::before{
-  content:"";position:absolute;left:0;right:0;top:50%;height:2px;transform:translateY(-50%);
-  background:transparent;transition:background .12s;}
+  content:"";position:absolute;left:0;right:0;top:50%;height:1px;transform:translateY(-50%);
+  background:var(--line, #e4e4e4);transition:background .12s,height .12s;}
 .rf-vsplit:hover::before,.rf-vsplit.active::before,
-.sc-vsplit:hover::before,.sc-vsplit.active::before{background:var(--accent, #c2611f);}
+.sc-vsplit:hover::before,.sc-vsplit.active::before{
+  background:var(--accent, #c2611f);height:2px;}
 /* Inspector panel — flatten every text run to one uniform style: same family
    (Inter, killing the monospace node-kind / stepType spans and default <pre>
    monospace), 14px body size, normal case, and base tracking. Removes the
@@ -465,7 +502,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .sysconf .sc-modal.obs-float{position:fixed;z-index:85;max-width:none;max-height:none;}
 /* Snapped to the top of the screen: full width, flush to the top edge, only the
    bottom corners rounded (height stays resizable via the bottom-right grip). */
-.sysconf .sc-modal.obs-float.obs-float--top{border-radius:0 0 14px 14px;border-top:none;box-shadow:none;}
+.sysconf .sc-modal.obs-float.obs-float--top{border-radius:0;border-top:none;box-shadow:none;}
 /* Bottom-right resize grip. */
 .sysconf .sc-modal.obs-float .obs-float-resize{
   position:absolute;right:0;bottom:0;width:18px;height:18px;z-index:3;
@@ -545,11 +582,14 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* Tab bar: the scrollable tab row plus a pinned "close panel" button. */
 /* pinned to the same height as .thread-head so the header divider line sits at
    the same level on the left (main) and in the side drawer */
-.ra-scope .drawer-tabbar{flex:0 0 auto;height:46px;display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);}
-/* Tabs stay on ONE line and scroll horizontally (never vertically). The
-   scrollbar is hidden — scroll with trackpad / shift-wheel. */
+/* overflow:visible so the active tab's 2px underline (margin-bottom:-1px) isn't
+   clipped to ~1px — must match Knowledge/State/Policy (.obs-setup-chip). */
+.ra-scope .drawer-tabbar{flex:0 0 auto;height:46px;display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);
+  overflow:visible;}
+/* Tabs stay on ONE line and scroll horizontally. Do not set overflow-y:hidden —
+   that clipped the Model Setup underline thinner than Knowledge. */
 .ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;gap:22px;padding:0 16px;
-  overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;}
+  overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
 .ra-scope .drawer-tabs::-webkit-scrollbar{display:none;}
 /* Close the whole drawer in one click (no need to × each tab). */
 .ra-scope .drawer-collapse{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:42px;
@@ -612,15 +652,28 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   height:100%;min-height:0;max-height:none;flex:1 1 auto;min-width:0;}
 .ra-scope .bottom-drawer .rf-canvas-body > aside{
   min-width:240px;min-height:0;max-height:none;height:auto;align-self:stretch;overflow:auto;}
-/* Horizontal drag handle between canvas and inspector (bottom drawer split). */
+/* Horizontal drag handle between canvas and inspector (bottom drawer split).
+   Always-visible hairline — same “one separator” rule as .rf-vsplit. */
 .rf-hsplit{
-  flex:0 0 9px;position:relative;cursor:col-resize;touch-action:none;z-index:4;}
+  flex:0 0 7px;position:relative;cursor:col-resize;touch-action:none;z-index:4;}
 .rf-hsplit::before{
-  content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);
-  background:transparent;transition:background .12s;}
-.rf-hsplit:hover::before,.rf-hsplit.active::before{background:var(--accent, #c2611f);}
+  content:"";position:absolute;top:0;bottom:0;left:50%;width:1px;transform:translateX(-50%);
+  background:var(--line, #e4e4e4);transition:background .12s,width .12s;}
+.rf-hsplit:hover::before,.rf-hsplit.active::before{
+  background:var(--accent, #c2611f);width:2px;}
 body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select:none !important;}
 body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select:none !important;}
+/* Drawers (side, bottom, mobile sheet, floated Model Setup window): square
+   corners on the shell and every nested control / canvas / inspector surface. */
+.ra-scope .obs-panel,
+.ra-scope .obs-panel *,
+.ra-scope .bottom-drawer,
+.ra-scope .bottom-drawer *,
+.ra-scope .sidebar-sheet,
+.ra-scope .sidebar-sheet *,
+.sysconf .sc-modal.obs-float,
+.sysconf .sc-modal.obs-float *{
+  border-radius:0 !important;}
 /* Same spacing model as the Knowledge/State/Policy nav (padding 0 2px + gap on
    the row) so the active underline hugs the label identically instead of
    spreading across wide tab padding. */
@@ -631,7 +684,7 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 .ra-scope .drawer-tab:focus,
 .ra-scope .drawer-tab:focus-visible{outline:none;box-shadow:none;}
 /* Same 2px text-hugging underline as Knowledge/State/Policy (.obs-setup-chip.on). */
-.ra-scope .drawer-tab.on{color:var(--text);border-bottom-color:var(--text);}
+.ra-scope .drawer-tab.on{color:var(--text);border-bottom-width:2px;border-bottom-color:var(--text);}
 .ra-scope .drawer-tab-x{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
   border-radius:5px;color:var(--text-3);font-size:10px;line-height:1;}
 .ra-scope .drawer-tab-x:hover{background:var(--surface-2);color:var(--text);}
@@ -826,16 +879,16 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
     /* fixed height so the sheet doesn't resize when you switch tabs (each pane
        scrolls its own body); flick the grabber up for full height. */
     height:70vh;max-height:70vh;
-    border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+    border-top:1px solid var(--line);border-radius:0;
     box-shadow:0 -10px 40px -12px rgba(40,36,28,.45);
-    transition:transform .26s ease, max-height .26s ease, height .26s ease, border-radius .2s ease;}
+    transition:transform .26s ease, max-height .26s ease, height .26s ease;}
   /* dragged/flicked up → full height */
   .ra-scope .obs-panel.full{max-height:100dvh;height:100dvh;border-radius:0;}
   /* drag handle — only shown in the bottom-sheet (mobile) layout */
   .ra-scope .drawer-grabber-wrap{display:flex;justify-content:center;align-items:center;
     flex:0 0 auto;padding:9px 0 5px;touch-action:none;cursor:grab;}
   .ra-scope .drawer-grabber-wrap:active{cursor:grabbing;}
-  .ra-scope .drawer-grabber{width:40px;height:4px;border-radius:3px;background:var(--line);}
+  .ra-scope .drawer-grabber{width:40px;height:4px;border-radius:0;background:var(--line);}
 
   /* no edge-dragging on touch layouts */
   .ra-scope .resize-handle{display:none;}
@@ -860,10 +913,10 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
   .ra-scope .sheet-scrim.show{opacity:1;pointer-events:auto;}
   .ra-scope .sidebar-sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:40;
     max-height:84vh;background:var(--panel);border-top:1px solid var(--line);
-    border-radius:18px 18px 0 0;box-shadow:0 -10px 40px -12px rgba(40,36,28,.45);
+    border-radius:0;box-shadow:0 -10px 40px -12px rgba(40,36,28,.45);
     overflow:hidden;transform:translateY(100%);transition:transform .28s ease;}
   .ra-scope .sidebar-sheet.open{transform:translateY(0);}
-  .ra-scope .sheet-grabber{width:40px;height:4px;border-radius:3px;background:var(--line);margin:9px auto 2px;}
+  .ra-scope .sheet-grabber{width:40px;height:4px;border-radius:0;background:var(--line);margin:9px auto 2px;}
   .ra-scope .sidebar-sheet .sidebar{width:100%;flex:none;height:auto;max-height:78vh;
     border-right:none;background:transparent;padding-top:8px;}
 }
@@ -1103,10 +1156,20 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 .sysconf .sc-block{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);margin-top:14px;overflow:hidden;}
 .sysconf .sc-block-h{display:flex;align-items:center;gap:10px;padding:13px 15px;cursor:pointer;}
 .sysconf .sc-block-h:hover{background:#e4e2d4;}
+.sysconf .sc-block-h:focus{outline:none;}
 .sysconf .sc-block-h .nm{font-family:var(--sc-sans);font-weight:700;font-size:14px;flex:1;}
 .sysconf .sc-block-h .meta{font-family:var(--sc-mono);font-size:13px;color:var(--sc-ink-3);}
-.sysconf .sc-block-h .cv{color:var(--sc-ink-3);}
+.sysconf .sc-block-h .cv{color:var(--sc-ink-3);display:flex;transition:transform .15s ease;}
+.sysconf .sc-block.open .sc-block-h .cv{transform:rotate(180deg);}
+.sysconf .sc-guide-preview{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--sc-serif);font-size:13px;color:var(--sc-ink-3);}
 .sysconf .sc-block-b{padding:4px 15px 16px;border-top:1px solid var(--sc-line-soft);}
+/* Knowledge guideline body: no nested textarea box — text sits flush under the header. */
+.sysconf .sc-guide-body{padding:0 15px 14px;border-top:none;}
+.sysconf .sc-textarea.sc-guide-text{
+  border:none;background:transparent;border-radius:0;padding:0;margin:0;
+  box-shadow:none;min-height:0;}
+.sysconf .sc-textarea.sc-guide-text:focus{border:none;outline:none;box-shadow:none;}
 
 /* flow card */
 .sysconf .sc-flow{border:1px solid var(--sc-line);border-radius:12px;background:var(--sc-panel);overflow:hidden;margin-top:14px;}

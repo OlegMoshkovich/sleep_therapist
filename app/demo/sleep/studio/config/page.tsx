@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -373,6 +373,42 @@ function Overview({
   );
 }
 
+/** Textarea that grows with its content so guideline rows show the full text. */
+function AutoGrowTextarea({
+  value,
+  onChange,
+  className,
+  placeholder,
+  style,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  placeholder?: string;
+  style?: React.CSSProperties;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const resize = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+  useLayoutEffect(resize, [value]);
+  return (
+    <textarea
+      ref={ref}
+      className={className}
+      value={value}
+      placeholder={placeholder}
+      rows={1}
+      onChange={(e) => onChange(e.target.value)}
+      onInput={resize}
+      style={{ overflow: "hidden", resize: "none", ...style }}
+    />
+  );
+}
+
 function KnowledgePane({
   files,
   setFiles,
@@ -385,14 +421,38 @@ function KnowledgePane({
   setGuidelineItems: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   const [drag, setDrag] = useState(false);
+  // Accordion: which guideline rows are expanded (collapsed by default).
+  const [openRows, setOpenRows] = useState<Set<number>>(() => new Set());
   const fileRef = React.useRef<HTMLInputElement>(null);
   const add = (l: FileList) => setFiles((f) => [...f, ...Array.from(l).map((x) => x.name)]);
 
   const updateRow = (i: number, value: string) =>
     setGuidelineItems((rows) => rows.map((row, j) => (j === i ? value : row)));
-  const removeRow = (i: number) =>
+  const removeRow = (i: number) => {
     setGuidelineItems((rows) => rows.filter((_, j) => j !== i));
-  const addRow = () => setGuidelineItems((rows) => [...rows, ""]);
+    setOpenRows((prev) => {
+      const next = new Set<number>();
+      for (const j of prev) {
+        if (j < i) next.add(j);
+        else if (j > i) next.add(j - 1);
+      }
+      return next;
+    });
+  };
+  const addRow = () => {
+    setGuidelineItems((rows) => {
+      setOpenRows((prev) => new Set(prev).add(rows.length));
+      return [...rows, ""];
+    });
+  };
+  const toggleRow = (i: number) => {
+    setOpenRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
+      return next;
+    });
+  };
 
   return (
     <div className="sc-pane-inner">
@@ -410,28 +470,69 @@ function KnowledgePane({
         (content, problem description, and recommendation concatenated) and now
         live in this dataset.
       </p>
-      <div
-        className="sc-guidelines"
-        style={{ maxHeight: 480, overflowY: "auto", display: "grid", gap: 10, paddingRight: 6 }}
-      >
-        {guidelineItems.map((row, i) => (
-          <div key={i} className="sc-block" style={{ marginTop: 0 }}>
-            <div className="sc-block-h" style={{ cursor: "default" }}>
-              <span className="sc-lbl" style={{ flex: 1 }}>Row {i + 1}</span>
-              <span className="meta">{GUIDELINE_ITEMS_COLUMN_NAME}</span>
-              <button className="sc-row-x" title="Remove" onClick={() => removeRow(i)} style={{ marginLeft: 8 }}>×</button>
+      <div className="sc-guidelines" style={{ display: "grid", gap: 10 }}>
+        {guidelineItems.map((row, i) => {
+          const open = openRows.has(i);
+          const preview = row.trim().replace(/\s+/g, " ");
+          const previewShort =
+            preview.length > 90 ? `${preview.slice(0, 90)}…` : preview;
+          return (
+            <div
+              key={i}
+              className={"sc-block" + (open ? " open" : "")}
+              style={{ marginTop: 0 }}
+            >
+              <div
+                className="sc-block-h"
+                role="button"
+                tabIndex={0}
+                aria-expanded={open}
+                onClick={() => toggleRow(i)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleRow(i);
+                  }
+                }}
+              >
+                <span className="cv" aria-hidden="true">
+                  <Ic.Chevron size={14} />
+                </span>
+                <span className="sc-lbl" style={{ flex: "0 0 auto" }}>
+                  {i + 1}
+                </span>
+                {!open && previewShort ? (
+                  <span className="sc-guide-preview">{previewShort}</span>
+                ) : (
+                  <span style={{ flex: 1 }} />
+                )}
+                <span className="meta">{GUIDELINE_ITEMS_COLUMN_NAME}</span>
+                <button
+                  className="sc-row-x"
+                  title="Remove"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeRow(i);
+                  }}
+                  style={{ marginLeft: 8 }}
+                >
+                  ×
+                </button>
+              </div>
+              {open && (
+                <div className="sc-block-b sc-guide-body">
+                  <AutoGrowTextarea
+                    className="sc-textarea serif sc-guide-text"
+                    value={row}
+                    placeholder="One guideline per row…"
+                    onChange={(value) => updateRow(i, value)}
+                    style={{ minHeight: 48 }}
+                  />
+                </div>
+              )}
             </div>
-            <div className="sc-block-b">
-              <textarea
-                className="sc-textarea serif"
-                value={row}
-                placeholder="One guideline per row…"
-                onChange={(e) => updateRow(i, e.target.value)}
-                style={{ minHeight: 120, marginTop: 8 }}
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <button className="sc-btn ghost" style={{ marginTop: 10 }} onClick={addRow}>
         {guidelineItems.length === 0 ? "+ Create guideline rows" : "+ Add row"}
@@ -877,38 +978,41 @@ function StatePane({
               </>
             )}
           </div>
-          {stateOpen && (
-            <div
-              className={"sc-vsplit" + (varsSplitDragging ? " active" : "")}
-              role="separator"
-              aria-orientation="horizontal"
-              aria-label="Resize state variables (double-click to reset)"
-              title="Drag to resize · double-click to reset"
-              onDoubleClick={() => setVarsHeight(null)}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                const el = varsRef.current;
-                if (!el) return;
-                const startY = e.clientY;
-                const startH = el.getBoundingClientRect().height;
-                setVarsSplitDragging(true);
-                document.body.classList.add("ra-resizing-v");
-                const onMove = (ev: PointerEvent) => {
-                  setVarsHeight(
-                    Math.round(Math.max(80, Math.min(640, startH + (ev.clientY - startY))))
-                  );
-                };
-                const onUp = () => {
-                  setVarsSplitDragging(false);
-                  document.body.classList.remove("ra-resizing-v");
-                  window.removeEventListener("pointermove", onMove);
-                  window.removeEventListener("pointerup", onUp);
-                };
-                window.addEventListener("pointermove", onMove);
-                window.addEventListener("pointerup", onUp);
-              }}
-            />
-          )}
+          {/* Always mount the split so open↔collapsed doesn't jump; drag only
+              resizes while expanded. Hairline is the sole gap above the canvas. */}
+          <div
+            className={"sc-vsplit" + (varsSplitDragging ? " active" : "")}
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize state variables (double-click to reset)"
+            title={stateOpen ? "Drag to resize · double-click to reset" : undefined}
+            onDoubleClick={() => {
+              if (stateOpen) setVarsHeight(null);
+            }}
+            onPointerDown={(e) => {
+              if (!stateOpen) return;
+              e.preventDefault();
+              const el = varsRef.current;
+              if (!el) return;
+              const startY = e.clientY;
+              const startH = el.getBoundingClientRect().height;
+              setVarsSplitDragging(true);
+              document.body.classList.add("ra-resizing-v");
+              const onMove = (ev: PointerEvent) => {
+                setVarsHeight(
+                  Math.round(Math.max(80, Math.min(640, startH + (ev.clientY - startY))))
+                );
+              };
+              const onUp = () => {
+                setVarsSplitDragging(false);
+                document.body.classList.remove("ra-resizing-v");
+                window.removeEventListener("pointermove", onMove);
+                window.removeEventListener("pointerup", onUp);
+              };
+              window.addEventListener("pointermove", onMove);
+              window.addEventListener("pointerup", onUp);
+            }}
+          />
         </>
       )}
       <div className="sc-canvas-host">

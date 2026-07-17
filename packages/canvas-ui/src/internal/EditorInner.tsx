@@ -3308,7 +3308,9 @@ export function EditorInner<TOutput>({
         fullscreen
           ? "rf-canvas-surface relative min-h-[32rem] flex-1 overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
           : fillHeight
-            ? "rf-canvas-surface relative block h-full min-h-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
+            ? // fillHeight (drawer): borderless — the rf-vsplit / rf-hsplit is the
+              // only separator between board and inspector.
+              "rf-canvas-surface relative block h-full min-h-0 overflow-hidden bg-[#f3f1e6]"
             : "rf-canvas-surface relative hidden lg:block flex-1 min-h-[300px] h-[360px] overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
       }
       role={fullscreen ? "dialog" : undefined}
@@ -3409,14 +3411,19 @@ export function EditorInner<TOutput>({
         fullscreen
           ? "flex h-full min-h-0 flex-col gap-4"
           : fillHeight
-            ? "flex h-full min-h-0 flex-1 flex-col gap-4"
+            ? // No gap when Tools is collapsed — an empty toolbar wrapper used to
+              // still sit in the flex column and gap-4 left a blank band under
+              // the canvas tabs. Only space the rows when Tools is open.
+              `flex h-full min-h-0 flex-1 flex-col ${toolbarOpen ? "gap-2" : "gap-0"}`
             : "flex flex-col gap-4"
       }
     >
       {/* Canvas tabs */}
-      {/* gap-x matches .obs-setup / .drawer-tabs (22px); tab padding 0 2px so the
-          active underline hugs the label like Model Setup / Knowledge / Policy. */}
-      <div className={`${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] items-stretch gap-[22px] border-b border-[#c8c4b4] px-4`}>
+      {/* gap-x matches .obs-setup / .drawer-tabs (22px); px-4 = 16px matches
+          those rows so "Main" lines up with Knowledge / Model Setup when the
+          docked body side padding is zeroed. Tab label padding 0 2px hugs the
+          underline like the rows above. */}
+      <div className={`rf-canvas-tabs ${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] items-stretch gap-[22px] border-b border-[#c8c4b4] px-4`}>
         {canvases.map((c) => {
           const isActive = c.id === activeId;
           const isRenaming = renamingId === c.id;
@@ -3556,77 +3563,76 @@ export function EditorInner<TOutput>({
         </div>
       </div>
 
-      {/* Toolbar — collapsible node + canvas action rows (toggle lives in the tab bar above) */}
-      <div className={`${fullscreen ? "flex" : "hidden lg:flex"} flex-col gap-2`}>
-        {toolbarOpen && (
-          <div className="flex flex-col gap-2">
-            {/* Node toolbar (row 1) — add-node buttons + Delete selected */}
-            <div className="flex flex-wrap items-center gap-2">
-        {controlStructureKinds.length > 0 && (
-          <div className="relative" ref={controlStructureMenuRef}>
-            <button
-              type="button"
-              onClick={() => setIsControlStructureMenuOpen((open) => !open)}
-              className="text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-500 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-full"
-              aria-haspopup="menu"
-              aria-expanded={isControlStructureMenuOpen}
-            >
-              + Control structure
-            </button>
-            {isControlStructureMenuOpen && (
-              <div
-                className="absolute left-0 top-full z-20 mt-2 min-w-[14rem] rounded border border-[#c8c4b4] bg-[#f7f4e8] p-2 shadow-xl"
-                role="menu"
-              >
-                <div className="mb-2 px-2 text-[10px] font-sans uppercase tracking-widest text-gray-500">
-                  Choose node type
-                </div>
-                <div className="space-y-1">
-                  {controlStructureKinds.map((k) => (
-                    <button
-                      key={k.kind}
-                      type="button"
-                      onClick={() => addNode(k)}
-                      className="flex w-full items-center justify-between rounded px-2 py-2 text-left text-xs font-sans uppercase tracking-widest text-gray-700 hover:bg-[#ece7d6]"
-                      role="menuitem"
-                    >
-                      <span>{k.toolbarLabel.replace(/^\+\s*/, "")}</span>
-                      <span className="font-mono text-[10px] lowercase tracking-normal text-gray-500">
-                        {k.kind}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+      {/* Toolbar — only mount when open so it can't leave a flex gap under the tabs. */}
+      {toolbarOpen && (
+        <div
+          className={`${fullscreen ? "flex" : "hidden lg:flex"} flex-col gap-2 px-4`}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            {controlStructureKinds.length > 0 && (
+              <div className="relative" ref={controlStructureMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsControlStructureMenuOpen((open) => !open)}
+                  className="text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-500 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-full"
+                  aria-haspopup="menu"
+                  aria-expanded={isControlStructureMenuOpen}
+                >
+                  + Control structure
+                </button>
+                {isControlStructureMenuOpen && (
+                  <div
+                    className="absolute left-0 top-full z-20 mt-2 min-w-[14rem] rounded border border-[#c8c4b4] bg-[#f7f4e8] p-2 shadow-xl"
+                    role="menu"
+                  >
+                    <div className="mb-2 px-2 text-[10px] font-sans uppercase tracking-widest text-gray-500">
+                      Choose node type
+                    </div>
+                    <div className="space-y-1">
+                      {controlStructureKinds.map((k) => (
+                        <button
+                          key={k.kind}
+                          type="button"
+                          onClick={() => addNode(k)}
+                          className="flex w-full items-center justify-between rounded px-2 py-2 text-left text-xs font-sans uppercase tracking-widest text-gray-700 hover:bg-[#ece7d6]"
+                          role="menuitem"
+                        >
+                          <span>{k.toolbarLabel.replace(/^\+\s*/, "")}</span>
+                          <span className="font-mono text-[10px] lowercase tracking-normal text-gray-500">
+                            {k.kind}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+            {directToolbarKinds.map((k) => (
+              <button
+                key={k.kind}
+                type="button"
+                onClick={() => addNode(k)}
+                className={k.toolbarClassName}
+              >
+                {k.toolbarLabel}
+              </button>
+            ))}
+            <div className="w-px h-6 bg-[#c8c4b4] mx-1" />
+            <button
+              type="button"
+              disabled={
+                (!selectedId && !selectedCollapsedEdgeId) ||
+                (Boolean(selectedNode) && selectedNodeNonEditable)
+              }
+              onClick={deleteSelected}
+              className="text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 rounded-full disabled:opacity-40"
+            >
+              Delete selected
+            </button>
           </div>
-        )}
-        {directToolbarKinds.map((k) => (
-          <button
-            key={k.kind}
-            type="button"
-            onClick={() => addNode(k)}
-            className={k.toolbarClassName}
-          >
-            {k.toolbarLabel}
-          </button>
-        ))}
-        <div className="w-px h-6 bg-[#c8c4b4] mx-1" />
-        <button
-          type="button"
-          disabled={
-            (!selectedId && !selectedCollapsedEdgeId) ||
-            (Boolean(selectedNode) && selectedNodeNonEditable)
-          }
-          onClick={deleteSelected}
-          className="text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 rounded-full disabled:opacity-40"
-        >
-          Delete selected
-        </button>
-      </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Canvas + inspector */}
       <div
@@ -3705,10 +3711,11 @@ export function EditorInner<TOutput>({
             // Force every label, help line, textarea, and chip to the same 14px
             // body size — child utilities like text-[10px]/text-xs otherwise win.
             fullscreen
-              ? "rf-inspector w-full lg:w-80 lg:max-w-[24rem] shrink-0 overflow-auto rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3 text-[14px] [&_*]:!text-[14px]"
+              ? "rf-inspector flex w-full min-h-0 flex-col lg:w-80 lg:max-w-[24rem] shrink-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#dddacb] text-[14px] [&_*]:!text-[14px]"
               : fillHeight
-                ? "rf-inspector w-full overflow-auto min-h-0 min-w-0 rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3 text-[14px] [&_*]:!text-[14px]"
-                : "rf-inspector w-full lg:w-72 lg:h-[360px] lg:overflow-auto shrink-0 rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3 text-[14px] [&_*]:!text-[14px]"
+                ? // Drawer fillHeight: no outer border/radius — flush to the drag split.
+                  "rf-inspector flex w-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#dddacb] text-[14px] [&_*]:!text-[14px]"
+                : "rf-inspector flex w-full min-h-0 flex-col lg:w-72 lg:h-[360px] shrink-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#dddacb] text-[14px] [&_*]:!text-[14px]"
           }
           // fillHeight: grow into the remaining share (below canvas when stacked,
           // beside canvas when split) so the panel always fills the free space.
@@ -3718,7 +3725,8 @@ export function EditorInner<TOutput>({
               : undefined
           }
         >
-          <div className="flex flex-wrap items-center gap-1 border-b border-[#c0bdb0] pb-2">
+          {/* Same underline nav as Main / Sleep Intake / Knowledge (46px · 22px gap · 16px inset). */}
+          <div className="rf-inspector-tabs flex h-[46px] shrink-0 items-stretch gap-[22px] border-b border-[#c8c4b4] px-4">
             {[
               ["inspector", "Inspector"],
               ["compiler", "Compiler"],
@@ -3728,10 +3736,10 @@ export function EditorInner<TOutput>({
                 key={id}
                 type="button"
                 onClick={() => setInspectorTab(id)}
-                className={`text-[14px] font-sans px-2 py-1 rounded ${
+                className={`flex items-center self-stretch px-0.5 border-b-2 -mb-px bg-transparent text-[14px] font-sans text-[#1c1b16] outline-none focus:outline-none focus-visible:outline-none ${
                   inspectorTab === id
-                    ? "bg-[#cbc9ba] text-gray-900"
-                    : "text-gray-500 hover:text-gray-800"
+                    ? "border-[#1c1b16]"
+                    : "border-transparent text-gray-500 hover:text-[#1c1b16]"
                 }`}
               >
                 {label}
@@ -3739,8 +3747,9 @@ export function EditorInner<TOutput>({
             ))}
           </div>
 
+          <div className="rf-inspector-body min-h-0 flex-1 overflow-auto">
           {inspectorTab === "inspector" && (
-          <div className="space-y-3">
+          <div className="space-y-3 px-4 py-3">
           {selectedPromptGroup && selectedPromptGroupPreview ? (
             <>
               <p className="text-xs text-gray-500 font-serif">
@@ -4304,14 +4313,20 @@ export function EditorInner<TOutput>({
           )}
 
           {inspectorTab === "compiler" && (
-            <pre className="w-full max-h-[460px] overflow-auto rounded border border-[#c8c4b4] bg-[#d6d3c4] px-3 py-2 text-[11px] font-mono text-gray-800 whitespace-pre-wrap leading-relaxed">
+            <pre className="rf-compiler-output m-0 h-full min-h-0 w-full overflow-auto border-0 bg-transparent p-4 text-[14px] font-mono text-gray-800 whitespace-pre-wrap leading-relaxed">
 {preview}
             </pre>
           )}
 
           {(inspectorExtraTabs ?? []).map(
-            (t) => inspectorTab === t.id && <div key={t.id}>{t.content}</div>
+            (t) =>
+              inspectorTab === t.id && (
+                <div key={t.id} className="px-4 py-3">
+                  {t.content}
+                </div>
+              )
           )}
+          </div>
         </aside>
         )}
       </div>
