@@ -90,7 +90,7 @@ export const TERMINATE_STAGE: NodeKindDef = {
   kind: "terminate_stage",
   toolbarLabel: "+ Terminate stage",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-emerald-600 text-emerald-950 bg-emerald-50 hover:bg-emerald-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-600 text-emerald-950 bg-emerald-50 hover:bg-emerald-100 rounded-full",
   component: TerminateStageNode,
   defaultLabel: "finish this stage; continue on the next turn",
   inspector: {
@@ -106,7 +106,7 @@ export const TERMINATE_STAGE_IMMEDIATE: NodeKindDef = {
   kind: "terminate_stage_immediate",
   toolbarLabel: "+ Move immediately",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-teal-700 text-teal-950 bg-teal-50 hover:bg-teal-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-teal-700 text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-full",
   component: TerminateStageImmediateNode,
   defaultLabel: "finish this stage; run the next state canvas now",
   inspector: {

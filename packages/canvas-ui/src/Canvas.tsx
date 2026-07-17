@@ -54,6 +54,12 @@ export interface UnifiedCanvasProps {
   hideInspector?: boolean;
   /** Give the canvas + inspector a constant viewport-filling height (overlay). */
   fillHeight?: boolean;
+  /**
+   * How canvas + inspector share the fillHeight body.
+   * - `stack` (default): canvas above inspector — side drawer / Model Setup.
+   * - `split`: canvas | inspector side by side — bottom drawer.
+   */
+  panelLayout?: "stack" | "split";
   /** Decorative dashed frame + corner tag around the graph (e.g. trained version). */
   graphTag?: string;
   /** Animate a walk through the flow each time this changes (per chat turn). */
@@ -76,6 +82,7 @@ export default function Canvas({
   inspectorExtraTabs,
   hideInspector,
   fillHeight,
+  panelLayout,
   graphTag,
   fireSignal,
   tabBarTrailing,
@@ -117,6 +124,7 @@ export default function Canvas({
             inspectorExtraTabs={inspectorExtraTabs}
             hideInspector={hideInspector}
             fillHeight={fillHeight}
+            panelLayout={panelLayout}
             graphTag={graphTag}
             fireSignal={fireSignal}
             tabBarTrailing={tabBarTrailing}

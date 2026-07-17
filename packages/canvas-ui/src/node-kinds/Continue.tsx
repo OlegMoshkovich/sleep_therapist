@@ -29,7 +29,7 @@ export const CONTINUE_STAGE: NodeKindDef = {
   kind: "continue",
   toolbarLabel: "+ Continue",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-sky-600 text-sky-950 bg-sky-50 hover:bg-sky-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-sky-600 text-sky-950 bg-sky-50 hover:bg-sky-100 rounded-full",
   component: ContinueNode,
   defaultLabel: "continue this stage next turn",
   inspector: {

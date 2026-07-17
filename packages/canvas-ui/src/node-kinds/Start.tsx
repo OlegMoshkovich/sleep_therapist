@@ -28,7 +28,7 @@ export const START: NodeKindDef = {
   kind: "start",
   toolbarLabel: "+ Start",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-emerald-400 text-emerald-900 bg-emerald-50 hover:bg-emerald-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-400 text-emerald-900 bg-emerald-50 hover:bg-emerald-100 rounded-full",
   component: StartNode,
   defaultLabel: "Start",
   hideFromToolbar: true,

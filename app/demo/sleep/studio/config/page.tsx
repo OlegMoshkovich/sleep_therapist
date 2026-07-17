@@ -20,6 +20,7 @@ import {
   STATE_NODES,
   STATE_PROMPT,
   STATE_TOOLS,
+  STATE_TYPES,
   type FlowEdge,
   type FlowGroup,
   type FlowNode,
@@ -682,6 +683,8 @@ function StatePane({
   fillHeight,
   currentState,
   loaded = true,
+  tabBarTrailing,
+  onPersistFields,
 }: {
   fields: SchemaField[];
   setFields: React.Dispatch<React.SetStateAction<SchemaField[]>>;
@@ -691,12 +694,68 @@ function StatePane({
   fillHeight?: boolean;
   currentState?: Record<string, unknown> | null;
   loaded?: boolean;
+  tabBarTrailing?: React.ReactNode;
+  /** Persist the next schema immediately (used after delete so reload keeps it). */
+  onPersistFields?: (next: SchemaField[]) => void | Promise<void>;
 }) {
+  // Prefer the schema as the source of truth for which chips to show. Live
+  // conversation state may still hold keys for deleted fields — don't resurface
+  // those after the user removed them from the schema.
+  const schemaNames = new Set(fields.map(([name]) => name));
   const currentEntries: [string, unknown][] = currentState
-    ? Object.entries(currentState)
+    ? Object.entries(currentState).filter(([key]) => schemaNames.has(key))
     : fields.map(([name, , initialValue]) => [name, initialValue]);
-  const hasLiveState = !!currentState;
+  // If live state was filtered down to nothing but the schema still has rows,
+  // fall back to schema defaults so the panel doesn't look empty mid-edit.
+  const displayEntries: [string, unknown][] =
+    currentEntries.length > 0 || !currentState
+      ? currentEntries
+      : fields.map(([name, , initialValue]) => [name, initialValue]);
+  const hasLiveState = !!currentState && currentEntries.length > 0;
   const [stateOpen, setStateOpen] = useState(true);
+  // Pixel height of the expanded State variables block (null = content-sized).
+  // Drag the handle under it to resize; persisted in localStorage.
+  const [varsHeight, setVarsHeight] = useState<number | null>(null);
+  const [varsSplitDragging, setVarsSplitDragging] = useState(false);
+  const varsRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("sc-state-vars-height");
+      if (!raw) return;
+      const n = Number(raw);
+      if (Number.isFinite(n) && n >= 80 && n <= 800) setVarsHeight(n);
+    } catch {
+      // ignore
+    }
+  }, []);
+  React.useEffect(() => {
+    if (typeof window === "undefined" || varsHeight == null) return;
+    try {
+      window.localStorage.setItem("sc-state-vars-height", String(varsHeight));
+    } catch {
+      // ignore
+    }
+  }, [varsHeight]);
+  // Edit mode swaps the read-only value chips for an editable schema list
+  // (name / type / initial value). Edits go through setFields, which marks the
+  // config dirty so the Save button (on the canvas tab bar) persists them.
+  const [editing, setEditing] = useState(false);
+  const updateField = (i: number, pos: 0 | 1 | 2, value: string) =>
+    setFields((rows) =>
+      rows.map((r, j) =>
+        j === i ? (r.map((c, k) => (k === pos ? value : c)) as SchemaField) : r
+      )
+    );
+  const removeField = (i: number) => {
+    const next = fields.filter((_, j) => j !== i);
+    setFields(next);
+    // Persist immediately — waiting for an explicit Save was leaving deletions
+    // session-only, so they came back on reload.
+    void onPersistFields?.(next);
+  };
+  const addField = () =>
+    setFields((rows) => [...rows, ["new_variable", "string", "null"] as SchemaField]);
   const fmtStateVal = (v: unknown): string => {
     if (v === null || v === undefined || v === "" || v === "null") return "—";
     if (Array.isArray(v)) return v.length ? v.join(", ") : "—";
@@ -711,45 +770,146 @@ function StatePane({
         <h1>State</h1>
         <p>The concise pieces of information the assistant tracks across the conversation, and how it updates them each turn.</p>
       </div>
-      {currentEntries.length > 0 && (
-        <div className="sc-curstate">
-          <button
-            type="button"
-            className="sc-curstate-head"
-            onClick={() => setStateOpen((o) => !o)}
-            aria-expanded={stateOpen}
-            title={stateOpen ? "Collapse" : "Expand"}
+      {(fields.length > 0 || editing || displayEntries.length > 0) && (
+        <>
+          <div
+            ref={varsRef}
+            className="sc-curstate"
+            style={
+              stateOpen && varsHeight != null
+                ? { height: varsHeight, maxHeight: varsHeight, overflow: "auto", flex: "0 0 auto" }
+                : undefined
+            }
           >
-            <svg
-              viewBox="0 0 24 24"
-              width="11"
-              height="11"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={"sc-curstate-chev" + (stateOpen ? " open" : "")}
-              aria-hidden="true"
-            >
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-            <span className="sc-lbl">{hasLiveState ? "Current state · this conversation" : "State variables"}</span>
-          </button>
-          {stateOpen && (
-            <div className="sc-curstate-rows">
-              {currentEntries.map(([k, v]) => {
-                const set = fmtStateVal(v) !== "—";
-                return (
-                  <div key={k} className={"sc-curstate-row" + (set ? "" : " unset")}>
-                    <span className="sc-curstate-k">{k}</span>
-                    <span className="sc-curstate-v">{fmtStateVal(v)}</span>
-                  </div>
-                );
-              })}
+            <div className="sc-curstate-bar">
+              <button
+                type="button"
+                className="sc-curstate-head"
+                onClick={() => setStateOpen((o) => !o)}
+                aria-expanded={stateOpen}
+                title={stateOpen ? "Collapse" : "Expand"}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="11"
+                  height="11"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className={"sc-curstate-chev" + (stateOpen ? " open" : "")}
+                  aria-hidden="true"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+                <span className="sc-lbl">{hasLiveState && !editing ? "Current state · this conversation" : "State variables"}</span>
+              </button>
+              {stateOpen && (
+                <div className="sc-curstate-actions">
+                  <button type="button" className="sc-var-edit" onClick={() => setEditing((e) => !e)}>
+                    {editing ? "Done" : "Edit"}
+                  </button>
+                  {editing && (
+                    <button type="button" className="sc-var-edit" onClick={addField}>
+                      + Add variable
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+            {stateOpen && (
+              <>
+                {editing ? (
+                  <div className="sc-var-list">
+                    {fields.map(([name, type, initial], i) => (
+                      <div key={i} className="sc-var-row">
+                        <input
+                          className="sc-input"
+                          value={name}
+                          placeholder="field_name"
+                          onChange={(e) => updateField(i, 0, e.target.value)}
+                        />
+                        <div className="sc-select-wrap">
+                          <select
+                            className="sc-select"
+                            value={type}
+                            onChange={(e) => updateField(i, 1, e.target.value)}
+                          >
+                            {STATE_TYPES.map((t) => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <input
+                          className="sc-input"
+                          value={initial}
+                          placeholder="null"
+                          onChange={(e) => updateField(i, 2, e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          className="sc-row-x"
+                          title="Remove variable"
+                          onClick={() => removeField(i)}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                    {fields.length === 0 && (
+                      <div className="sc-var-empty">No variables yet. Add one to start.</div>
+                    )}
+                  </div>
+                ) : (
+                <div className="sc-curstate-rows">
+                  {displayEntries.map(([k, v]) => {
+                    const set = fmtStateVal(v) !== "—";
+                    return (
+                      <div key={k} className={"sc-curstate-row" + (set ? "" : " unset")}>
+                        <span className="sc-curstate-k">{k}</span>
+                        <span className="sc-curstate-v">{fmtStateVal(v)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                )}
+              </>
+            )}
+          </div>
+          {stateOpen && (
+            <div
+              className={"sc-vsplit" + (varsSplitDragging ? " active" : "")}
+              role="separator"
+              aria-orientation="horizontal"
+              aria-label="Resize state variables (double-click to reset)"
+              title="Drag to resize · double-click to reset"
+              onDoubleClick={() => setVarsHeight(null)}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                const el = varsRef.current;
+                if (!el) return;
+                const startY = e.clientY;
+                const startH = el.getBoundingClientRect().height;
+                setVarsSplitDragging(true);
+                document.body.classList.add("ra-resizing-v");
+                const onMove = (ev: PointerEvent) => {
+                  setVarsHeight(
+                    Math.round(Math.max(80, Math.min(640, startH + (ev.clientY - startY))))
+                  );
+                };
+                const onUp = () => {
+                  setVarsSplitDragging(false);
+                  document.body.classList.remove("ra-resizing-v");
+                  window.removeEventListener("pointermove", onMove);
+                  window.removeEventListener("pointerup", onUp);
+                };
+                window.addEventListener("pointermove", onMove);
+                window.addEventListener("pointerup", onUp);
+              }}
+            />
           )}
-        </div>
+        </>
       )}
       <div className="sc-canvas-host">
         {loaded ? (
@@ -768,6 +928,7 @@ function StatePane({
               stateUpdateSystemPrompt: STATE_PROMPT,
             }}
             fillHeight={fillHeight}
+            tabBarTrailing={tabBarTrailing}
             onChange={({ doc }) => onStateChange(doc)}
           />
         ) : (
@@ -1247,7 +1408,9 @@ export function useSleepSetup() {
               environment_players: config.environment_players,
             };
             const schema = config.state_schema;
-            if (Array.isArray(schema) && schema.length > 0) {
+            // Honor an explicit empty array (user deleted every field). Only
+            // keep the seeded STATE_FIELDS defaults when the column is absent.
+            if (Array.isArray(schema)) {
               setFields(
                 schema.map((f) => {
                   const r = (f ?? {}) as Record<string, unknown>;
@@ -1299,21 +1462,24 @@ export function useSleepSetup() {
     markDirty();
   };
 
-  const save = async () => {
+  const save = async (overrides?: { fields?: SchemaField[] }) => {
     if (saving || !canEdit) return;
     setSaving(true);
     setSaveError(null);
+    // Allow callers (e.g. delete-row) to pass the next schema explicitly so we
+    // don't race React's setState and persist a stale `fields` snapshot.
+    const fieldsToSave = overrides?.fields ?? fields;
     try {
       const policyDocToSave = policyDoc ?? POLICY_SEED_DOC;
       const stateDocToSave = stateDoc ?? STATE_SEED_DOC;
-      const compilerFields = fields.map(([name, type, initialValue]) => ({
+      const compilerFields = fieldsToSave.map(([name, type, initialValue]) => ({
         name,
         type: type as StateFieldType,
         initialValue,
       }));
       const config: Record<string, unknown> = {
         config_name: (preservedRef.current.config_name as string) ?? "sleep configuration",
-        state_schema: fields.map(([name, type, initial]) => ({
+        state_schema: fieldsToSave.map(([name, type, initial]) => ({
           field_name: name.trim(),
           type,
           initial_value: initial.trim(),
@@ -1412,6 +1578,8 @@ export function useSleepSetup() {
           fillHeight={opts?.fillHeight}
           currentState={opts?.currentState}
           loaded={loaded}
+          tabBarTrailing={opts?.tabBarTrailing}
+          onPersistFields={(next) => save({ fields: next })}
         />
       );
     else if (which === "policy")
@@ -1539,7 +1707,7 @@ export function SetupBar({
         <button
           type="button"
           className="obs-setup-action"
-          onClick={setup.save}
+          onClick={() => void setup.save()}
           disabled={setup.saving || !setup.dirty}
         >
           {setup.saving ? "Saving…" : "Save"}
@@ -1554,6 +1722,11 @@ export function SetupBar({
   // the `slot` portal target. The floating window is portaled to <body> and is
   // owned by this page-level SetupBar, so it stays present when the drawer — and
   // thus the slot — is closed.
+  // Save lives on the canvas tab bar (the Main/+Canvas · Tools · Collapse line)
+  // for the sections that HAVE a canvas — Policy and State — via tabBarTrailing.
+  // Knowledge has no canvas, so its Save stays on the section nav row.
+  const canvasSection = active === "policy" || active === "state";
+
   const dockedChrome = (
     <>
       <div className="obs-setup">
@@ -1572,11 +1745,12 @@ export function SetupBar({
             </button>
           );
         })}
-        {navActions}
+        {!canvasSection ? navActions : null}
       </div>
 
       {/* Docked inline: the actual section component, embedded in the drawer.
-          No title row — Save is on the nav bar above. */}
+          For canvas sections, Save is docked into the canvas tab bar
+          (tabBarTrailing); otherwise it's on the nav bar above. */}
       {active && (
         <div className="sysconf obs-docked">
           <div className="obs-docked-body">
@@ -1584,6 +1758,7 @@ export function SetupBar({
               fillHeight: true,
               fireSignal,
               currentState,
+              tabBarTrailing: canvasSection ? navActions : undefined,
             })}
           </div>
         </div>
@@ -1796,7 +1971,7 @@ function SleepStudioConfigInner() {
                 <span className="dot" style={dirty || saving ? { background: "#c2611f" } : undefined} />
                 {saving ? "Saving…" : dirty ? "Unsaved changes" : "All changes saved"}
               </span>
-              <button className="sc-close" onClick={save} disabled={saving || !dirty}>
+              <button className="sc-close" onClick={() => void save()} disabled={saving || !dirty}>
                 {saving ? "Saving…" : "Save"}
               </button>
             </>

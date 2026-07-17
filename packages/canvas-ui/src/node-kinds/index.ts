@@ -57,7 +57,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Read async job",
     toolbarLabel: "+ Read async job",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-indigo-500 text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-indigo-500 text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded-full",
     container: "bg-indigo-50 border-indigo-500 text-indigo-900",
     ring: "ring-indigo-500",
     handle: "!bg-indigo-500",
@@ -71,7 +71,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Await async job",
     toolbarLabel: "+ Await async job",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-blue-600 text-blue-950 bg-blue-50 hover:bg-blue-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-blue-600 text-blue-950 bg-blue-50 hover:bg-blue-100 rounded-full",
     container: "bg-blue-50 border-blue-600 text-blue-950",
     ring: "ring-blue-600",
     handle: "!bg-blue-600",
@@ -85,7 +85,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Build primary schema",
     toolbarLabel: "+ Primary schema",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-cyan-500 text-cyan-900 bg-cyan-50 hover:bg-cyan-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-cyan-500 text-cyan-900 bg-cyan-50 hover:bg-cyan-100 rounded-full",
     container: "bg-cyan-50 border-cyan-500 text-cyan-900",
     ring: "ring-cyan-500",
     handle: "!bg-cyan-500",
@@ -99,7 +99,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Build env schemas",
     toolbarLabel: "+ Env schemas",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-sky-500 text-sky-900 bg-sky-50 hover:bg-sky-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-sky-500 text-sky-900 bg-sky-50 hover:bg-sky-100 rounded-full",
     container: "bg-sky-50 border-sky-500 text-sky-900",
     ring: "ring-sky-500",
     handle: "!bg-sky-500",
@@ -113,7 +113,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Materialize shapes",
     toolbarLabel: "+ Materialize shapes",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-violet-500 text-violet-900 bg-violet-50 hover:bg-violet-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-violet-500 text-violet-900 bg-violet-50 hover:bg-violet-100 rounded-full",
     container: "bg-violet-50 border-violet-500 text-violet-900",
     ring: "ring-violet-500",
     handle: "!bg-violet-500",
@@ -127,7 +127,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Build shape requests",
     toolbarLabel: "+ Shape requests",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-fuchsia-500 text-fuchsia-900 bg-fuchsia-50 hover:bg-fuchsia-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-fuchsia-500 text-fuchsia-900 bg-fuchsia-50 hover:bg-fuchsia-100 rounded-full",
     container: "bg-fuchsia-50 border-fuchsia-500 text-fuchsia-900",
     ring: "ring-fuchsia-500",
     handle: "!bg-fuchsia-500",
@@ -141,7 +141,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Merge structures",
     toolbarLabel: "+ Merge structures",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-pink-500 text-pink-900 bg-pink-50 hover:bg-pink-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-pink-500 text-pink-900 bg-pink-50 hover:bg-pink-100 rounded-full",
     container: "bg-pink-50 border-pink-500 text-pink-900",
     ring: "ring-pink-500",
     handle: "!bg-pink-500",
@@ -155,7 +155,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Prep rule check",
     toolbarLabel: "+ Prep rule check",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-rose-500 text-rose-900 bg-rose-50 hover:bg-rose-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-rose-500 text-rose-900 bg-rose-50 hover:bg-rose-100 rounded-full",
     container: "bg-rose-50 border-rose-500 text-rose-900",
     ring: "ring-rose-500",
     handle: "!bg-rose-500",
@@ -169,7 +169,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Prep repair reqs",
     toolbarLabel: "+ Prep repair reqs",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-red-500 text-red-900 bg-red-50 hover:bg-red-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-red-500 text-red-900 bg-red-50 hover:bg-red-100 rounded-full",
     container: "bg-red-50 border-red-500 text-red-900",
     ring: "ring-red-500",
     handle: "!bg-red-500",
@@ -183,7 +183,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Apply repairs",
     toolbarLabel: "+ Apply repairs",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-orange-500 text-orange-900 bg-orange-50 hover:bg-orange-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-orange-500 text-orange-900 bg-orange-50 hover:bg-orange-100 rounded-full",
     container: "bg-orange-50 border-orange-500 text-orange-900",
     ring: "ring-orange-500",
     handle: "!bg-orange-500",
@@ -197,7 +197,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Prep recheck",
     toolbarLabel: "+ Prep recheck",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-amber-600 text-amber-950 bg-amber-50 hover:bg-amber-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-600 text-amber-950 bg-amber-50 hover:bg-amber-100 rounded-full",
     container: "bg-amber-50 border-amber-600 text-amber-950",
     ring: "ring-amber-600",
     handle: "!bg-amber-600",
@@ -211,7 +211,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Finalize repair",
     toolbarLabel: "+ Finalize repair",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-rose-700 text-rose-950 bg-rose-100 hover:bg-rose-200 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-rose-700 text-rose-950 bg-rose-100 hover:bg-rose-200 rounded-full",
     container: "bg-rose-100 border-rose-700 text-rose-950",
     ring: "ring-rose-700",
     handle: "!bg-rose-700",
@@ -225,7 +225,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Apply patch",
     toolbarLabel: "+ Apply patch",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-teal-500 text-teal-900 bg-teal-50 hover:bg-teal-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-teal-500 text-teal-900 bg-teal-50 hover:bg-teal-100 rounded-full",
     container: "bg-teal-50 border-teal-500 text-teal-900",
     ring: "ring-teal-500",
     handle: "!bg-teal-500",
@@ -239,7 +239,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Scaffold tools",
     toolbarLabel: "+ Scaffold tools",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-amber-500 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-500 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-full",
     container: "bg-amber-50 border-amber-500 text-amber-900",
     ring: "ring-amber-500",
     handle: "!bg-amber-500",
@@ -253,7 +253,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Sync prompts",
     toolbarLabel: "+ Sync prompts",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-slate-500 text-slate-900 bg-slate-50 hover:bg-slate-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-slate-500 text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-full",
     container: "bg-slate-50 border-slate-500 text-slate-900",
     ring: "ring-slate-500",
     handle: "!bg-slate-500",
@@ -267,7 +267,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Repair canvases",
     toolbarLabel: "+ Repair canvases",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-rose-500 text-rose-900 bg-rose-50 hover:bg-rose-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-rose-500 text-rose-900 bg-rose-50 hover:bg-rose-100 rounded-full",
     container: "bg-rose-50 border-rose-500 text-rose-900",
     ring: "ring-rose-500",
     handle: "!bg-rose-500",
@@ -281,7 +281,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Finalize reply",
     toolbarLabel: "+ Finalize reply",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-indigo-500 text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-indigo-500 text-indigo-900 bg-indigo-50 hover:bg-indigo-100 rounded-full",
     container: "bg-indigo-50 border-indigo-500 text-indigo-900",
     ring: "ring-indigo-500",
     handle: "!bg-indigo-500",
@@ -295,7 +295,7 @@ const RUNTIME_OPERATION_CHROME: Record<RuntimeOperationNodeKind, RuntimeOperatio
     title: "Raise error",
     toolbarLabel: "+ Raise error",
     toolbarClassName:
-      "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-red-700 text-red-950 bg-red-100 hover:bg-red-200 rounded",
+      "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-red-700 text-red-950 bg-red-100 hover:bg-red-200 rounded-full",
     container: "bg-red-100 border-red-700 text-red-950",
     ring: "ring-red-700",
     handle: "!bg-red-700",
@@ -633,9 +633,27 @@ export const WORKFLOW_CANVAS_NODE_KINDS: NodeKindDef[] = [
 ];
 
 export const DEFAULT_POLICY_NODE_KINDS: NodeKindDef[] = [
-  ...BASE_CANVAS_NODE_KINDS,
-  READ_ASYNC_JOB,
-  AWAIT_ASYNC_JOB,
+  // Toolbar is pruned to only the node types this policy canvas actually uses:
+  // Control structure (IF/condition), Prompt, Expand (subtree reference), and
+  // Terminate. Every other kind stays registered — so existing nodes and loaded
+  // graphs still render — but is hidden from the add-node palette.
+  START,
+  CONDITION,
+  hideFromToolbar(FOR),
+  hideFromToolbar(WHILE),
+  PROMPT,
+  hideFromToolbar(CODE),
+  hideFromToolbar(TOOL_CALL),
+  hideFromToolbar(CALL_AGENT),
+  hideFromToolbar(DISPLAY),
+  EXPAND,
+  hideFromToolbar(YIELD_TURN),
+  hideFromToolbar(CONTINUE_STAGE),
+  hideFromToolbar(TERMINATE_STAGE),
+  hideFromToolbar(TERMINATE_STAGE_IMMEDIATE),
+  TERMINATE,
+  hideFromToolbar(READ_ASYNC_JOB),
+  hideFromToolbar(AWAIT_ASYNC_JOB),
   hideFromToolbar(BUILD_DEFAULT_PRIMARY_STATE_SCHEMA),
   hideFromToolbar(BUILD_DEFAULT_ENVIRONMENT_STATE_SCHEMA),
   hideFromToolbar(BUILD_INITIAL_CANVAS_SHAPE_MATERIALIZATION_REQUESTS),
@@ -646,8 +664,8 @@ export const DEFAULT_POLICY_NODE_KINDS: NodeKindDef[] = [
   hideFromToolbar(APPLY_CANVAS_RULE_REPAIRS),
   hideFromToolbar(PREPARE_CANVAS_RULE_RECHECK_REQUESTS),
   hideFromToolbar(FINALIZE_CANVAS_RULE_REPAIR_PASS),
-  APPLY_STRUCTURED_PATCH,
-  RAISE_ERROR,
+  hideFromToolbar(APPLY_STRUCTURED_PATCH),
+  hideFromToolbar(RAISE_ERROR),
   hideFromToolbar(SCAFFOLD_TOOLS),
   hideFromToolbar(SYNC_DERIVED_PROMPTS),
   hideFromToolbar(REPAIR_CANVAS_RULES),

@@ -172,17 +172,31 @@
 :root {
   --background: #E1DECF;
   --foreground: #171717;
-  --font-american-grotesk: "Test American Grotesk", "Helvetica Neue", Arial, sans-serif;
-  --font-styrene: "Styrene A", "Test American Grotesk", "Helvetica Neue", Arial, sans-serif;
-  --font-martina: "Test Martina Plantijn", "Times New Roman", serif;
+
+  /* ══ TYPOGRAPHY THEME — the one place to restyle all text ═══════════════
+     Modelled on miresearchlab.com's base text style (Inter · 14px · .01em ·
+     1.65). Change any value here and it flows to body, headings, and every
+     component that inherits (which, after the flattening below, is all of
+     them). Swapping the family is a one-line change here + the Inter() loader
+     in layout.tsx. */
+  --font-app: var(--font-inter), system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --text-size: 14px;         /* base font-size everywhere */
+  --text-tracking: 0.01em;   /* base letter-spacing */
+  --text-leading: 1.65;      /* base line-height */
+  --title-weight: 600;       /* headings share the base size; only weight sets them apart */
+
+  /* Legacy aliases kept so any direct references still work — all Inter now. */
+  --font-american-grotesk: var(--font-app);
+  --font-styrene: var(--font-app);
+  --font-martina: var(--font-app);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-american-grotesk);
-  --font-serif: var(--font-martina);
-  --font-display: var(--font-styrene);
+  --font-sans: var(--font-app);
+  --font-serif: var(--font-app);
+  --font-display: var(--font-app);
 }
 
 
@@ -190,6 +204,9 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-size: var(--text-size);
+  letter-spacing: var(--text-tracking);
+  line-height: var(--text-leading);
   overflow: hidden;
   height: 100vh;
   height: 100dvh;
@@ -197,8 +214,16 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Titles flattened into the base style (like miresearchlab.com): same font,
+   size, tracking and leading as body text — only --title-weight distinguishes
+   them. Bump a single heading's size with a local font-size where hierarchy is
+   genuinely needed. */
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
+  font-family: var(--font-app);
+  font-size: var(--text-size);
+  font-weight: var(--title-weight);
+  letter-spacing: var(--text-tracking);
+  line-height: var(--text-leading);
 }
 
 .font-display {

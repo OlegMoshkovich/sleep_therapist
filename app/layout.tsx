@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
+import { Archivo, Inter } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import PostSignInRedirect from "./components/PostSignInRedirect";
@@ -12,6 +12,15 @@ const archivo = Archivo({
   subsets: ["latin"],
   weight: ["300", "400"],
   variable: "--font-archivo",
+  display: "swap",
+});
+
+// The single app-wide UI typeface. Everything (body, headings, studio, canvas)
+// resolves to this through the --font-app variable in globals.css, so swapping
+// the font is a one-line change here + the --font-app fallback list.
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -69,7 +78,7 @@ export default async function RootLayout({
   return (
     <ClerkProvider publishableKey={publishableKey}>
       <html lang="en">
-        <body className={`${archivo.variable} antialiased font-sans`}>
+        <body className={`${archivo.variable} ${inter.variable} antialiased font-sans`}>
           <ThemeProvider>
             <NavigationOverlay />
             <PostSignInRedirect />

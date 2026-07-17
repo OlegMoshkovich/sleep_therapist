@@ -141,7 +141,7 @@ export const CALL_AGENT: NodeKindDef = {
   kind: "call_agent",
   toolbarLabel: "+ Call agent",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-cyan-600 text-cyan-950 bg-cyan-50 hover:bg-cyan-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-cyan-600 text-cyan-950 bg-cyan-50 hover:bg-cyan-100 rounded-full",
   component: CallAgentNode,
   defaultLabel: "when another agent should be called",
   defaultData: {

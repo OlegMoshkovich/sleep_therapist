@@ -31,7 +31,7 @@ export const TERMINATE: NodeKindDef = {
   kind: "terminate",
   toolbarLabel: "+ Terminate",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-stone-600 text-stone-950 bg-stone-100 hover:bg-stone-200 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-stone-600 text-stone-950 bg-stone-100 hover:bg-stone-200 rounded-full",
   component: TerminateNode,
   defaultLabel: "task complete; no future turns",
   inspector: {

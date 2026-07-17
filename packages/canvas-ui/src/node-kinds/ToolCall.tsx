@@ -839,7 +839,7 @@ export const TOOL_CALL: NodeKindDef = {
   kind: "tool_call",
   toolbarLabel: "+ Tool call",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-violet-400 text-violet-900 bg-violet-50 hover:bg-violet-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-violet-400 text-violet-900 bg-violet-50 hover:bg-violet-100 rounded-full",
   component: ToolCallNode,
   defaultLabel: "tool_name(args)",
   defaultData: {

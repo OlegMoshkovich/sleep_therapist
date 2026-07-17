@@ -282,6 +282,11 @@ interface EditorInnerProps<TOutput> {
    */
   fillHeight?: boolean;
   /**
+   * fillHeight layout: `stack` = canvas above inspector (side drawer default);
+   * `split` = canvas | inspector side by side (bottom drawer).
+   */
+  panelLayout?: "stack" | "split";
+  /**
    * Optional decorative label. When set, a dashed frame is drawn around the
    * canvas surface with this text as a corner tag (e.g. "Moved into the
    * weights" for a trained agent version). Purely visual; non-interactive.
@@ -1982,10 +1987,13 @@ export function EditorInner<TOutput>({
   inspectorExtraTabs,
   hideInspector,
   fillHeight,
+  panelLayout = "stack",
   graphTag,
   fireSignal,
   tabBarTrailing,
 }: EditorInnerProps<TOutput>) {
+  // Bottom drawer: side-by-side. Side drawer / Model Setup: stacked column.
+  const splitPanels = Boolean(fillHeight && panelLayout === "split");
   // Stable index of kinds keyed by `kind` for O(1) lookups.
   const kindByKey = useMemo(() => {
     const map = new Map<string, NodeKindDef>();
@@ -2022,6 +2030,10 @@ export function EditorInner<TOutput>({
   // Collapse the graph surface (docked column layout) so the inspector below
   // gets the reclaimed height.
   const [canvasCollapsed, setCanvasCollapsed] = useState(false);
+  // Docked column: share of rf-canvas-body height for the graph (rest → inspector).
+  // 0.5 = 50/50. Persisted so a drag sticks across reloads.
+  const [canvasShare, setCanvasShare] = useState(0.5);
+  const [splitDragging, setSplitDragging] = useState(false);
   // "How to use the canvas" help overlay.
   const [helpOpen, setHelpOpen] = useState(false);
   // The node + canvas-action toolbar is collapsible to reclaim space; starts
@@ -2055,6 +2067,27 @@ export function EditorInner<TOutput>({
     return { x: minX - pad, y: minY - pad, w: maxX - minX + pad * 2, h: maxY - minY + pad * 2 };
   }, [graphTag, active]);
 
+  // Restore the canvas/inspector split from localStorage.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("rf-canvas-inspector-share");
+      if (!raw) return;
+      const n = Number(raw);
+      if (Number.isFinite(n) && n >= 0.2 && n <= 0.8) setCanvasShare(n);
+    } catch {
+      // ignore
+    }
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("rf-canvas-inspector-share", String(canvasShare));
+    } catch {
+      // ignore
+    }
+  }, [canvasShare]);
+
   // In fillHeight mode, give the canvas + inspector row a CONSTANT height that
   // spans from its top (just below the toolbars) to the bottom of the viewport,
   // minus the overlay's bottom gap. This is measured rather than derived from a
@@ -2070,18 +2103,31 @@ export function EditorInner<TOutput>({
     const el = canvasBodyRef.current;
     if (!el || typeof window === "undefined") return;
     let raf = 0;
-    const BOTTOM_GAP = 36; // 16px overlay inset + 20px modal-body bottom padding
+    // Tight bottom gap when the canvas already sits at the viewport edge
+    // (docked drawer sets --rf-fill-reserve-bottom: 0); keep a larger gap for
+    // floating/modal hosts that have their own bottom padding.
     const recompute = () => {
       const top = el.getBoundingClientRect().top;
-      // Space reserved at the bottom of the viewport by the host (e.g. a docked
-      // bottom drawer). Read from a CSS var on this element so it cascades: a
-      // canvas above the drawer inherits the reserve, one INSIDE the drawer
-      // overrides it to 0. Defaults to 0 when unset.
+      // Prefer the docked pane / drawer bottom over the raw viewport so the
+      // inspector reaches the panel edge on Policy (and other panes without a
+      // State-variables header eating space above). Fall back to viewport with
+      // the host's --rf-fill-reserve-bottom when no docked host is found.
+      const host =
+        el.closest(".obs-docked-body") ||
+        el.closest(".bottom-drawer-body") ||
+        el.closest(".sc-canvas-host");
       const reserve =
         parseFloat(getComputedStyle(el).getPropertyValue("--rf-fill-reserve-bottom")) || 0;
-      setFillRowHeight(
-        Math.max(260, Math.round(window.innerHeight - reserve - top - BOTTOM_GAP))
-      );
+      let bottom: number;
+      let bottomGap: number;
+      if (host) {
+        bottom = host.getBoundingClientRect().bottom;
+        bottomGap = 4;
+      } else {
+        bottom = window.innerHeight - reserve;
+        bottomGap = reserve > 0 ? 36 : 8;
+      }
+      setFillRowHeight(Math.max(260, Math.round(bottom - top - bottomGap)));
     };
     // Measure after layout settles so the toolbars have their final height.
     raf = requestAnimationFrame(recompute);
@@ -2399,39 +2445,6 @@ export function EditorInner<TOutput>({
     setSelectedId(null);
     setSelectedCollapsedEdgeId(null);
     setSelectedPromptGroupKey(promptGroupKey(selectedPromptGroup));
-  }
-
-  // Load one of the seedDoc's example canvases into the active canvas. Index 0
-  // is the default ("Load example"); higher indices back the named example
-  // buttons (e.g. the RAG / Corpus example). Falls back to a blank graph for
-  // hosts that didn't pass a seed.
-  function loadSeedCanvas(index: number) {
-    const seedCanvas = normalizeDoc(seedDoc ?? null)?.canvases[index];
-    const fallback = makeBlankGraph(nodeKinds);
-    const nextNodes = (seedCanvas?.graph.nodes ?? fallback.nodes).map((node) => {
-      const workingNode = {
-        ...node,
-        data: { ...(node.data ?? {}), label: node.data?.label ?? "" },
-      } as CanvasNode;
-
-      return applyEditorNodeInteractivity(workingNode);
-    });
-    const nextEdges = (seedCanvas?.graph.edges ?? fallback.edges).map((e) => ({
-      ...e,
-      markerEnd: { type: MarkerType.ArrowClosed },
-    })) as Edge[];
-    patchActive((c) => ({
-      ...c,
-      nodes: nextNodes,
-      edges: nextEdges,
-    }));
-    setSelectedId(null);
-    setSelectedPromptGroupKey(null);
-    setSelectedCollapsedEdgeId(null);
-  }
-
-  function resetActive() {
-    loadSeedCanvas(0);
   }
 
   // ── Canvas (tab) management ──────────────────────────────────────────────
@@ -3295,7 +3308,7 @@ export function EditorInner<TOutput>({
         fullscreen
           ? "rf-canvas-surface relative min-h-[32rem] flex-1 overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
           : fillHeight
-            ? "rf-canvas-surface relative block flex-1 min-h-[320px] overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6] lg:h-full"
+            ? "rf-canvas-surface relative block h-full min-h-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
             : "rf-canvas-surface relative hidden lg:block flex-1 min-h-[300px] h-[360px] overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
       }
       role={fullscreen ? "dialog" : undefined}
@@ -3391,16 +3404,26 @@ export function EditorInner<TOutput>({
   );
 
   const renderEditorWorkspace = (fullscreen: boolean) => (
-    <div className={fullscreen ? "flex h-full min-h-0 flex-col gap-4" : "flex flex-col gap-4"}>
+    <div
+      className={
+        fullscreen
+          ? "flex h-full min-h-0 flex-col gap-4"
+          : fillHeight
+            ? "flex h-full min-h-0 flex-1 flex-col gap-4"
+            : "flex flex-col gap-4"
+      }
+    >
       {/* Canvas tabs */}
-      <div className={`${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] items-center gap-1 border-b border-[#c8c4b4]`}>
+      {/* gap-x matches .obs-setup / .drawer-tabs (22px); tab padding 0 2px so the
+          active underline hugs the label like Model Setup / Knowledge / Policy. */}
+      <div className={`${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] items-stretch gap-[22px] border-b border-[#c8c4b4] px-4`}>
         {canvases.map((c) => {
           const isActive = c.id === activeId;
           const isRenaming = renamingId === c.id;
           return (
             <div
               key={c.id}
-              className={`group flex items-center self-stretch gap-1 px-3 border-b-2 cursor-pointer text-[13px] font-sans text-[#1c1b16] ${
+              className={`group flex items-center self-stretch gap-1 px-0.5 border-b-2 -mb-px cursor-pointer text-[14px] font-sans text-[#1c1b16] ${
                 isActive ? "border-[#1c1b16]" : "border-transparent"
               }`}
               onClick={() => selectCanvas(c.id)}
@@ -3419,7 +3442,7 @@ export function EditorInner<TOutput>({
                     }
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="bg-transparent border-b border-gray-500 outline-none text-[13px] font-sans text-[#1c1b16] px-1 w-32"
+                  className="bg-transparent border-b border-gray-500 outline-none text-[14px] font-sans text-[#1c1b16] px-1 w-32"
                 />
               ) : (
                 <span>{c.name || "Untitled"}</span>
@@ -3443,7 +3466,7 @@ export function EditorInner<TOutput>({
         <button
           type="button"
           onClick={addCanvas}
-          className="px-3 py-1.5 text-[13px] font-sans text-[#1c1b16] hover:bg-[#eceadd] rounded-t"
+          className="px-0.5 text-[14px] font-sans text-[#1c1b16] hover:text-black self-center"
           title="Add canvas"
         >
           + Canvas
@@ -3469,7 +3492,7 @@ export function EditorInner<TOutput>({
             type="button"
             onClick={() => setToolbarOpen((o) => !o)}
             aria-expanded={toolbarOpen}
-            className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[13px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
+            className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[14px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
           >
             <svg
               viewBox="0 0 24 24"
@@ -3493,7 +3516,7 @@ export function EditorInner<TOutput>({
               onClick={() => setCanvasFullscreen(false)}
               aria-label="Exit fullscreen"
               title="Exit fullscreen (Esc)"
-              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[13px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
+              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[14px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
             >
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M6 6l12 12M18 6L6 18" />
@@ -3501,15 +3524,15 @@ export function EditorInner<TOutput>({
               Close
             </button>
           )}
-          {/* Collapse the canvas so the inspector below reclaims the height.
-              Only shown in the docked/fill-height (stacked) layout. */}
+          {/* Collapse the canvas so the inspector reclaims space (height when
+              stacked, width when split). Shown in any fillHeight host. */}
           {fillHeight && !fullscreen && (
             <button
               type="button"
               onClick={() => setCanvasCollapsed((v) => !v)}
               aria-expanded={!canvasCollapsed}
               title={canvasCollapsed ? "Expand canvas" : "Collapse canvas"}
-              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[13px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
+              className="flex items-center gap-1.5 rounded px-1.5 py-1 text-[14px] font-sans text-[#1c1b16] hover:bg-[#eceadd]"
             >
               <svg
                 viewBox="0 0 24 24"
@@ -3544,7 +3567,7 @@ export function EditorInner<TOutput>({
             <button
               type="button"
               onClick={() => setIsControlStructureMenuOpen((open) => !open)}
-              className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-amber-500 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded"
+              className="text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-500 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-full"
               aria-haspopup="menu"
               aria-expanded={isControlStructureMenuOpen}
             >
@@ -3596,62 +3619,11 @@ export function EditorInner<TOutput>({
             (Boolean(selectedNode) && selectedNodeNonEditable)
           }
           onClick={deleteSelected}
-          className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 rounded disabled:opacity-40"
+          className="text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 rounded-full disabled:opacity-40"
         >
           Delete selected
         </button>
       </div>
-
-            {/* Canvas-level actions (row 2) — Load example + Reset canvas */}
-            <div className="flex flex-wrap items-center gap-2">
-        {seedDoc?.canvases[0] && (
-          <button
-            type="button"
-            onClick={resetActive}
-            className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-emerald-500 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded"
-            title="Replace this canvas with the example chain"
-          >
-            Load example
-          </button>
-        )}
-        {seedDoc?.canvases[1] && (
-          <button
-            type="button"
-            onClick={() => loadSeedCanvas(1)}
-            className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-sky-500 text-sky-800 bg-sky-50 hover:bg-sky-100 rounded"
-            title="Replace this canvas with the document-grounded RAG (Corpus B1) example"
-          >
-            RAG example
-          </button>
-        )}
-        {seedDoc?.canvases[2] && (
-          <button
-            type="button"
-            onClick={() => loadSeedCanvas(2)}
-            className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-violet-500 text-violet-800 bg-violet-50 hover:bg-violet-100 rounded"
-            title="Replace this canvas with the persistent memory (knowledge graph) example"
-          >
-            Memory example
-          </button>
-        )}
-        {seedDoc?.canvases[3] && (
-          <button
-            type="button"
-            onClick={() => loadSeedCanvas(3)}
-            className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-amber-500 text-amber-800 bg-amber-50 hover:bg-amber-100 rounded"
-            title="Replace this canvas with the Playwright browser example (drives a real Chromium; local/self-hosted only)"
-          >
-            Browser example
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={resetActive}
-          className="text-xs font-sans uppercase tracking-widest px-3 py-2 border border-gray-400 text-gray-600 bg-transparent hover:bg-gray-100 rounded"
-        >
-          Reset canvas
-        </button>
-            </div>
           </div>
         )}
       </div>
@@ -3659,25 +3631,90 @@ export function EditorInner<TOutput>({
       {/* Canvas + inspector */}
       <div
         ref={!fullscreen && fillHeight ? canvasBodyRef : undefined}
-        className={fullscreen ? "rf-canvas-body flex min-h-0 flex-1 flex-col gap-4 lg:flex-row" : "rf-canvas-body flex flex-col gap-4 lg:flex-row"}
+        className={
+          fullscreen
+            ? "rf-canvas-body flex min-h-0 flex-1 flex-col gap-4 lg:flex-row"
+            : fillHeight
+              ? `rf-canvas-body flex min-h-0 flex-1 ${splitPanels ? "flex-row" : "flex-col"}`
+              : "rf-canvas-body flex flex-col gap-4 lg:flex-row"
+        }
         style={!fullscreen && fillHeight && fillRowHeight ? { height: fillRowHeight } : undefined}
       >
-        {renderCanvasSurface(fullscreen)}
+        {fillHeight && !fullscreen ? (
+          <div
+            className="rf-canvas-slot min-h-0 min-w-0 overflow-hidden"
+            style={
+              canvasCollapsed
+                ? { display: "none" }
+                : {
+                    flex: `0 0 ${Math.round(canvasShare * 1000) / 10}%`,
+                    minHeight: 0,
+                    minWidth: 0,
+                  }
+            }
+          >
+            {renderCanvasSurface(fullscreen)}
+          </div>
+        ) : (
+          renderCanvasSurface(fullscreen)
+        )}
+
+        {/* Drag handle: vertical in stacked side drawer; horizontal in bottom split. */}
+        {fillHeight && !fullscreen && !hideInspector && !canvasCollapsed && (
+          <div
+            className={
+              (splitPanels ? "rf-hsplit" : "rf-vsplit") + (splitDragging ? " active" : "")
+            }
+            role="separator"
+            aria-orientation={splitPanels ? "vertical" : "horizontal"}
+            aria-label="Resize canvas and inspector (double-click to reset)"
+            title="Drag to resize · double-click to reset"
+            onDoubleClick={() => setCanvasShare(0.5)}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              const body = canvasBodyRef.current;
+              if (!body) return;
+              const rect = body.getBoundingClientRect();
+              const axisSize = splitPanels ? rect.width : rect.height;
+              if (axisSize <= 0) return;
+              const startPos = splitPanels ? e.clientX : e.clientY;
+              const startShare = canvasShare;
+              const resizeClass = splitPanels ? "ra-resizing-h" : "ra-resizing-v";
+              setSplitDragging(true);
+              document.body.classList.add(resizeClass);
+              const onMove = (ev: PointerEvent) => {
+                const delta = (splitPanels ? ev.clientX : ev.clientY) - startPos;
+                const next = startShare + delta / axisSize;
+                setCanvasShare(Math.max(0.2, Math.min(0.8, next)));
+              };
+              const onUp = () => {
+                setSplitDragging(false);
+                document.body.classList.remove(resizeClass);
+                window.removeEventListener("pointermove", onMove);
+                window.removeEventListener("pointerup", onUp);
+              };
+              window.addEventListener("pointermove", onMove);
+              window.addEventListener("pointerup", onUp);
+            }}
+          />
+        )}
 
         {!hideInspector && (
         <aside
           className={
+            // Force every label, help line, textarea, and chip to the same 14px
+            // body size — child utilities like text-[10px]/text-xs otherwise win.
             fullscreen
-              ? "w-full lg:w-80 lg:max-w-[24rem] shrink-0 overflow-auto rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3"
+              ? "rf-inspector w-full lg:w-80 lg:max-w-[24rem] shrink-0 overflow-auto rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3 text-[14px] [&_*]:!text-[14px]"
               : fillHeight
-                ? "w-full lg:w-72 h-full overflow-auto shrink-0 rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3"
-                : "w-full lg:w-72 lg:h-[360px] lg:overflow-auto shrink-0 rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3"
+                ? "rf-inspector w-full overflow-auto min-h-0 min-w-0 rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3 text-[14px] [&_*]:!text-[14px]"
+                : "rf-inspector w-full lg:w-72 lg:h-[360px] lg:overflow-auto shrink-0 rounded border border-[#c8c4b4] bg-[#dddacb] p-4 space-y-3 text-[14px] [&_*]:!text-[14px]"
           }
-          // When the canvas is collapsed, override the docked height cap
-          // (max-height:34%) so the inspector expands to fill the row.
+          // fillHeight: grow into the remaining share (below canvas when stacked,
+          // beside canvas when split) so the panel always fills the free space.
           style={
-            canvasCollapsed && !fullscreen
-              ? { maxHeight: "none", height: "100%", flex: "1 1 auto" }
+            !fullscreen && fillHeight
+              ? { maxHeight: "none", flex: "1 1 0", minHeight: 0, minWidth: 0 }
               : undefined
           }
         >
@@ -3691,7 +3728,7 @@ export function EditorInner<TOutput>({
                 key={id}
                 type="button"
                 onClick={() => setInspectorTab(id)}
-                className={`text-[10px] uppercase tracking-widest font-sans px-2 py-1 rounded ${
+                className={`text-[14px] font-sans px-2 py-1 rounded ${
                   inspectorTab === id
                     ? "bg-[#cbc9ba] text-gray-900"
                     : "text-gray-500 hover:text-gray-800"

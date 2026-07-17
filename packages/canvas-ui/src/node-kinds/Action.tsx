@@ -325,7 +325,7 @@ export const PROMPT: NodeKindDef = {
   kind: "prompt",
   toolbarLabel: "+ Prompt",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-sky-400 text-sky-900 bg-sky-50 hover:bg-sky-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-sky-400 text-sky-900 bg-sky-50 hover:bg-sky-100 rounded-full",
   component: PromptNode,
   defaultLabel: "new prompt",
   defaultData: {
@@ -355,7 +355,7 @@ export const CODE: NodeKindDef = {
   kind: "code",
   toolbarLabel: "+ Code",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-slate-700 text-slate-50 bg-slate-900 hover:bg-slate-800 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-slate-700 text-slate-50 bg-slate-900 hover:bg-slate-800 rounded-full",
   component: CodeNode,
   defaultLabel: "state mutation",
   defaultData: {

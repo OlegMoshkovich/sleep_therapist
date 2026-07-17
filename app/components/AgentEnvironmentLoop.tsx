@@ -32,7 +32,7 @@ export interface AgentEnvironmentLoopProps {
 }
 
 const LABEL_FONT =
-  '"Test American Grotesk", "Styrene A", system-ui, -apple-system, sans-serif';
+  'var(--font-app), system-ui, -apple-system, sans-serif';
 
 export default function AgentEnvironmentLoop({
   className,

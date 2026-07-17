@@ -122,7 +122,7 @@ export const DISPLAY: NodeKindDef = {
   kind: "display",
   toolbarLabel: "+ Display",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-emerald-500 text-emerald-900 bg-emerald-50 hover:bg-emerald-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-500 text-emerald-900 bg-emerald-50 hover:bg-emerald-100 rounded-full",
   component: DisplayNode,
   defaultLabel: "display output",
   defaultData: {

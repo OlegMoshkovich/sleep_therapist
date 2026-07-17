@@ -200,35 +200,11 @@ export function RightDrawer({
             }}
           >
             <span className="drawer-tab-label">{DRAWER_LABEL[id]}</span>
-            {/* Per-tab close removed — the whole drawer is dismissed via the
-                collapse button (desktop) or by flicking the grabber down (mobile). */}
+            {/* Per-tab close removed. The whole drawer is toggled from the right
+                rail's panel icon (desktop) or by flicking the grabber down (mobile). */}
           </div>
         ))}
       </div>
-        {onDismiss && !isMobile && (
-          <button
-            type="button"
-            className="drawer-collapse"
-            aria-label="Close panel"
-            title="Close panel"
-            onClick={onDismiss}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="18"
-              height="18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
-              <line x1="14.5" y1="4.5" x2="14.5" y2="19.5" />
-            </svg>
-          </button>
-        )}
       </div>
 
       {tabIds.map((id) => (

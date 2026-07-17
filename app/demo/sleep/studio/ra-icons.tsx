@@ -47,6 +47,8 @@ export const Ic = {
   Chevron: mk(<path d="M6 9l6 6 6-6" />),
   Shield: mk(<path d="M12 3l8 3v5c0 5-3.5 8-8 9.5C7.5 19 4 16 4 11V6z" />),
   Grid: mk(<><rect x="3.5" y="3.5" width="7" height="7" rx="1.4" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.4" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.4" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.4" /></>),
+  /* Connected nodes — reads as a flow/graph, distinct from Grid (Observability). */
+  Workflow: mk(<><rect x="3" y="3" width="6" height="6" rx="1.2" /><rect x="15" y="3" width="6" height="6" rx="1.2" /><rect x="15" y="15" width="6" height="6" rx="1.2" /><rect x="3" y="15" width="6" height="6" rx="1.2" /><path d="M9 6h6" /><path d="M18 9v6" /><path d="M15 18H9" /></>),
   List: mk(<><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="15" y2="18" /></>),
   Sliders: mk(<><line x1="4" y1="7" x2="20" y2="7" /><circle cx="15" cy="7" r="2.4" /><line x1="4" y1="16" x2="20" y2="16" /><circle cx="9" cy="16" r="2.4" /></>),
   User: mk(<><circle cx="12" cy="8" r="3.5" /><path d="M5 20c1-3.6 4-5.2 7-5.2s6 1.6 7 5.2" /></>),

@@ -199,9 +199,17 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* collapsed right drawer rail — mirror of .sidebar.rail, docked on the right */
 .ra-scope .right-rail{width:64px;flex:0 0 64px;background:var(--panel);border-left:none;
   display:flex;flex-direction:column;align-items:center;padding:16px 0 14px;gap:8px;min-height:0;}
+/* When a right drawer is open, the rail floats at the drawer's left edge (its
+   `right` is set inline to the live drawer width, so it tracks resizing). It's
+   out of the flex flow, transparent, and click-through except on the icons, and
+   sits just below the drawer's resize handle so dragging still works. */
+.ra-scope .right-rail.floating{position:absolute;top:0;bottom:0;right:0;width:64px;flex:none;
+  z-index:22;background:transparent;pointer-events:none;padding-top:12px;}
+.ra-scope .right-rail.floating > *{pointer-events:auto;}
 .ra-scope .rail-btn{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:12px;color:var(--text-2);border:1px solid transparent;}
 .ra-scope .rail-flip svg{transform:rotate(180deg);}
 .ra-scope .rail-btn:hover{background:var(--surface);color:var(--text);}
+.ra-scope .rail-btn.on{background:transparent;color:var(--accent);border-color:transparent;}
 .ra-scope .rail-btn.accent{border:1px solid transparent;background:transparent;color:var(--accent);}
 .ra-scope .rail-btn.accent:hover{background:var(--surface);}
 .ra-scope .rail-div{display:flex;color:var(--text-3);padding:6px 0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);width:32px;justify-content:center;}
@@ -340,17 +348,21 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    (a border) and the muted inactive color would be wiped out. */
 .ra-scope .obs-setup .obs-setup-chip{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0;
   border:none;border-bottom:2px solid transparent;border-radius:0;padding:0 2px;background:none;
-  color:var(--text);font-size:13px;font-weight:400;white-space:nowrap;margin-bottom:-1px;}
+  color:var(--text);font-size:14px;font-weight:400;white-space:nowrap;margin-bottom:-1px;
+  outline:none;box-shadow:none;}
 .ra-scope .obs-setup .obs-setup-chip:hover{background:none;color:var(--text);}
+.ra-scope .obs-setup .obs-setup-chip:focus,
+.ra-scope .obs-setup .obs-setup-chip:focus-visible{outline:none;box-shadow:none;}
 .ra-scope .obs-setup .obs-setup-chip svg{flex:0 0 auto;color:currentColor;}
-/* Active tab while its section is docked inline below. */
+/* Active tab while its section is docked inline below — same 2px text-width
+   underline as Model Setup (.drawer-tab.on). */
 .ra-scope .obs-setup .obs-setup-chip.on{background:none;color:var(--text);border-bottom-color:var(--text);}
 .ra-scope .obs-setup .obs-setup-chip.on svg{color:currentColor;}
 /* Save + Pop out, right-aligned on the nav bar (no separate title row). Scoped
    under `.obs-setup` to out-specify the global button reset. */
 .ra-scope .obs-setup .obs-setup-actions{margin-left:auto;display:flex;align-items:center;gap:18px;}
 .ra-scope .obs-setup .obs-setup-action{display:inline-flex;align-items:center;gap:6px;
-  font-family:var(--serif);font-size:13px;font-weight:400;color:var(--text);white-space:nowrap;}
+  font-family:var(--serif);font-size:14px;font-weight:400;color:var(--text);white-space:nowrap;}
 .ra-scope .obs-setup .obs-setup-action:hover{color:var(--text);}
 .ra-scope .obs-setup .obs-setup-action:disabled{opacity:.4;cursor:default;}
 .ra-scope .obs-setup .obs-setup-action svg{flex:0 0 auto;}
@@ -364,30 +376,70 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-docked{position:static;inset:auto;z-index:auto;
   display:flex;flex-direction:column;flex:1;min-height:0;background:var(--sc-bg);}
 .ra-scope .obs-docked .obs-docked-bar{height:46px;padding:0 8px 0 16px;display:flex;align-items:center;}
-/* Header label + controls share the panel's unified 13px, normal weight, and
+/* Header label + controls share the panel's unified 14px, normal weight, and
    the same ink color as the rest of the labels. The label uses the same
    proportional font as the nav (not the wider monospace) so it reads at the
    same size. */
-.ra-scope .obs-docked .obs-docked-bar .sc-lbl{font-size:13px;font-weight:400;color:var(--sc-ink);
+.ra-scope .obs-docked .obs-docked-bar .sc-lbl{font-size:14px;font-weight:400;color:var(--sc-ink);
   font-family:var(--serif);letter-spacing:0;}
-.ra-scope .obs-docked .obs-docked-bar .sc-close{font-size:13px;font-weight:400;color:var(--sc-ink);}
-.ra-scope .obs-docked .obs-docked-body{flex:1;min-height:0;overflow:auto;padding:4px 14px 16px;}
+.ra-scope .obs-docked .obs-docked-bar .sc-close{font-size:14px;font-weight:400;color:var(--sc-ink);}
+.ra-scope .obs-docked .obs-docked-body{flex:1;min-height:0;overflow:auto;padding:18px 14px 16px;}
 .ra-scope .obs-docked .obs-docked-body .sc-pane-inner{max-width:none;}
 .ra-scope .obs-docked .obs-docked-body .sc-pane-head{display:none;}
-.ra-scope .obs-docked .obs-docked-body .sc-pane-fill{min-height:100%;}
+.ra-scope .obs-docked .obs-docked-body .sc-pane-fill{min-height:100%;display:flex;flex-direction:column;}
+/* Canvas panes (State/Policy) sit flush under the Knowledge/State/Policy nav so
+   the canvas tab bar reads as the next stacked row — matching the tight rhythm
+   of the Model Setup / Knowledge rows above. Text panes (Knowledge) keep the
+   18px top breathing room; only panes that actually contain a canvas go flush. */
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host){padding-top:0;padding-bottom:0;}
+.ra-scope .obs-docked .obs-docked-body .sc-canvas-host{margin-top:0;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+.ra-scope .obs-docked .obs-docked-body .sc-canvas-host > *,
+.ra-scope .obs-docked .obs-docked-body .sc-canvas-host .rf-canvas-shell{
+  flex:1 1 auto;min-height:0;display:flex;flex-direction:column;height:100%;}
+.ra-scope .obs-docked .obs-docked-body .sc-canvas-host .rf-canvas-shell > *{
+  flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
 /* In the narrow drawer the canvas inspector stacks below the board. The canvas
    keys its board/inspector split off the `lg:` viewport breakpoint (≥1024px),
    which is wrong inside a ~420px drawer — force the stacked, full-width layout
    so the board isn't squeezed beside the 288px inspector. Pop out for the wide
    side-by-side editing view. */
 .ra-scope .obs-docked .sc-stage{grid-template-columns:1fr;}
-.ra-scope .obs-docked .rf-canvas-body{flex-direction:column;}
+.ra-scope .obs-docked .rf-canvas-body{flex-direction:column;flex:1 1 auto;min-height:0;}
 .ra-scope .obs-docked .rf-canvas-body > *{width:100%;max-width:none;}
-/* The canvas fills the available height and the inspector takes a bounded share
-   below it. fillHeight mode measures rf-canvas-body's height from the viewport
-   (and recomputes on resize), so the canvas follows the window height. */
-.ra-scope .obs-docked .rf-canvas-surface{flex:1 1 auto;height:auto;min-height:240px;}
-.ra-scope .obs-docked .rf-canvas-body > aside{flex:0 0 auto;height:auto;max-height:34%;}
+/* Canvas/inspector heights are driven by the drag split in EditorInner
+   (flex-basis %). Slot + aside fill their assigned share. */
+.ra-scope .obs-docked .rf-canvas-slot{min-height:0;}
+.ra-scope .obs-docked .rf-canvas-slot .rf-canvas-surface{height:100%;min-height:0;max-height:none;}
+.ra-scope .obs-docked .rf-canvas-body > aside{
+  min-height:0;max-height:none;overflow:auto;}
+/* Horizontal drag handle between canvas and inspector / state vars and canvas. */
+.rf-vsplit,.sc-vsplit{
+  flex:0 0 9px;position:relative;cursor:row-resize;touch-action:none;z-index:4;
+  margin:0 -14px; /* full-bleed under docked body padding */}
+.rf-vsplit{margin:0;}
+.rf-vsplit::before,.sc-vsplit::before{
+  content:"";position:absolute;left:0;right:0;top:50%;height:2px;transform:translateY(-50%);
+  background:transparent;transition:background .12s;}
+.rf-vsplit:hover::before,.rf-vsplit.active::before,
+.sc-vsplit:hover::before,.sc-vsplit.active::before{background:var(--accent, #c2611f);}
+/* Inspector panel — flatten every text run to one uniform style: same family
+   (Inter, killing the monospace node-kind / stepType spans and default <pre>
+   monospace), 14px body size, normal case, and base tracking. Removes the
+   mixed uppercase-label / monospace / serif / tiny text-[10px|11px]
+   treatments so the whole panel reads as one font. */
+.rf-inspector,
+.rf-inspector *,
+.rf-canvas-body > aside,
+.rf-canvas-body > aside *{
+  font-family:var(--font-app) !important;
+  font-size:var(--text-size, 14px) !important;
+  line-height:1.5 !important;
+  letter-spacing:var(--text-tracking) !important;
+}
+.rf-inspector .uppercase,
+.rf-canvas-body > aside .uppercase{text-transform:none;}
+.rf-inspector .tracking-widest,
+.rf-canvas-body > aside .tracking-widest{letter-spacing:var(--text-tracking);}
 /* Pop-out / dock toggle button: icon + label, matches the mono .sc-close. */
 .sysconf .obs-dock-toggle{display:inline-flex;align-items:center;gap:5px;}
 .sysconf .obs-dock-toggle svg{flex:0 0 auto;}
@@ -496,7 +548,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .drawer-tabbar{flex:0 0 auto;height:46px;display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);}
 /* Tabs stay on ONE line and scroll horizontally (never vertically). The
    scrollbar is hidden — scroll with trackpad / shift-wheel. */
-.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;gap:2px;padding:0 8px;
+.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;gap:22px;padding:0 16px;
   overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none;}
 .ra-scope .drawer-tabs::-webkit-scrollbar{display:none;}
 /* Close the whole drawer in one click (no need to × each tab). */
@@ -543,13 +595,43 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   border-radius:8px;color:var(--text-2);background:var(--surface);border:1px solid var(--line);cursor:pointer;}
 .ra-scope .bottom-drawer-close-fallback:hover{color:var(--text);}
 @media(min-width:1024px){.ra-scope .bottom-drawer-close-fallback{display:none;}}
-/* Small top gap so the tab bar clears the resize splitter that straddles the top edge. */
-.ra-scope .bottom-drawer-body{flex:1;min-height:0;padding:8px 14px 12px;overflow:auto;}
+/* Small top gap so the tab bar clears the resize splitter that straddles the top edge.
+   Flex column + hidden overflow so the fillHeight canvas|inspector row can size
+   to the drawer (side-by-side), unlike the stacked side-drawer column. */
+.ra-scope .bottom-drawer-body{flex:1;min-height:0;padding:8px 14px 12px;overflow:hidden;
+  display:flex;flex-direction:column;}
+.ra-scope .bottom-drawer-body .rf-canvas-shell,
+.ra-scope .bottom-drawer-body .rf-canvas-shell > *{
+  flex:1 1 auto;min-height:0;min-width:0;display:flex;flex-direction:column;}
+/* Bottom drawer: wide board | inspector side by side (panelLayout="split"). */
+.ra-scope .bottom-drawer .rf-canvas-body{
+  flex-direction:row;flex:1 1 auto;min-height:0;min-width:0;}
+.ra-scope .bottom-drawer .rf-canvas-slot{min-width:0;min-height:0;height:100%;}
+.ra-scope .bottom-drawer .rf-canvas-slot .rf-canvas-surface,
+.ra-scope .bottom-drawer .rf-canvas-surface{
+  height:100%;min-height:0;max-height:none;flex:1 1 auto;min-width:0;}
+.ra-scope .bottom-drawer .rf-canvas-body > aside{
+  min-width:240px;min-height:0;max-height:none;height:auto;align-self:stretch;overflow:auto;}
+/* Horizontal drag handle between canvas and inspector (bottom drawer split). */
+.rf-hsplit{
+  flex:0 0 9px;position:relative;cursor:col-resize;touch-action:none;z-index:4;}
+.rf-hsplit::before{
+  content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;transform:translateX(-50%);
+  background:transparent;transition:background .12s;}
+.rf-hsplit:hover::before,.rf-hsplit.active::before{background:var(--accent, #c2611f);}
 body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select:none !important;}
-.ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:7px 11px;cursor:pointer;white-space:nowrap;
-  color:var(--text);font-family:var(--serif);font-size:13px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:-1px;}
+body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select:none !important;}
+/* Same spacing model as the Knowledge/State/Policy nav (padding 0 2px + gap on
+   the row) so the active underline hugs the label identically instead of
+   spreading across wide tab padding. */
+.ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:0 2px;cursor:pointer;white-space:nowrap;
+  color:var(--text);font-family:var(--serif);font-size:14px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:-1px;
+  outline:none;box-shadow:none;}
 .ra-scope .drawer-tab:hover{color:var(--text);}
-.ra-scope .drawer-tab.on{color:var(--text);border-bottom-color:var(--accent);}
+.ra-scope .drawer-tab:focus,
+.ra-scope .drawer-tab:focus-visible{outline:none;box-shadow:none;}
+/* Same 2px text-hugging underline as Knowledge/State/Policy (.obs-setup-chip.on). */
+.ra-scope .drawer-tab.on{color:var(--text);border-bottom-color:var(--text);}
 .ra-scope .drawer-tab-x{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
   border-radius:5px;color:var(--text-3);font-size:10px;line-height:1;}
 .ra-scope .drawer-tab-x:hover{background:var(--surface-2);color:var(--text);}
@@ -817,7 +899,7 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
 .sysconf a{color:inherit;text-decoration:none;}
 .sysconf ::-webkit-scrollbar{width:10px;height:10px;}
 .sysconf ::-webkit-scrollbar-thumb{background:#bfbcab;border-radius:20px;border:3px solid transparent;background-clip:padding-box;}
-.sysconf .sc-lbl{font-family:var(--sc-mono);font-size:10px;letter-spacing:.3px;color:var(--sc-faint);}
+.sysconf .sc-lbl{font-family:var(--sc-mono);font-size:13px;letter-spacing:.3px;color:var(--sc-faint);}
 
 /* top bar */
 .sysconf .sc-bar{height:54px;flex:0 0 54px;display:flex;align-items:center;gap:14px;padding:0 18px;border-bottom:1px solid var(--sc-line);}
@@ -887,7 +969,7 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
 .sysconf .sc-pane-inner{max-width:880px;}
 .sysconf .sc-pane-head{margin-bottom:14px;}
 .sysconf .sc-pane-head .sc-lbl{display:block;margin-bottom:2px;}
-.sysconf .sc-pane-head h1{font-family:var(--sc-sans);font-weight:800;font-size:20px;letter-spacing:-.4px;margin:0 0 3px;}
+.sysconf .sc-pane-head h1{font-family:var(--font-app);font-weight:var(--title-weight);font-size:var(--text-size);letter-spacing:var(--text-tracking);margin:0 0 3px;}
 .sysconf .sc-pane-head p{margin:0;font-family:var(--sc-serif);font-size:13.5px;color:var(--sc-ink-2);max-width:none;white-space:nowrap;}
 
 /* overview */
@@ -911,7 +993,7 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
 .sysconf .sc-check .mark.done{background:var(--sc-accent);color:#fff;}
 .sysconf .sc-check .mark.todo{border:1.5px dashed var(--sc-input-line);color:var(--sc-faint);}
 .sysconf .sc-check .ci .nm{font-size:14px;flex:1;}
-.sysconf .sc-check .ci .meta{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);}
+.sysconf .sc-check .ci .meta{font-family:var(--sc-mono);font-size:13px;color:var(--sc-ink-3);}
 
 /* form bits */
 .sysconf .sc-field-lbl{display:block;margin:20px 0 8px;}
@@ -946,7 +1028,7 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
 .sysconf .sc-ds-row{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;}
 .sysconf .sc-ds-row:hover{background:#e4e2d4;}
 .sysconf .sc-ds-row .nm{font-family:var(--sc-sans);font-weight:700;font-size:15px;}
-.sysconf .sc-ds-row .meta{font-family:var(--sc-mono);font-size:11px;color:var(--sc-ink-3);white-space:nowrap;}
+.sysconf .sc-ds-row .meta{font-family:var(--sc-mono);font-size:13px;color:var(--sc-ink-3);white-space:nowrap;}
 .sysconf .sc-ds-row .sp{flex:1;}
 .sysconf .sc-ds-row .cv{color:var(--sc-ink-3);}
 .sysconf .sc-ds.open .sc-ds-row .cv{transform:rotate(180deg);}
@@ -958,24 +1040,49 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
 .sysconf .sc-rec-empty{border:1px solid var(--sc-line-soft);border-radius:7px;padding:12px 14px;margin-top:6px;color:var(--sc-ink-3);font-family:var(--sc-serif);font-size:13.5px;}
 
 /* state schema */
-/* Current extracted state values (age, gender, …) shown atop the State pane. */
-.sysconf .sc-curstate{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);padding:12px 14px;margin-bottom:14px;}
+/* Current extracted state values (age, gender, …) shown atop the State pane.
+   Always full-bleed (cancel docked-body 14px side padding) with a fixed 16px
+   inset so the "State variables" title stays put when expanding/collapsing —
+   same column as .drawer-tabs / .obs-setup. */
+.sysconf .sc-curstate{
+  margin:0 -14px 0;padding:0 0 12px;flex:0 0 auto;
+  border-bottom:1px solid var(--sc-line);}
 .sysconf .sc-curstate > .sc-lbl{display:block;margin-bottom:9px;}
-/* Collapsible "Current state" header — styled like the Knowledge/State/Policy
-   nav (proportional font, 13px, dark ink, normal weight) rather than the muted
-   monospace caption. */
-.sysconf .sc-curstate-head{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;
-  padding:0;margin-bottom:9px;cursor:pointer;text-align:left;}
-.sysconf .sc-curstate-head > .sc-lbl{margin-bottom:0;font-family:var(--sc-serif);font-size:13px;
+/* Title row: chevron + "State variables" on the left, Edit/Done on the right. */
+.sysconf .sc-curstate-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;}
+/* Collapsible header — same 16px inset + 14px type in both open and closed. */
+.sysconf .sc-curstate-head{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;
+  background:none;border:none;padding:0;margin:0;cursor:pointer;text-align:left;}
+/* No focus outline on the accordion header — the click-persist ring read as an
+   unwanted blue box around "State variables". */
+.sysconf .sc-curstate-head:focus{outline:none;}
+/* Collapsed: lock to the same 46px height as the Model Setup / Knowledge nav
+   rows and vertically center the title. Padding on the bar is unchanged so
+   the label doesn't jump. */
+.sysconf .sc-curstate:has(.sc-curstate-head[aria-expanded="false"]){
+  height:46px;padding:0;margin-bottom:0;
+  display:flex;flex-direction:column;justify-content:center;}
+.sysconf .sc-curstate:has(.sc-curstate-head[aria-expanded="false"]) .sc-curstate-bar{
+  padding-top:0;padding-bottom:0;}
+.sysconf .sc-curstate-head > .sc-lbl{margin-bottom:0;font-family:var(--sc-serif);font-size:14px;
   font-weight:400;letter-spacing:0;text-transform:none;color:var(--sc-ink);}
 .sysconf .sc-curstate-head .sc-curstate-chev{flex:0 0 auto;color:var(--sc-ink);transition:transform .15s ease;}
 .sysconf .sc-curstate-head .sc-curstate-chev.open{transform:rotate(90deg);}
-.sysconf .sc-curstate-rows{display:flex;flex-wrap:wrap;gap:8px;}
+.sysconf .sc-curstate-rows{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;}
 .sysconf .sc-curstate-row{display:flex;align-items:baseline;gap:8px;border:1px solid var(--sc-line);border-radius:8px;padding:5px 11px;background:var(--sc-panel-2);}
 .sysconf .sc-curstate-k{font-family:var(--sc-mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--sc-ink-3);}
 .sysconf .sc-curstate-v{font-family:var(--sc-serif);font-size:13.5px;color:var(--sc-ink);font-weight:600;}
 .sysconf .sc-curstate-row.unset{opacity:.5;}
 .sysconf .sc-curstate-row.unset .sc-curstate-v{font-weight:400;}
+/* Edit / Done / + Add — right side of the State variables title row. */
+.sysconf .sc-curstate-actions{display:flex;align-items:center;gap:14px;margin:0 0 0 auto;padding:0;flex:0 0 auto;}
+.sysconf .sc-var-edit{font-family:var(--sc-mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--sc-ink-3);}
+.sysconf .sc-var-edit:hover{color:var(--sc-ink);}
+.sysconf .sc-var-list{display:flex;flex-direction:column;gap:6px;padding:0 16px;}
+.sysconf .sc-var-row{display:grid;grid-template-columns:1fr 116px 1fr 22px;gap:8px;align-items:center;}
+.sysconf .sc-var-row > *{min-width:0;}
+.sysconf .sc-var-row .sc-input,.sysconf .sc-var-row .sc-select{width:100%;font-family:var(--sc-mono);font-size:12px;padding:6px 9px;}
+.sysconf .sc-var-empty{color:var(--sc-ink-3);font-family:var(--sc-serif);font-size:13px;padding:4px 0;}
 .sysconf .sc-schema{border:1px solid var(--sc-line);border-radius:10px;background:var(--sc-panel);overflow:hidden;}
 .sysconf .sc-schema-h,.sysconf .sc-schema-r{display:grid;grid-template-columns:1.4fr 150px 1fr 30px;gap:12px;align-items:center;padding:9px 14px;}
 .sysconf .sc-schema-h{background:var(--sc-panel-2);border-bottom:1px solid var(--sc-line);}
@@ -997,7 +1104,7 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
 .sysconf .sc-block-h{display:flex;align-items:center;gap:10px;padding:13px 15px;cursor:pointer;}
 .sysconf .sc-block-h:hover{background:#e4e2d4;}
 .sysconf .sc-block-h .nm{font-family:var(--sc-sans);font-weight:700;font-size:14px;flex:1;}
-.sysconf .sc-block-h .meta{font-family:var(--sc-mono);font-size:10.5px;color:var(--sc-ink-3);}
+.sysconf .sc-block-h .meta{font-family:var(--sc-mono);font-size:13px;color:var(--sc-ink-3);}
 .sysconf .sc-block-h .cv{color:var(--sc-ink-3);}
 .sysconf .sc-block-b{padding:4px 15px 16px;border-top:1px solid var(--sc-line-soft);}
 
@@ -1088,7 +1195,7 @@ body.ra-resizing-v,body.ra-resizing-v *{cursor:row-resize !important;user-select
   .sysconf .sc-close{margin-left:auto;}
   /* tighter content padding */
   .sysconf .sc-pane{padding:20px 16px 48px;}
-  .sysconf .sc-pane-head h1{font-size:22px;}
+  .sysconf .sc-pane-head h1{font-size:var(--text-size);}
   .sysconf .sc-editor-body{padding:14px 12px 24px;}
   .sysconf .sc-editor-bar{gap:8px;padding:0 12px;}
   .sysconf .sc-editor-bar .sub{display:none;}

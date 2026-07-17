@@ -44,7 +44,7 @@ export const CONDITION: NodeKindDef = {
   kind: "condition",
   toolbarLabel: "+ Condition",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-amber-400 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-400 text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-full",
   component: ConditionNode,
   defaultLabel: "new condition?",
   sourceHandles: [

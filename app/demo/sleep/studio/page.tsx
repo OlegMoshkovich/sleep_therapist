@@ -19,6 +19,11 @@ import AuthModal from "../../../components/AuthModal";
 import SiteLogo from "../../../components/SiteLogo";
 import { useVoiceRecorder, useTTS } from "./useVoice";
 import Canvas, { type CanvasDoc } from "../../../components/canvas/Canvas";
+import { WORKFLOW_CANVAS_NODE_KINDS } from "../../../components/canvas/node-kinds";
+import {
+  WORKFLOW_OVERVIEW_CANVAS_MARKER,
+  WORKFLOW_OVERVIEW_CANVAS_NAME,
+} from "@airlab/orchestration-core/general-orchestration";
 
 const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
 const MONO_PREF_KEY = "sleep-studio-mono-theme";
@@ -679,7 +684,8 @@ function MobileNav({
 
 /* ---------------- compact (collapsed) right drawer rail ---------------- */
 function RightRail({
-  onOpen,
+  panelOpen,
+  onTogglePanel,
   isAdmin,
   canvasOpen,
   onToggleCanvas,
@@ -687,8 +693,11 @@ function RightRail({
   onToggleAutoSpeak,
   isSpeaking,
   onStopSpeaking,
+  floating = false,
+  rightOffset,
 }: {
-  onOpen: (id: DrawerId) => void;
+  panelOpen: boolean;
+  onTogglePanel: () => void;
   isAdmin: boolean;
   canvasOpen: boolean;
   onToggleCanvas: () => void;
@@ -696,23 +705,39 @@ function RightRail({
   onToggleAutoSpeak: () => void;
   isSpeaking: boolean;
   onStopSpeaking: () => void;
+  /** When a right drawer is open, the rail floats at the drawer's left edge
+   *  (`rightOffset` px from the body's right edge) instead of docking as a flex
+   *  column, and follows the drawer as its width is resized. */
+  floating?: boolean;
+  rightOffset?: number;
 }) {
   return (
-    <aside className="right-rail">
+    <aside
+      className={"right-rail" + (floating ? " floating" : "")}
+      style={floating && rightOffset != null ? { right: rightOffset } : undefined}
+    >
+      {/* Panel icon = toggle: opens the right drawer when closed, closes it when
+          open. Highlighted while the drawer is open. */}
       {isAdmin && (
-        <button className="rail-btn" title="Model Setup" onClick={() => onOpen("modelsetup")}>
+        <button
+          className={"rail-btn" + (panelOpen ? " on" : "")}
+          title={panelOpen ? "Close panel" : "Open Model Setup"}
+          aria-label={panelOpen ? "Close panel" : "Open Model Setup"}
+          aria-pressed={panelOpen}
+          onClick={onTogglePanel}
+        >
           <Ic.Panel size={18} />
         </button>
       )}
-      {/* Canvas launcher, docked in the rail directly under the drawer icon. */}
+      {/* Workflow launcher, docked in the rail directly under the drawer icon. */}
       <button
-        className={"rail-btn" + (canvasOpen ? " accent" : "")}
-        title={canvasOpen ? "Close canvas" : "Open canvas"}
-        aria-label={canvasOpen ? "Close canvas" : "Open canvas"}
+        className={"rail-btn" + (canvasOpen ? " on" : "")}
+        title={canvasOpen ? "Close workflow" : "Open workflow"}
+        aria-label={canvasOpen ? "Close workflow" : "Open workflow"}
         aria-pressed={canvasOpen}
         onClick={onToggleCanvas}
       >
-        <Ic.Grid size={18} />
+        <Ic.Workflow size={18} />
       </button>
       <VoiceReplyButton
         className="rail-btn"
@@ -1073,26 +1098,126 @@ function Composer({
   );
 }
 
-/* ---------------- bottom canvas drawer ---------------- */
-// Minimal starter graph so the freshly opened canvas isn't blank.
-const BOTTOM_CANVAS_SEED: CanvasDoc = {
+/* ---------------- bottom workflow drawer ---------------- */
+// Same wiring as airlab's Primary / Environment Workflow canvas:
+// WORKFLOW_CANVAS_NODE_KINDS (includes Stage) + an Overall Workflow overview
+// tagged with the shared workflow-overview marker so stage nodes compile/inspect
+// like the orchestration daemon's editable workflow surface.
+const BOTTOM_WORKFLOW_SEED: CanvasDoc = {
   version: 2,
-  activeId: "main",
+  activeId: "overall-workflow",
   canvases: [
     {
-      id: "main",
-      name: "Main",
-      freeText: "",
+      id: "overall-workflow",
+      name: WORKFLOW_OVERVIEW_CANVAS_NAME,
+      freeText: [
+        WORKFLOW_OVERVIEW_CANVAS_MARKER,
+        "Primary agent: Sleep Assistant",
+        "Editable overview of the main sleep-care stages. Edit stages, add loops, or partition a stage into a child workflow.",
+      ].join("\n"),
       graph: {
         nodes: [
           {
-            id: "start",
+            id: "wf-start",
             type: "start",
-            position: { x: 400, y: 80 },
-            data: { label: "Start building your flow here." },
+            position: { x: 80, y: 140 },
+            data: {
+              label:
+                "Editable overview of the main workflow stages. Describe the high-level turn-taking process shared with the sleeper.",
+              workflowOverview: true,
+              runtimeRole: "workflow_overview",
+              workflowCanvasId: "overall-workflow",
+            },
+          },
+          {
+            id: "wf-stage-intake",
+            type: "stage",
+            position: { x: 420, y: 120 },
+            data: {
+              label:
+                "Intake\nGather the sleep complaint, schedule, and constraints.\nEntry: conversation opens.\nDone: enough history to assess.",
+              workflowOverview: true,
+              runtimeRole: "workflow_overview",
+              workflowCanvasId: "overall-workflow",
+              workflowStageId: "intake",
+              workflowStageName: "Intake",
+            },
+          },
+          {
+            id: "wf-stage-assess",
+            type: "stage",
+            position: { x: 850, y: 120 },
+            data: {
+              label:
+                "Assess\nIdentify patterns (onset, maintenance, schedule, habits).\nEntry: intake complete.\nDone: working hypothesis shared with the sleeper.",
+              workflowOverview: true,
+              runtimeRole: "workflow_overview",
+              workflowCanvasId: "overall-workflow",
+              workflowStageId: "assess",
+              workflowStageName: "Assess",
+            },
+          },
+          {
+            id: "wf-stage-guide",
+            type: "stage",
+            position: { x: 1280, y: 120 },
+            data: {
+              label:
+                "Guide\nOffer CBT-I style recommendations and next steps.\nEntry: assessment agreed.\nDone: plan accepted or revised.",
+              workflowOverview: true,
+              runtimeRole: "workflow_overview",
+              workflowCanvasId: "overall-workflow",
+              workflowStageId: "guide",
+              workflowStageName: "Guide",
+            },
+          },
+          {
+            id: "wf-stage-followup",
+            type: "stage",
+            position: { x: 1710, y: 120 },
+            data: {
+              label:
+                "Follow up\nCheck progress, adjust the plan, or loop back.\nEntry: plan in place.\nDone: sleeper is stable or returns to Assess.",
+              workflowOverview: true,
+              runtimeRole: "workflow_overview",
+              workflowCanvasId: "overall-workflow",
+              workflowStageId: "followup",
+              workflowStageName: "Follow up",
+            },
           },
         ],
-        edges: [],
+        edges: [
+          { id: "e-start-intake", source: "wf-start", target: "wf-stage-intake" },
+          {
+            id: "e-intake-assess",
+            source: "wf-stage-intake",
+            target: "wf-stage-assess",
+            sourceHandle: "workflow-next-2",
+            targetHandle: "workflow-previous-2",
+          },
+          {
+            id: "e-assess-guide",
+            source: "wf-stage-assess",
+            target: "wf-stage-guide",
+            sourceHandle: "workflow-next-2",
+            targetHandle: "workflow-previous-2",
+          },
+          {
+            id: "e-guide-followup",
+            source: "wf-stage-guide",
+            target: "wf-stage-followup",
+            sourceHandle: "workflow-next-2",
+            targetHandle: "workflow-previous-2",
+          },
+          {
+            id: "e-followup-assess-loop",
+            source: "wf-stage-followup",
+            target: "wf-stage-assess",
+            label: "loop / return",
+            sourceHandle: "workflow-loop-2",
+            targetHandle: "workflow-loop-target-2",
+          },
+        ],
       },
     },
   ],
@@ -1146,12 +1271,12 @@ function BottomCanvasDrawer({
 
   if (!open) return null;
   return (
-    <div className="bottom-drawer" style={{ height }} role="dialog" aria-label="Canvas">
+    <div className="bottom-drawer" style={{ height }} role="dialog" aria-label="Workflow">
       <div
         className={"bottom-drawer-resize" + (resizing ? " active" : "")}
         role="separator"
         aria-orientation="horizontal"
-        aria-label="Resize canvas (drag up or down; double-click to reset)"
+        aria-label="Resize workflow (drag up or down; double-click to reset)"
         title="Drag to resize"
         onPointerDown={onResizeDown}
         onDoubleClick={() => setHeight(Math.round(window.innerHeight * 0.55))}
@@ -1161,8 +1286,8 @@ function BottomCanvasDrawer({
       <button
         type="button"
         className="bottom-drawer-close-fallback"
-        aria-label="Close canvas"
-        title="Close canvas"
+        aria-label="Close workflow"
+        title="Close workflow"
         onClick={onClose}
       >
         <Ic.Close size={18} />
@@ -1170,17 +1295,22 @@ function BottomCanvasDrawer({
       <div className="bottom-drawer-body">
         <Canvas
           value={doc}
-          seedDoc={BOTTOM_CANVAS_SEED}
+          seedDoc={BOTTOM_WORKFLOW_SEED}
+          // Same node registry as airlab's RuntimeWorkflowCanvas (includes Stage).
+          nodeKinds={WORKFLOW_CANVAS_NODE_KINDS}
           fillHeight
+          // Wide bottom drawer: canvas | Inspector/Compiler side by side.
+          // (Side drawer Model Setup keeps the stacked column layout.)
+          panelLayout="split"
           onChange={({ doc }) => onDocChange(doc)}
           // Dock the close button into the canvas's own tab bar so the drawer
-          // header and the Main/+Canvas · Tools · Collapse row share one line.
+          // header and the Overall Workflow · Tools · Collapse row share one line.
           tabBarTrailing={
             <button
               type="button"
               className="bottom-drawer-close"
-              aria-label="Close canvas"
-              title="Close canvas"
+              aria-label="Close workflow"
+              title="Close workflow"
               onClick={onClose}
             >
               <Ic.Close size={16} />
@@ -1825,20 +1955,25 @@ function SleepStudioChat() {
             />
           </main>
 
-          {/* Collapsed right rail: everyone gets the voice-reply toggle; only
-              admins get the Model Setup panel button next to it. */}
-          {openDrawers.length === 0 && (
-            <RightRail
-              onOpen={openDrawer}
-              isAdmin={isAdmin}
-              canvasOpen={canvasOpen}
-              onToggleCanvas={() => setCanvasOpen((v) => !v)}
-              autoSpeak={autoSpeak}
-              onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
-              isSpeaking={isSpeaking}
-              onStopSpeaking={stopSpeaking}
-            />
-          )}
+          {/* Right rail: everyone gets the voice-reply toggle + Workflow launcher;
+              admins get the Model Setup panel button. Docked at the right edge
+              when no drawer is open; when a drawer IS open it floats at the
+              drawer's left edge and tracks its width. */}
+          <RightRail
+            panelOpen={openDrawers.length > 0}
+            onTogglePanel={() =>
+              openDrawers.length > 0 ? closeAllDrawers() : openDrawer("modelsetup")
+            }
+            isAdmin={isAdmin}
+            canvasOpen={canvasOpen}
+            onToggleCanvas={() => setCanvasOpen((v) => !v)}
+            autoSpeak={autoSpeak}
+            onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
+            isSpeaking={isSpeaking}
+            onStopSpeaking={stopSpeaking}
+            floating={openDrawers.length > 0}
+            rightOffset={obsWidth ?? obsBounds.def}
+          />
           {openDrawers.length === 0 && (
             <MobileNav
               onOpen={openDrawer}

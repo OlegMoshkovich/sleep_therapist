@@ -72,7 +72,7 @@ export const FOR: NodeKindDef = {
   kind: "for",
   toolbarLabel: "+ For",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-lime-500 text-lime-900 bg-lime-50 hover:bg-lime-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-lime-500 text-lime-900 bg-lime-50 hover:bg-lime-100 rounded-full",
   component: ForNode,
   defaultLabel: "Repeat the body.",
   sourceHandles: [

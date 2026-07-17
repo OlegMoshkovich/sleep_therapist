@@ -76,7 +76,7 @@ export const WHILE: NodeKindDef = {
   kind: "while",
   toolbarLabel: "+ While",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-orange-500 text-orange-900 bg-orange-50 hover:bg-orange-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-orange-500 text-orange-900 bg-orange-50 hover:bg-orange-100 rounded-full",
   component: WhileNode,
   defaultLabel: "condition?",
   sourceHandles: [

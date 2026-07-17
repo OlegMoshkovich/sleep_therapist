@@ -31,7 +31,7 @@ export const YIELD_TURN: NodeKindDef = {
   kind: "yield",
   toolbarLabel: "+ End turn",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-3 py-2 border border-amber-600 text-amber-950 bg-amber-50 hover:bg-amber-100 rounded",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-amber-600 text-amber-950 bg-amber-50 hover:bg-amber-100 rounded-full",
   component: YieldNode,
   defaultLabel: "pause here; continue on the next event",
   inspector: {
