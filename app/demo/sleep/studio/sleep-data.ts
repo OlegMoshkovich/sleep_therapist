@@ -186,40 +186,6 @@ Return exactly a JSON object of this form and nothing else:
 }`;
 
 /* ── Datasets (Knowledge) ── */
-export const DATASET_TYPES = ["string", "number", "boolean", "string[]", "URL", "json", "date"];
-export interface DatasetSpec {
-  name: string;
-  cols: [string, string][];
-  notes: string;
-  records: number;
-}
-export const DATASETS: DatasetSpec[] = [
-  {
-    name: "Sleep logs",
-    cols: [
-      ["date", "date"],
-      ["bedtime", "string"],
-      ["wake_time", "string"],
-      ["hours_slept", "number"],
-      ["awakenings", "number"],
-      ["quality", "number"],
-      ["notes", "string"],
-    ],
-    notes: "Nightly self-reported sleep records used to ground coaching advice.",
-    records: 0,
-  },
-  {
-    name: "Guidelines",
-    cols: [
-      ["topic", "string"],
-      ["source", "string"],
-      ["recommendation", "string"],
-    ],
-    notes: "Source types are {AASM, NHS, peer-reviewed}.",
-    records: 12,
-  },
-];
-
 /* ── Guideline topics (Domain Knowledge) ── */
 export interface GuidelineTopic {
   topic: string;

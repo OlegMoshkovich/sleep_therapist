@@ -51,8 +51,9 @@
   --danger:#555555;
 }
 /* Neutral scrollbars + accents that hard-code a hue (no token to catch them). */
-.ra-scope.ra-mono ::-webkit-scrollbar-thumb{background:#c9c9c9;}
-.ra-scope.ra-mono ::-webkit-scrollbar-thumb:hover{background:#b3b3b3;}
+.ra-scope.ra-mono{scrollbar-color:#bdbdbd transparent;}
+.ra-scope.ra-mono ::-webkit-scrollbar-thumb{background:#bdbdbd;}
+.ra-scope.ra-mono ::-webkit-scrollbar-thumb:hover{background:#a3a3a3;}
 .ra-scope.ra-mono .online-dot{background:#8a8a8a;box-shadow:0 0 8px #8a8a8a88;}
 /* The mic sets its recording color via an inline style (#F05025); neutralize it. */
 .ra-scope.ra-mono .comp-mic[style*="background"]{background:#111 !important;}
@@ -145,9 +146,10 @@
 .ra-scope button:not(.rf-canvas *){font-family:inherit;color:inherit;cursor:pointer;border:none;background:none;}
 .ra-scope input{font-family:inherit;}
 .ra-scope ::selection{background:var(--accent-soft);}
-.ra-scope ::-webkit-scrollbar{width:10px;height:10px;}
-.ra-scope ::-webkit-scrollbar-thumb{background:#d3cdbf;border-radius:20px;border:3px solid transparent;background-clip:padding-box;}
-.ra-scope ::-webkit-scrollbar-thumb:hover{background:#bfb8a7;background-clip:padding-box;border:3px solid transparent;}
+.ra-scope{scrollbar-width:thin;scrollbar-color:#c4c4c4 transparent;}
+.ra-scope ::-webkit-scrollbar{width:5px;height:5px;}
+.ra-scope ::-webkit-scrollbar-thumb{background:#c4c4c4;border-radius:99px;border:1px solid transparent;background-clip:padding-box;}
+.ra-scope ::-webkit-scrollbar-thumb:hover{background:#a8a8a8;background-clip:padding-box;border:1px solid transparent;}
 .ra-scope ::-webkit-scrollbar-track{background:transparent;}
 
 @keyframes ra-fadeUp{from{transform:translateY(8px);}to{transform:none;}}
@@ -187,12 +189,38 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   display:flex;flex-direction:column;padding:16px 14px 14px;min-height:0;}
 /* when the menu is open (expanded, not the collapsed rail) show a border on its edge */
 .ra-scope .sidebar:not(.rail){border-right:1px solid var(--line);}
-.ra-scope .side-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0 2px;}
+/* One content column: title, + New, search field edge, Recent, and list titles
+   share the same left inset (no extra per-row offsets). */
+.ra-scope .side-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:0;}
 /* size the collapse button to the title line height and top-align it,
    so its icon centers on the "Sleep Assistant" title line */
-.ra-scope .side-title{line-height:28px;}
+.ra-scope .side-title{line-height:1.4;}
 .ra-scope .side-close{margin-left:auto;flex:0 0 auto;align-self:flex-start;width:28px;height:28px;margin-top:0;}
 .ra-scope .topbar-toggle{padding:6px;}
+/* One type size across the expanded left rail (title, actions, list, account). */
+.ra-scope .sidebar:not(.rail){--side-text:14px;font-size:var(--side-text);}
+.ra-scope .sidebar:not(.rail) .side-title,
+.ra-scope .sidebar:not(.rail) .side-sub,
+.ra-scope .sidebar:not(.rail) .newbtn,
+.ra-scope .sidebar:not(.rail) .side-search,
+.ra-scope .sidebar:not(.rail) .conv-title,
+.ra-scope .sidebar:not(.rail) .conv-rename,
+.ra-scope .sidebar:not(.rail) .conv-empty p,
+.ra-scope .sidebar:not(.rail) .acct-name,
+.ra-scope .sidebar:not(.rail) .acct-sub,
+.ra-scope .sidebar:not(.rail) .avatar .mono,
+.ra-scope .sidebar:not(.rail) .pop-label,
+.ra-scope .sidebar:not(.rail) .pop-label .pill,
+.ra-scope .sidebar:not(.rail) .pop-row,
+.ra-scope .sidebar:not(.rail) .help-title,
+.ra-scope .sidebar:not(.rail) .help-intro,
+.ra-scope .sidebar:not(.rail) .help-section-title,
+.ra-scope .sidebar:not(.rail) .help-section-body{
+  font-size:var(--side-text);}
+/* Caps labels read larger at the same px — keep them a step smaller. */
+.ra-scope .sidebar:not(.rail) .recent-head,
+.ra-scope .sidebar:not(.rail) .role-pill{
+  font-size:11px;letter-spacing:.4px;}
 
 /* compact rail (collapsed sidebar) */
 .ra-scope .sidebar.rail{width:64px;flex:0 0 64px;align-items:center;padding:16px 0 14px;gap:8px;}
@@ -214,12 +242,13 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .rail-btn.accent:hover{background:var(--surface);}
 .ra-scope .rail-div{display:flex;color:var(--text-3);padding:6px 0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);width:32px;justify-content:center;}
 .ra-scope .rail-spacer{flex:1;}
-.ra-scope .side-title{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:.2px;white-space:nowrap;}
-.ra-scope .side-sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);}
+.ra-scope .side-title{font-family:var(--serif);font-size:14px;font-weight:500;letter-spacing:.2px;white-space:nowrap;}
+.ra-scope .side-sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:14px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);}
 
-.ra-scope .newbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--surface);
-  border:1px solid var(--line);border-radius:12px;padding:11px;font-size:14.5px;color:var(--text);white-space:nowrap;}
-.ra-scope .newbtn:hover{background:var(--surface-2);}
+/* Text link — no card padding, so "+" lines up with the title / list. */
+.ra-scope .newbtn{display:flex;align-items:center;justify-content:flex-start;gap:8px;width:100%;
+  background:transparent;border:none;border-radius:8px;padding:8px 0;font-size:14px;color:var(--text);white-space:nowrap;}
+.ra-scope .newbtn:hover{background:var(--surface);color:var(--text);}
 .ra-scope .newbtn .nb-ic{color:var(--accent);display:flex;}
 
 .ra-scope .searchwrap{position:relative;margin-top:12px;}
@@ -229,29 +258,27 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .side-search::placeholder{color:var(--text-3);}
 .ra-scope .side-search:focus{background:var(--surface-2);}
 
-.ra-scope .recent-head{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:10.5px;margin:18px 4px 8px;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:1.4px;text-transform:uppercase;white-space:nowrap;}
+.ra-scope .recent-head{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:11px;margin:18px 0 8px;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;}
 .ra-scope .recent-head .chev{margin-left:2px;opacity:.7;}
 
-.ra-scope .conv-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0;margin:0 -4px;padding:0 4px;}
-.ra-scope .conv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:var(--text-3);padding:20px;}
+.ra-scope .conv-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0;margin:0;padding:0;}
+.ra-scope .conv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:var(--text-3);padding:20px 0;}
 .ra-scope .conv-empty .ce-orb{width:38px;height:38px;border-radius:50%;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--text-4);}
-.ra-scope .conv-empty p{margin:0;font-size:13px;line-height:1.35;}
+.ra-scope .conv-empty p{margin:0;font-size:14px;line-height:1.35;}
 
-.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:10px;cursor:pointer;
+.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-radius:8px;cursor:pointer;
   position:relative;color:var(--text-2);}
 .ra-scope .conv-item:hover{background:var(--surface);color:var(--text);}
 .ra-scope .conv-item.active{background:var(--surface);color:var(--text);}
-.ra-scope .conv-item.active::before{content:"";position:absolute;left:2px;top:9px;bottom:9px;width:2.5px;border-radius:3px;background:var(--accent);}
+.ra-scope .conv-item.active::before{content:"";position:absolute;left:-10px;top:9px;bottom:9px;width:2.5px;border-radius:3px;background:var(--accent);}
 .ra-scope .conv-title{flex:1;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ra-scope .conv-rename{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--text);
   background:var(--elevated);border:1px solid var(--accent);border-radius:6px;padding:3px 7px;outline:none;}
-.ra-scope .conv-lock{color:var(--text-4);display:flex;flex:0 0 auto;}
-.ra-scope .conv-kebab{opacity:0;color:var(--text-3);display:flex;border-radius:6px;padding:2px;}
-.ra-scope .conv-item:hover .conv-kebab{opacity:1;}
+.ra-scope .conv-kebab{opacity:1;color:var(--text-3);display:flex;border-radius:6px;padding:2px;}
 .ra-scope .conv-kebab:hover{background:var(--surface-2);color:var(--text);}
-.ra-scope .conv-kebab.open{opacity:1;background:var(--surface-2);color:var(--text);}
-.ra-scope .conv-menu{position:absolute;top:34px;right:8px;z-index:30;min-width:138px;
+.ra-scope .conv-kebab.open{background:var(--surface-2);color:var(--text);}
+.ra-scope .conv-menu{position:absolute;top:34px;right:0;z-index:30;min-width:138px;
   background:var(--elevated);border:1px solid var(--line);border-radius:10px;padding:5px;
   box-shadow:0 10px 28px rgba(0,0,0,.18);}
 
@@ -264,13 +291,13 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.05), inset -4px -5px 10px rgba(0,0,0,.06);}
 .ra-scope .avatar.ring{box-shadow:0 0 0 1.5px var(--accent), 0 0 14px -3px var(--accent-soft);}
 .ra-scope .avatar .mono{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--serif);font-size:13px;color:#6c6759;letter-spacing:.5px;}
+  font-family:var(--serif);font-size:14px;color:#6c6759;letter-spacing:.5px;}
 
 .ra-scope .acct{display:flex;align-items:center;gap:10px;padding-top:11px;border-top:1px solid var(--line-soft);}
 .ra-scope .acct-meta{min-width:0;flex:1;}
-.ra-scope .acct-name{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ra-scope .acct-sub{font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:6px;margin-top:1px;}
-.ra-scope .role-pill{font-size:10px;letter-spacing:.4px;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:0 5px;}
+.ra-scope .acct-name{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .acct-sub{font-size:14px;color:var(--text-3);display:flex;align-items:center;gap:6px;margin-top:1px;}
+.ra-scope .role-pill{font-size:11px;letter-spacing:.4px;border:1px solid var(--accent);color:var(--accent);border-radius:6px;padding:0 5px;}
 .ra-scope .icon-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;
   color:var(--text-3);flex:0 0 auto;}
 .ra-scope .icon-btn:hover{background:var(--surface);color:var(--text);}
@@ -286,11 +313,11 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .acct-chip.open .chev{transform:rotate(180deg);}
 .ra-scope .popover{position:absolute;left:0;right:0;bottom:62px;background:var(--elevated);border:1px solid var(--line);
   border-radius:14px;box-shadow:0 18px 40px -12px rgba(40,36,28,.35);padding:7px;z-index:30;animation:ra-popIn .16s ease;}
-.ra-scope .pop-label{display:flex;align-items:center;gap:7px;font-size:10.5px;letter-spacing:1px;text-transform:uppercase;
+.ra-scope .pop-label{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:400;letter-spacing:normal;text-transform:uppercase;
   color:var(--text-3);padding:8px 9px 5px;}
 .ra-scope .pop-label.adm{color:var(--accent);}
-.ra-scope .pop-label .pill{font-size:9.5px;border:1px solid var(--accent);border-radius:6px;padding:0 5px;text-transform:none;letter-spacing:.3px;}
-.ra-scope .pop-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 9px;border-radius:9px;font-size:14px;color:var(--text);text-align:left;}
+.ra-scope .pop-label .pill{font-size:14px;font-weight:400;border:1px solid var(--accent);border-radius:6px;padding:0 5px;text-transform:none;letter-spacing:normal;}
+.ra-scope .pop-row{display:flex;align-items:center;gap:11px;width:100%;padding:9px 9px;border-radius:9px;font-size:14px;font-weight:400;color:var(--text);text-align:left;}
 .ra-scope .pop-row:hover{background:var(--surface);}
 .ra-scope .pop-row .ic{color:var(--text-3);display:flex;flex:0 0 auto;}
 .ra-scope .pop-adm .pop-row .ic{color:var(--accent);opacity:.9;}
@@ -333,10 +360,11 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line-soft);}
 .ra-scope .obs-meta{flex:1;min-width:0;}
 .ra-scope .obs-title{font-family:var(--serif);font-size:19px;font-weight:500;letter-spacing:.2px;line-height:28px;white-space:nowrap;}
-.ra-scope .obs-sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1.2px;
-  text-transform:uppercase;color:var(--text-3);margin-top:2px;}
+/* Same type feel as Model Setup nav (.obs-setup-chip / .drawer-tab): 14px, normal case. */
+.ra-scope .obs-sub{font-family:inherit;font-size:14px;font-weight:400;letter-spacing:normal;
+  text-transform:none;color:var(--text);margin-top:2px;}
 .ra-scope .obs-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto;align-self:flex-start;}
-.ra-scope .obs-clear{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;
+.ra-scope .obs-clear{font-family:inherit;font-size:14px;font-weight:400;letter-spacing:normal;text-transform:none;
   border:1px solid var(--line);border-radius:8px;padding:6px 10px;color:var(--text-3);white-space:nowrap;}
 .ra-scope .obs-clear:hover{background:var(--surface);color:var(--text);}
 /* Section switcher styled as underline nav tabs (like the drawer tabs above),
@@ -366,7 +394,19 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-setup .obs-setup-action:hover{color:var(--text);}
 .ra-scope .obs-setup .obs-setup-action:disabled{opacity:.4;cursor:default;}
 .ra-scope .obs-setup .obs-setup-action svg{flex:0 0 auto;}
-.ra-scope .obs-body{flex:1;overflow-y:auto;padding:16px;min-height:0;}
+.ra-scope .obs-body{flex:1;overflow-y:auto;padding:16px;min-height:0;
+  font-size:14px;font-weight:400;letter-spacing:normal;}
+/* TraceView ships tiny mono/uppercase labels — flatten to Model Setup nav feel. */
+.ra-scope .obs-body,
+.ra-scope .obs-body *{
+  font-family:inherit !important;
+  font-size:14px !important;
+  letter-spacing:normal !important;
+  line-height:1.5 !important;}
+.ra-scope .obs-body .uppercase{text-transform:none !important;}
+.ra-scope .obs-body .tracking-widest,
+.ra-scope .obs-body .tracking-wider,
+.ra-scope .obs-body .tracking-wide{letter-spacing:normal !important;}
 
 /* Docked inline section (Knowledge/State/Policy embedded in the drawer). It
    fills the pane below the chips; the floating window reuses .sc-modal.
@@ -394,6 +434,27 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    and pushed "Main" right of Knowledge / Model Setup. Text panes (Knowledge)
    keep the 18px/14px breathing room. */
 .ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host){padding:0;}
+/* Knowledge guideline rows: full-bleed, stacked with hairline separators only. */
+.ra-scope .obs-docked .sc-guidelines{
+  margin-left:-14px;margin-right:-14px;width:calc(100% + 28px);gap:0 !important;}
+.ra-scope .obs-docked .sc-guidelines .sc-block{
+  margin-top:0;border:none;border-radius:0;border-bottom:1px solid var(--sc-line, var(--line));
+  background:transparent;}
+.ra-scope .obs-docked .sc-guidelines .sc-block:last-child{border-bottom:none;}
+.ra-scope .obs-docked .sc-guidelines .sc-block-h:hover{background:var(--surface, #f2f2f2);}
+/* Row chrome: black type (not muted grey). */
+.ra-scope .obs-docked .sc-guidelines .sc-block-h,
+.ra-scope .obs-docked .sc-guidelines .sc-block-h .sc-lbl,
+.ra-scope .obs-docked .sc-guidelines .sc-block-h .meta,
+.ra-scope .obs-docked .sc-guidelines .sc-block-h .cv,
+.ra-scope .obs-docked .sc-guidelines .sc-block-h .sc-row-x,
+.ra-scope .obs-docked .sc-guidelines .sc-guide-preview{
+  color:var(--sc-ink, var(--text));}
+/* Expanded: frame the header row with top + bottom hairlines. */
+.ra-scope .obs-docked .sc-guidelines .sc-block.open .sc-block-h{
+  border-top:1px solid var(--sc-line, var(--line));
+  border-bottom:1px solid var(--sc-line, var(--line));}
+.ra-scope .obs-docked .sc-guidelines .sc-block:has(+ .sc-block.open){border-bottom:none;}
 /* State-variables block used margin:-14px to cancel the old body inset; with
    padding:0 that pull is gone — keep its own 16px column. Same for the split. */
 .ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-curstate{
@@ -678,7 +739,7 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
    the row) so the active underline hugs the label identically instead of
    spreading across wide tab padding. */
 .ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:0 2px;cursor:pointer;white-space:nowrap;
-  color:var(--text);font-family:var(--serif);font-size:14px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:-1px;
+  color:var(--text);font-family:inherit;font-size:14px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:-1px;
   outline:none;box-shadow:none;}
 .ra-scope .drawer-tab:hover{color:var(--text);}
 .ra-scope .drawer-tab:focus,
@@ -802,11 +863,11 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 /* empty state */
 .ra-scope .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;}
 .ra-scope .empty-orb{width:60px;height:60px;border-radius:50%;}
-.ra-scope .empty-title{font-family:var(--serif);font-size:27px;color:var(--text-2);font-weight:400;white-space:nowrap;}
-.ra-scope .empty-sub{color:var(--text-3);font-size:14.5px;max-width:380px;text-align:center;margin:2px 0 4px;line-height:1.5;}
+.ra-scope .empty-title{font-family:var(--serif);font-size:20px;color:var(--text);font-weight:500;letter-spacing:.2px;white-space:nowrap;}
+.ra-scope .empty-sub{color:var(--text-3);font-size:14px;font-weight:400;max-width:380px;text-align:center;margin:2px 0 4px;line-height:1.5;}
 .ra-scope .suggests{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;max-width:480px;}
 .ra-scope .sug-chip{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;
-  padding:9px 15px;font-size:13.5px;color:var(--text-2);background:transparent;white-space:nowrap;}
+  padding:9px 15px;font-size:14px;font-weight:400;color:var(--text);background:transparent;white-space:nowrap;}
 .ra-scope .sug-chip:hover{background:var(--surface);border-color:var(--accent-soft);color:var(--text);}
 .ra-scope .sug-chip .ic{color:var(--text-3);display:flex;}
 .ra-scope .sug-chip:hover .ic{color:var(--accent);}
@@ -901,7 +962,7 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
   .ra-scope .topbar-back{display:none;}
 
   /* let headings wrap instead of forcing width */
-  .ra-scope .empty-title{white-space:normal;text-align:center;font-size:23px;line-height:1.25;}
+  .ra-scope .empty-title{white-space:normal;text-align:center;font-size:20px;line-height:1.4;}
   .ra-scope .side-title,.ra-scope .empty-sub{white-space:normal;}
   .ra-scope .thread{padding:18px 14px 8px;}
   .ra-scope .composer-wrap{padding:12px 14px 16px;}
@@ -950,8 +1011,9 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 .sysconf *{box-sizing:border-box;}
 .sysconf button:not(.rf-canvas *){font-family:inherit;color:inherit;cursor:pointer;background:none;border:none;}
 .sysconf a{color:inherit;text-decoration:none;}
-.sysconf ::-webkit-scrollbar{width:10px;height:10px;}
-.sysconf ::-webkit-scrollbar-thumb{background:#bfbcab;border-radius:20px;border:3px solid transparent;background-clip:padding-box;}
+.sysconf{scrollbar-width:thin;scrollbar-color:#c4c4c4 transparent;}
+.sysconf ::-webkit-scrollbar{width:5px;height:5px;}
+.sysconf ::-webkit-scrollbar-thumb{background:#c4c4c4;border-radius:99px;border:1px solid transparent;background-clip:padding-box;}
 .sysconf .sc-lbl{font-family:var(--sc-mono);font-size:13px;letter-spacing:.3px;color:var(--sc-faint);}
 
 /* top bar */
@@ -1098,11 +1160,13 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
    inset so the "State variables" title stays put when expanding/collapsing —
    same column as .drawer-tabs / .obs-setup. */
 .sysconf .sc-curstate{
-  margin:0 -14px 0;padding:0 0 12px;flex:0 0 auto;
+  margin:0 -14px 0;padding:0;flex:0 0 auto;min-height:0;
+  display:flex;flex-direction:column;overflow:hidden;
   border-bottom:1px solid var(--sc-line);}
 .sysconf .sc-curstate > .sc-lbl{display:block;margin-bottom:9px;}
-/* Title row: chevron + "State variables" on the left, Edit/Done on the right. */
-.sysconf .sc-curstate-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;}
+/* Title row stays pinned; chips/editor scroll in .sc-curstate-body below. */
+.sysconf .sc-curstate-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;
+  flex:0 0 auto;background:var(--sc-panel, var(--panel));z-index:1;}
 /* Collapsible header — same 16px inset + 14px type in both open and closed. */
 .sysconf .sc-curstate-head{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;
   background:none;border:none;padding:0;margin:0;cursor:pointer;text-align:left;}
@@ -1113,7 +1177,7 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
    rows and vertically center the title. Padding on the bar is unchanged so
    the label doesn't jump. */
 .sysconf .sc-curstate:has(.sc-curstate-head[aria-expanded="false"]){
-  height:46px;padding:0;margin-bottom:0;
+  height:46px;max-height:46px;padding:0;margin-bottom:0;
   display:flex;flex-direction:column;justify-content:center;}
 .sysconf .sc-curstate:has(.sc-curstate-head[aria-expanded="false"]) .sc-curstate-bar{
   padding-top:0;padding-bottom:0;}
@@ -1121,6 +1185,7 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
   font-weight:400;letter-spacing:0;text-transform:none;color:var(--sc-ink);}
 .sysconf .sc-curstate-head .sc-curstate-chev{flex:0 0 auto;color:var(--sc-ink);transition:transform .15s ease;}
 .sysconf .sc-curstate-head .sc-curstate-chev.open{transform:rotate(90deg);}
+.sysconf .sc-curstate-body{flex:1 1 auto;min-height:0;overflow:auto;padding:0 0 12px;}
 .sysconf .sc-curstate-rows{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;}
 .sysconf .sc-curstate-row{display:flex;align-items:baseline;gap:8px;border:1px solid var(--sc-line);border-radius:8px;padding:5px 11px;background:var(--sc-panel-2);}
 .sysconf .sc-curstate-k{font-family:var(--sc-mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--sc-ink-3);}

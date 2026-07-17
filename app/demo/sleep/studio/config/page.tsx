@@ -8,8 +8,6 @@ import "../ra-theme.css";
 import { Ic, type IconName } from "../ra-icons";
 import { FlowThumb, KnowledgeThumb, Logo, anchor, edgePath } from "../ra-shared";
 import {
-  DATASETS,
-  DATASET_TYPES,
   GUIDELINES,
   POLICY_EDGES,
   POLICY_NODES,
@@ -162,77 +160,6 @@ function buildCanvasRows(doc: CanvasDoc | null) {
   }));
 }
 
-/* ---------------- small controls ---------------- */
-function Sel({ value, opts }: { value: string; opts: string[] }) {
-  const [v, setV] = useState(value);
-  return (
-    <div className="sc-select-wrap">
-      <select className="sc-select" value={v} onChange={(e) => setV(e.target.value)}>
-        {opts.map((t) => <option key={t} value={t}>{t}</option>)}
-      </select>
-    </div>
-  );
-}
-
-/* ---------------- dataset row ---------------- */
-function DatasetRow({
-  name,
-  cols,
-  notes,
-  records,
-}: {
-  name: string;
-  cols: [string, string][];
-  notes: string;
-  records: number;
-}) {
-  const [open, setOpen] = useState(false);
-  const [columns, setColumns] = useState(cols);
-  return (
-    <div className={"sc-ds" + (open ? " open" : "")}>
-      <div className="sc-ds-row" onClick={() => setOpen((o) => !o)}>
-        <span className="nm">{name}</span>
-        <span className="sp" />
-        <span className="meta">{columns.length} columns · {records} records</span>
-        <span className="cv"><Ic.Chevron size={16} /></span>
-      </div>
-      {open && (
-        <div className="sc-ds-body">
-          <span className="sc-lbl sc-mini-lbl">Columns</span>
-          <div className="sc-cols">
-            {columns.map((c, i) => (
-              <div key={i} className="sc-col">
-                <input className="sc-input" defaultValue={c[0]} />
-                <Sel value={c[1]} opts={DATASET_TYPES} />
-              </div>
-            ))}
-          </div>
-          <button
-            className="sc-btn ghost"
-            style={{ marginTop: 10 }}
-            onClick={() => setColumns((cs) => [...cs, ["new_column", "string"]])}
-          >
-            + Add column
-          </button>
-          <span className="sc-lbl sc-mini-lbl">Notes</span>
-          <textarea
-            className="sc-textarea serif"
-            defaultValue={notes}
-            placeholder="Notes about this dataset, its columns, assumptions, or caveats…"
-          />
-          <span className="sc-lbl sc-mini-lbl">Records</span>
-          <div className="sc-rec-empty">
-            {records > 0
-              ? `${records} record${records > 1 ? "s" : ""}. Add a record to extend the dataset.`
-              : "No records yet. Add a record to start filling the dataset."}
-          </div>
-          <button className="sc-btn ghost" style={{ marginTop: 10 }}>+ Add record</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ---------------- flow card ---------------- */
 function FlowCard({
   kicker,
@@ -340,7 +267,7 @@ function Overview({
           icon={<Ic.Book size={18} />}
           title="Knowledge"
           stat={`${guidelines} guideline rows · ${files} files`}
-          desc="Datasets and files the model can draw on."
+          desc="Guideline rows and files the model can draw on."
           thumb={<KnowledgeThumb h={116} />}
           go={go}
         />
@@ -365,7 +292,7 @@ function Overview({
       </div>
       <span className="sc-lbl" style={{ display: "block", margin: "0 0 10px" }}>Readiness</span>
       <div className="sc-check">
-        <div className="ci"><span className="mark done">✓</span><span className="nm">Knowledge — datasets defined</span><span className="meta">2 datasets</span></div>
+        <div className="ci"><span className="mark done">✓</span><span className="nm">Knowledge — guideline rows</span><span className="meta">{guidelines} rows</span></div>
         <div className="ci"><span className="mark done">✓</span><span className="nm">State — schema defined</span><span className="meta">{fields} fields</span></div>
         <div className="ci"><span className="mark done">✓</span><span className="nm">Policy — decision flow drawn</span><span className="meta">{POLICY_NODES.length} nodes</span></div>
       </div>
@@ -470,7 +397,7 @@ function KnowledgePane({
         (content, problem description, and recommendation concatenated) and now
         live in this dataset.
       </p>
-      <div className="sc-guidelines" style={{ display: "grid", gap: 10 }}>
+      <div className="sc-guidelines" style={{ display: "grid", gap: 0 }}>
         {guidelineItems.map((row, i) => {
           const open = openRows.has(i);
           const preview = row.trim().replace(/\s+/g, " ");
@@ -559,13 +486,6 @@ function KnowledgePane({
           ))}
         </div>
       )}
-
-      <div className="sc-list-head">
-        <span className="sc-lbl">Datasets</span>
-      </div>
-      {DATASETS.map((d) => (
-        <DatasetRow key={d.name} name={d.name} cols={d.cols} notes={d.notes} records={d.records} />
-      ))}
     </div>
   );
 }
@@ -877,8 +797,13 @@ function StatePane({
             ref={varsRef}
             className="sc-curstate"
             style={
-              stateOpen && varsHeight != null
-                ? { height: varsHeight, maxHeight: varsHeight, overflow: "auto", flex: "0 0 auto" }
+              stateOpen
+                ? {
+                    // Title stays pinned; chips/editor scroll inside .sc-curstate-body.
+                    height: varsHeight ?? undefined,
+                    maxHeight: varsHeight ?? 240,
+                    flex: "0 0 auto",
+                  }
                 : undefined
             }
           >
@@ -920,7 +845,7 @@ function StatePane({
               )}
             </div>
             {stateOpen && (
-              <>
+              <div className="sc-curstate-body">
                 {editing ? (
                   <div className="sc-var-list">
                     {fields.map(([name, type, initial], i) => (
@@ -963,19 +888,19 @@ function StatePane({
                     )}
                   </div>
                 ) : (
-                <div className="sc-curstate-rows">
-                  {displayEntries.map(([k, v]) => {
-                    const set = fmtStateVal(v) !== "—";
-                    return (
-                      <div key={k} className={"sc-curstate-row" + (set ? "" : " unset")}>
-                        <span className="sc-curstate-k">{k}</span>
-                        <span className="sc-curstate-v">{fmtStateVal(v)}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                  <div className="sc-curstate-rows">
+                    {displayEntries.map(([k, v]) => {
+                      const set = fmtStateVal(v) !== "—";
+                      return (
+                        <div key={k} className={"sc-curstate-row" + (set ? "" : " unset")}>
+                          <span className="sc-curstate-k">{k}</span>
+                          <span className="sc-curstate-v">{fmtStateVal(v)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-              </>
+              </div>
             )}
           </div>
           {/* Always mount the split so open↔collapsed doesn't jump; drag only

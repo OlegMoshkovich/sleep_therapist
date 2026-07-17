@@ -62,7 +62,7 @@ function Splash() {
       className={`fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-700 ${
         phase === "fading" ? "pointer-events-none opacity-0" : "opacity-100"
       }`}
-      style={{ backgroundColor: "#E1DECF" }}
+      style={{ backgroundColor: "#ffffff" }}
     >
       <SiteLogo size={120} />
     </div>

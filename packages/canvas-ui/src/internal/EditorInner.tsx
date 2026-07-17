@@ -2030,9 +2030,17 @@ export function EditorInner<TOutput>({
   // Collapse the graph surface (docked column layout) so the inspector below
   // gets the reclaimed height.
   const [canvasCollapsed, setCanvasCollapsed] = useState(false);
-  // Docked column: share of rf-canvas-body height for the graph (rest → inspector).
-  // 0.5 = 50/50. Persisted so a drag sticks across reloads.
-  const [canvasShare, setCanvasShare] = useState(0.5);
+  // Only the bottom-drawer split layout uses canvas collapse; ignore the flag
+  // elsewhere so State/Policy can't end up with a hidden board.
+  const canvasIsCollapsed = splitPanels && canvasCollapsed;
+  // Share of the body axis for the graph (rest → inspector).
+  // Stack (State/Policy): 50/50 height. Split (bottom workflow): 2/3 · 1/3 width.
+  // Separate storage keys so one layout doesn't overwrite the other.
+  const defaultCanvasShare = splitPanels ? 2 / 3 : 0.5;
+  const canvasShareKey = splitPanels
+    ? "rf-canvas-inspector-share-split"
+    : "rf-canvas-inspector-share";
+  const [canvasShare, setCanvasShare] = useState(defaultCanvasShare);
   const [splitDragging, setSplitDragging] = useState(false);
   // "How to use the canvas" help overlay.
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2071,22 +2079,22 @@ export function EditorInner<TOutput>({
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const raw = window.localStorage.getItem("rf-canvas-inspector-share");
+      const raw = window.localStorage.getItem(canvasShareKey);
       if (!raw) return;
       const n = Number(raw);
       if (Number.isFinite(n) && n >= 0.2 && n <= 0.8) setCanvasShare(n);
     } catch {
       // ignore
     }
-  }, []);
+  }, [canvasShareKey]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem("rf-canvas-inspector-share", String(canvasShare));
+      window.localStorage.setItem(canvasShareKey, String(canvasShare));
     } catch {
       // ignore
     }
-  }, [canvasShare]);
+  }, [canvasShare, canvasShareKey]);
 
   // In fillHeight mode, give the canvas + inspector row a CONSTANT height that
   // spans from its top (just below the toolbars) to the bottom of the viewport,
@@ -3316,7 +3324,7 @@ export function EditorInner<TOutput>({
       role={fullscreen ? "dialog" : undefined}
       aria-modal={fullscreen || undefined}
       // Collapsed: hide the surface entirely so the inspector below fills the row.
-      style={canvasCollapsed && !fullscreen ? { display: "none" } : undefined}
+      style={canvasIsCollapsed && !fullscreen ? { display: "none" } : undefined}
     >
       <ReactFlow
         key={`${active.id}-${fullscreen ? "full" : "inline"}`}
@@ -3531,9 +3539,9 @@ export function EditorInner<TOutput>({
               Close
             </button>
           )}
-          {/* Collapse the canvas so the inspector reclaims space (height when
-              stacked, width when split). Shown in any fillHeight host. */}
-          {fillHeight && !fullscreen && (
+          {/* Collapse only in the bottom-drawer split layout. Hidden on stacked
+              State/Policy (side drawer) where the board should stay visible. */}
+          {fillHeight && !fullscreen && splitPanels && (
             <button
               type="button"
               onClick={() => setCanvasCollapsed((v) => !v)}
@@ -3566,7 +3574,7 @@ export function EditorInner<TOutput>({
       {/* Toolbar — only mount when open so it can't leave a flex gap under the tabs. */}
       {toolbarOpen && (
         <div
-          className={`${fullscreen ? "flex" : "hidden lg:flex"} flex-col gap-2 px-4`}
+          className={`rf-canvas-tools ${fullscreen ? "flex" : "hidden lg:flex"} flex-col gap-2 border-b border-[#c8c4b4] px-4 py-3`}
         >
           <div className="flex flex-wrap items-center gap-2">
             {controlStructureKinds.length > 0 && (
@@ -3650,7 +3658,7 @@ export function EditorInner<TOutput>({
           <div
             className="rf-canvas-slot min-h-0 min-w-0 overflow-hidden"
             style={
-              canvasCollapsed
+              canvasIsCollapsed
                 ? { display: "none" }
                 : {
                     flex: `0 0 ${Math.round(canvasShare * 1000) / 10}%`,
@@ -3666,7 +3674,7 @@ export function EditorInner<TOutput>({
         )}
 
         {/* Drag handle: vertical in stacked side drawer; horizontal in bottom split. */}
-        {fillHeight && !fullscreen && !hideInspector && !canvasCollapsed && (
+        {fillHeight && !fullscreen && !hideInspector && !canvasIsCollapsed && (
           <div
             className={
               (splitPanels ? "rf-hsplit" : "rf-vsplit") + (splitDragging ? " active" : "")
@@ -3675,7 +3683,7 @@ export function EditorInner<TOutput>({
             aria-orientation={splitPanels ? "vertical" : "horizontal"}
             aria-label="Resize canvas and inspector (double-click to reset)"
             title="Drag to resize · double-click to reset"
-            onDoubleClick={() => setCanvasShare(0.5)}
+            onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
             onPointerDown={(e) => {
               e.preventDefault();
               const body = canvasBodyRef.current;

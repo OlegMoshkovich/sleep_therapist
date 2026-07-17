@@ -244,7 +244,6 @@ function ConvList({
           ) : (
             <>
               <span className="conv-title">{c.title}</span>
-              <span className="conv-lock"><Ic.Lock size={13} /></span>
               <button
                 className={"conv-kebab" + (kebabId === c.id ? " open" : "")}
                 onClick={(e) => {
@@ -412,7 +411,7 @@ function Sidebar({
             {isAdmin && (
               <>
                 <div className="pop-label adm">
-                  <Ic.Shield size={13} /> Admin <span className="pill">admin only</span>
+                  <Ic.Shield size={13} /> Admin
                 </div>
                 <div className="pop-adm">
                   {ADMIN_ITEMS.map((it) => {
@@ -581,7 +580,7 @@ function AccountPane({
       {isAdmin && (
         <>
           <div className="pop-label adm">
-            <Ic.Shield size={13} /> Admin <span className="pill">admin only</span>
+            <Ic.Shield size={13} /> Admin
           </div>
           <div className="pop-adm">
             {ADMIN_ITEMS.map((it) => {
@@ -2063,7 +2062,7 @@ function SleepStudioChat() {
 // auth → setup transition. Matches the landing splash in app/page.tsx (size 120).
 function StudioLoading() {
   return (
-    <div className="flex flex-1 items-center justify-center bg-[#E1DECF]">
+    <div className="flex flex-1 items-center justify-center bg-white">
       <SiteLogo size={120} href="/sleep" />
     </div>
   );
@@ -2106,7 +2105,7 @@ function StudioSplash({ ready }: { ready: boolean }) {
         // through once it starts fading so the revealed UI is immediately usable.
         (phase === "fading" ? "pointer-events-none opacity-0" : "opacity-100")
       }
-      style={{ backgroundColor: "#E1DECF" }}
+      style={{ backgroundColor: "#ffffff" }}
     >
       <div
         className={
