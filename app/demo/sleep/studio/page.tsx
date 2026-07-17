@@ -640,28 +640,12 @@ const MOBILE_NAV: Array<{ id: DrawerId; icon: IconName }> = [
 function MobileNav({
   onOpen,
   isAdmin,
-  autoSpeak,
-  onToggleAutoSpeak,
-  isSpeaking,
-  onStopSpeaking,
 }: {
   onOpen: (id: DrawerId) => void;
   isAdmin: boolean;
-  autoSpeak: boolean;
-  onToggleAutoSpeak: () => void;
-  isSpeaking: boolean;
-  onStopSpeaking: () => void;
 }) {
   return (
     <nav className="mobile-railnav" aria-label="Panels">
-      <VoiceReplyButton
-        className="mrail-btn"
-        iconSize={15}
-        autoSpeak={autoSpeak}
-        onToggleAutoSpeak={onToggleAutoSpeak}
-        isSpeaking={isSpeaking}
-        onStopSpeaking={onStopSpeaking}
-      />
       {MOBILE_NAV.filter(
         (n) => isAdmin || !ADMIN_ONLY_DRAWERS.includes(n.id)
       ).map((n) => {
@@ -689,10 +673,6 @@ function RightRail({
   isAdmin,
   canvasOpen,
   onToggleCanvas,
-  autoSpeak,
-  onToggleAutoSpeak,
-  isSpeaking,
-  onStopSpeaking,
   floating = false,
   rightOffset,
 }: {
@@ -701,10 +681,6 @@ function RightRail({
   isAdmin: boolean;
   canvasOpen: boolean;
   onToggleCanvas: () => void;
-  autoSpeak: boolean;
-  onToggleAutoSpeak: () => void;
-  isSpeaking: boolean;
-  onStopSpeaking: () => void;
   /** When a right drawer is open, the rail floats at the drawer's left edge
    *  (`rightOffset` px from the body's right edge) instead of docking as a flex
    *  column, and follows the drawer as its width is resized. */
@@ -739,13 +715,6 @@ function RightRail({
       >
         <Ic.Workflow size={18} />
       </button>
-      <VoiceReplyButton
-        className="rail-btn"
-        autoSpeak={autoSpeak}
-        onToggleAutoSpeak={onToggleAutoSpeak}
-        isSpeaking={isSpeaking}
-        onStopSpeaking={onStopSpeaking}
-      />
     </aside>
   );
 }
@@ -763,10 +732,7 @@ function ThreadHeader() {
   );
 }
 
-/* Speaker (voice-reply) toggle used inside the docked right rail and mobile nav.
-   `className` is passed in so it inherits the surrounding rail's button style
-   (`.rail-btn` on desktop, `.mrail-btn` on mobile) — same 12px rounded square
-   as the neighbouring Panel button. */
+/* Speaker (voice-reply) toggle — lives in the composer, left of the mic while recording. */
 function VoiceReplyButton({
   autoSpeak,
   onToggleAutoSpeak,
@@ -793,7 +759,7 @@ function VoiceReplyButton({
         if (isSpeaking) onStopSpeaking();
         onToggleAutoSpeak();
       }}
-      style={autoSpeak ? { color: "var(--accent, #F05025)" } : { opacity: 0.7 }}
+      style={autoSpeak ? { color: "var(--accent, #F05025)" } : { opacity: 0.55 }}
     >
       {autoSpeak ? (
         isSpeaking ? (
@@ -965,6 +931,10 @@ function Composer({
   onMicToggle,
   isRecording,
   isTranscribing,
+  autoSpeak,
+  onToggleAutoSpeak,
+  isSpeaking,
+  onStopSpeaking,
 }: {
   value: string;
   setValue: (v: string) => void;
@@ -975,6 +945,10 @@ function Composer({
   onMicToggle: () => void;
   isRecording: boolean;
   isTranscribing: boolean;
+  autoSpeak: boolean;
+  onToggleAutoSpeak: () => void;
+  isSpeaking: boolean;
+  onStopSpeaking: () => void;
 }) {
   const submit = () => {
     const v = value.trim();
@@ -1050,6 +1024,17 @@ function Composer({
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </button>
+            )}
+            {/* Voice-reply mute: only beside the mic while listening / transcribing. */}
+            {(isRecording || isTranscribing) && (
+              <VoiceReplyButton
+                className="comp-speaker"
+                iconSize={16}
+                autoSpeak={autoSpeak}
+                onToggleAutoSpeak={onToggleAutoSpeak}
+                isSpeaking={isSpeaking}
+                onStopSpeaking={onStopSpeaking}
+              />
             )}
             <button
               type="button"
@@ -1951,13 +1936,16 @@ function SleepStudioChat() {
               onMicToggle={toggleMic}
               isRecording={isRecording}
               isTranscribing={isTranscribing}
+              autoSpeak={autoSpeak}
+              onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
+              isSpeaking={isSpeaking}
+              onStopSpeaking={stopSpeaking}
             />
           </main>
 
-          {/* Right rail: everyone gets the voice-reply toggle + Workflow launcher;
-              admins get the Model Setup panel button. Docked at the right edge
-              when no drawer is open; when a drawer IS open it floats at the
-              drawer's left edge and tracks its width. */}
+          {/* Right rail: Workflow launcher; admins also get Model Setup.
+              Docked at the right edge when no drawer is open; when a drawer IS
+              open it floats at the drawer's left edge and tracks its width. */}
           <RightRail
             panelOpen={openDrawers.length > 0}
             onTogglePanel={() =>
@@ -1966,10 +1954,6 @@ function SleepStudioChat() {
             isAdmin={isAdmin}
             canvasOpen={canvasOpen}
             onToggleCanvas={() => setCanvasOpen((v) => !v)}
-            autoSpeak={autoSpeak}
-            onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
-            isSpeaking={isSpeaking}
-            onStopSpeaking={stopSpeaking}
             floating={openDrawers.length > 0}
             rightOffset={obsWidth ?? obsBounds.def}
           />
@@ -1977,10 +1961,6 @@ function SleepStudioChat() {
             <MobileNav
               onOpen={openDrawer}
               isAdmin={isAdmin}
-              autoSpeak={autoSpeak}
-              onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
-              isSpeaking={isSpeaking}
-              onStopSpeaking={stopSpeaking}
             />
           )}
           {openDrawers.length > 0 && (
