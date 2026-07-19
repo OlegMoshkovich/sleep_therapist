@@ -1117,6 +1117,7 @@ function Bubble({
   collapsed = false,
   onToggleCollapse,
   hideControls = false,
+  turnNumber,
 }: {
   m: Message;
   onOpenTrace?: (turnId: string) => void;
@@ -1134,6 +1135,8 @@ function Bubble({
   onToggleCollapse?: () => void;
   /** When true, hide the bubble nav and footer chrome. */
   hideControls?: boolean;
+  /** 1-based turn index shown before Observability on assistant bubbles. */
+  turnNumber?: number;
 }) {
   const [fullscreen, setFullscreen] = useState(false);
   const isUser = m.role === "user";
@@ -1145,8 +1148,9 @@ function Bubble({
   // assistant replies (the long ones). All trace views need the turn (turnId).
   const showTrace = !isUser && !!turnId && !!onOpenTrace;
   const showPolicy = !isUser && !!turnId && !!onOpenPolicy;
-  // State is extracted from the patient message only — show the button there.
-  const showStateBtn = isUser && !!turnId && !!onOpenState && hasState;
+  // State opens the fields extracted this turn (from the patient message).
+  // Shown on both bubbles; on the assistant nav it sits after Policy trace.
+  const showStateBtn = !!turnId && !!onOpenState && hasState;
   const showFeedback = !!onOpenFeedback;
   // Fullscreen is available on both patient and assistant bubbles.
   const showFullscreen = !!turnId;
@@ -1158,7 +1162,9 @@ function Bubble({
     <div className="trace-actions">
       {showTrace && (
         <button type="button" className="trace-act" title="Open the step-by-step Observability trace for this reply" onClick={() => onOpenTrace!(turnId!)}>
-          <Ic.Grid size={13} /> Observability
+          {turnNumber != null ? <span className="trace-turn-n">{turnNumber}.</span> : null}
+          <Ic.Grid size={13} />
+          Observability
         </button>
       )}
       {showPolicy && (
@@ -1307,6 +1313,7 @@ function MessageRow({
   collapsed,
   onToggleCollapse,
   hideControls,
+  turnNumber,
 }: {
   m: Message;
   index: number;
@@ -1324,6 +1331,7 @@ function MessageRow({
   collapsed: boolean;
   onToggleCollapse: () => void;
   hideControls: boolean;
+  turnNumber?: number;
 }) {
   return (
     <div className="msg-block">
@@ -1342,6 +1350,7 @@ function MessageRow({
         collapsed={collapsed}
         onToggleCollapse={onToggleCollapse}
         hideControls={hideControls}
+        turnNumber={turnNumber}
       />
       <FeedbackControls
         mode={feedbackMode}
@@ -1372,6 +1381,7 @@ function Thread({
   onOpenState,
   stateTurnIds,
   allowFeedback,
+  activeId,
 }: {
   messages: Message[];
   typing: boolean;
@@ -1390,21 +1400,24 @@ function Thread({
   stateTurnIds?: Set<string>;
   /** Gates the per-reply Feedback button (admin-only, like the other panels). */
   allowFeedback?: boolean;
+  /** Current conversation id — changing it re-hides the bubble controls by default. */
+  activeId?: string | null;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
   // Per-bubble collapse; driven by each row's Collapse button or the top toggle.
   const [collapsedByIdx, setCollapsedByIdx] = useState<Record<number, boolean>>({});
-  // Hide per-bubble nav/footer chrome for a cleaner reading view.
-  // Narrow viewports start with controls hidden; "Show controls" can still reveal them.
-  const [hideBubbleControls, setHideBubbleControls] = useState(() =>
-    typeof window !== "undefined" &&
-    window.matchMedia("(max-width: 900px)").matches
-  );
+  // Hide per-bubble nav/footer chrome for a cleaner reading view. Hidden by
+  // default (on every conversation start); "Show controls" reveals them.
+  const [hideBubbleControls, setHideBubbleControls] = useState(true);
+  // Re-hide the controls whenever the conversation changes / a new one starts.
+  useEffect(() => {
+    setHideBubbleControls(true);
+  }, [activeId]);
+  // Narrow viewports only ever force-hide (never force-show) so the toggle sticks.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(max-width: 900px)");
-    const sync = () => setHideBubbleControls(mq.matches);
-    sync();
+    const sync = () => { if (mq.matches) setHideBubbleControls(true); };
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
@@ -1425,6 +1438,17 @@ function Thread({
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [messages, typing, streaming]);
+  // 1-based turn numbers for assistant replies (shared with the patient turn id).
+  const turnNumberById = useMemo(() => {
+    const map = new Map<string, number>();
+    let n = 0;
+    for (const m of messages) {
+      if (m.role === "ai" && m.turnId && !map.has(m.turnId)) {
+        map.set(m.turnId, ++n);
+      }
+    }
+    return map;
+  }, [messages]);
   return (
     <div className="thread">
       <div className="thread-inner">
@@ -1480,6 +1504,7 @@ function Thread({
               setCollapsedByIdx((prev) => ({ ...prev, [i]: !prev[i] }))
             }
             hideControls={hideBubbleControls}
+            turnNumber={m.turnId ? turnNumberById.get(m.turnId) : undefined}
           />
         ))}
         {streaming && <Bubble m={{ role: "ai", text: streaming }} />}
@@ -2548,16 +2573,27 @@ function SleepStudioChat() {
     [activeId, typing, loadConversations, stopSpeaking]
   );
 
-  const onNew = () => {
+  // Clears the thread + observability turns (which resets the policy-canvas trace
+  // animation, since it's driven off the latest completed turn). Shared by the New
+  // conversation button and by starting a simulation run.
+  const resetConversation = () => {
     setActiveId(null);
     setMessages([]);
     setStreaming("");
     setInput("");
-    setMenuOpen(false);
     setFeedbackByIdx({});
     setEditingIdx(null);
+    setTurns([]); // reset the policy trace / observability
     speakNextAssistantRef.current = false;
     stopSpeaking();
+  };
+  const onNew = () => {
+    resetConversation();
+    setMenuOpen(false);
+    // Start clean: hide all the panels (Model Setup / Observability / Simulation)
+    // and the workflow canvas by default.
+    closeAllDrawers();
+    setCanvasOpen(false);
     setTimeout(() => inputRef.current?.focus(), 30);
   };
   // Start a fresh, empty conversation for a simulation run. The actual
@@ -2567,7 +2603,9 @@ function SleepStudioChat() {
   // policy canvas animates, exactly like a hand-typed conversation.
   const beginSimulation = useCallback(
     (scenario: string, turns: number) => {
-      onNew();
+      // Reset the thread + policy trace, but KEEP the Simulation panel open (unlike
+      // the New conversation button, which hides the panels).
+      resetConversation();
       // Title encodes the run's turn count + scenario so the Simulation panel's run
       // list can show them: "Simulation · {n} turns · {scenario}".
       const label = scenario.trim().slice(0, 80) || "Improvised patient";
@@ -2576,8 +2614,8 @@ function SleepStudioChat() {
       // Save the exact scenario that drove the run (empty string for improvised).
       simulationScenarioRef.current = scenario;
     },
-    // onNew is a stable inline function defined every render; the values it
-    // touches are all setState/refs, so it's safe to omit from deps.
+    // resetConversation is a stable inline function defined every render; the values
+    // it touches are all setState/refs, so it's safe to omit from deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
@@ -2834,6 +2872,7 @@ function SleepStudioChat() {
                 onOpenState={isAdmin ? focusState : undefined}
                 stateTurnIds={stateTurnIds}
                 allowFeedback={isAdmin}
+                activeId={activeId}
               />
             ) : (
               <EmptyState onSuggest={send} compact={canvasOpen} />
