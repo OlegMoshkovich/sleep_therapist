@@ -3495,62 +3495,72 @@ export function EditorInner<TOutput>({
           those rows so "Main" lines up with Knowledge / Model Setup when the
           docked body side padding is zeroed. Tab label padding 0 2px hugs the
           underline like the rows above. */}
-      <div className={`rf-canvas-tabs ${fullscreen ? "flex" : "hidden lg:flex"} min-h-[46px] flex-wrap items-center gap-x-[22px] gap-y-1 border-b border-[#c8c4b4] py-0 pl-4 pr-2`}>
-        {canvases.map((c) => {
-          const isActive = c.id === activeId;
-          const isRenaming = renamingId === c.id;
-          return (
-            <div
-              key={c.id}
-              className={`group flex h-[46px] items-center gap-1 px-0.5 border-b-2 -mb-px cursor-pointer text-[14px] font-sans text-[#1c1b16] ${
-                isActive ? "border-[#1c1b16]" : "border-transparent"
-              }`}
-              onClick={() => selectCanvas(c.id)}
-              onDoubleClick={() => setRenamingId(c.id)}
-              title="Double-click to rename"
-            >
-              {isRenaming ? (
-                <input
-                  autoFocus
-                  value={c.name}
-                  onChange={(e) => renameCanvas(c.id, e.target.value)}
-                  onBlur={() => setRenamingId(null)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === "Escape") {
-                      (e.target as HTMLInputElement).blur();
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="bg-transparent border-b border-gray-500 outline-none text-[14px] font-sans text-[#1c1b16] px-1 w-32"
-                />
-              ) : (
-                <span>{c.name || "Untitled"}</span>
-              )}
-              {canvases.length > 1 && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeCanvas(c.id);
-                  }}
-                  className="opacity-40 hover:opacity-100 hover:text-red-600 ml-1"
-                  aria-label={`Remove ${c.name}`}
+      <div className={`rf-canvas-tabs ${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] min-h-[46px] flex-nowrap items-center border-b border-[#c8c4b4] py-0 pl-4 pr-2`}>
+        {/* Titles scroll under a pinned (i) when the drawer is narrow — never wrap the end chrome. */}
+        <div className="rf-canvas-tab-scroll min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex h-[46px] min-w-min items-center gap-x-[22px]">
+            {canvases.map((c) => {
+              const isActive = c.id === activeId;
+              const isRenaming = renamingId === c.id;
+              return (
+                <div
+                  key={c.id}
+                  className={`group flex h-[46px] shrink-0 items-center gap-1 px-0.5 border-b-2 -mb-px cursor-pointer whitespace-nowrap text-[14px] font-sans text-[#1c1b16] ${
+                    isActive ? "border-[#1c1b16]" : "border-transparent"
+                  }`}
+                  onClick={() => selectCanvas(c.id)}
+                  onDoubleClick={() => setRenamingId(c.id)}
+                  title="Double-click to rename"
                 >
-                  ×
-                </button>
-              )}
-            </div>
-          );
-        })}
-        <button
-          type="button"
-          onClick={addCanvas}
-          className="flex h-[46px] shrink-0 items-center whitespace-nowrap px-0.5 text-[14px] font-sans text-[#1c1b16] hover:text-black"
-          title="Add canvas"
-        >
-          + Canvas
-        </button>
-        <div className="rf-canvas-tab-end ml-auto flex h-[46px] shrink-0 items-center gap-0.5">
+                  {isRenaming ? (
+                    <input
+                      autoFocus
+                      value={c.name}
+                      onChange={(e) => renameCanvas(c.id, e.target.value)}
+                      onBlur={() => setRenamingId(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === "Escape") {
+                          (e.target as HTMLInputElement).blur();
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-transparent border-b border-gray-500 outline-none text-[14px] font-sans text-[#1c1b16] px-1 w-32"
+                    />
+                  ) : (
+                    <span>{c.name || "Untitled"}</span>
+                  )}
+                  {canvases.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeCanvas(c.id);
+                      }}
+                      className="opacity-40 hover:opacity-100 hover:text-red-600 ml-1"
+                      aria-label={`Remove ${c.name}`}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="rf-canvas-tab-end ml-1 flex h-[46px] shrink-0 items-center gap-0.5">
+          <button
+            type="button"
+            onClick={addCanvas}
+            aria-label="Add canvas"
+            title="Add canvas"
+            className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+          </button>
           <button
             type="button"
             onClick={() => setHelpOpen(true)}
@@ -3558,13 +3568,29 @@ export function EditorInner<TOutput>({
             title="How to use the canvas"
             className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
           >
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" />
               <line x1="12" y1="11" x2="12" y2="16.5" />
               <circle cx="12" cy="7.75" r="1" fill="currentColor" stroke="none" />
             </svg>
           </button>
           {tabBarEnd}
+          {fullscreen && (
+            <button
+              type="button"
+              onClick={() => {
+                setCanvasFullscreen(false);
+                setInspectorMaximized(false);
+              }}
+              aria-label="Exit fullscreen"
+              title="Exit fullscreen (Esc)"
+              className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

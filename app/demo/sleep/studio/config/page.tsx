@@ -731,6 +731,7 @@ function StatePane({
   loaded = true,
   tabBarTrailing,
   onPersistFields,
+  onCanvasCycle,
 }: {
   fields: SchemaField[];
   setFields: React.Dispatch<React.SetStateAction<SchemaField[]>>;
@@ -743,7 +744,13 @@ function StatePane({
   tabBarTrailing?: React.ReactNode;
   /** Persist the next schema immediately (used after delete so reload keeps it). */
   onPersistFields?: (next: SchemaField[]) => void | Promise<void>;
+  /** Fires on mount/unmount so dirty-tracking can re-adopt the editor baseline. */
+  onCanvasCycle?: (phase: "mount" | "unmount") => void;
 }) {
+  React.useEffect(() => {
+    onCanvasCycle?.("mount");
+    return () => onCanvasCycle?.("unmount");
+  }, [onCanvasCycle]);
   // Prefer the schema as the source of truth for which chips to show. Live
   // conversation state may still hold keys for deleted fields — don't resurface
   // those after the user removed them from the schema.
@@ -1010,6 +1017,7 @@ function PolicyPane({
   fireSignal,
   loaded = true,
   tabBarTrailing,
+  onCanvasCycle,
 }: {
   policyDoc: CanvasDoc | null;
   onPolicyChange: (doc: CanvasDoc) => void;
@@ -1018,7 +1026,12 @@ function PolicyPane({
   fireSignal?: CanvasFireSignal | null;
   loaded?: boolean;
   tabBarTrailing?: React.ReactNode;
+  onCanvasCycle?: (phase: "mount" | "unmount") => void;
 }) {
+  React.useEffect(() => {
+    onCanvasCycle?.("mount");
+    return () => onCanvasCycle?.("unmount");
+  }, [onCanvasCycle]);
   return (
     <div className={"sc-pane-inner" + (fillHeight ? " sc-pane-fill" : "")}>
       <div className="sc-pane-head">
@@ -1434,6 +1447,25 @@ export function useSleepSetup() {
   const configIdRef = React.useRef<string | null>(null);
   const preservedRef = React.useRef<Record<string, unknown>>({});
   const dirtyArmedRef = React.useRef(false);
+  // Fingerprint of last loaded/saved content. Save stays off unless the live
+  // docs differ in structure or node description (not selection / position).
+  const baselineRef = React.useRef<{
+    policy: string;
+    state: string;
+    fields: string;
+    guidelines: string;
+  } | null>(null);
+  const policyDocRef = React.useRef<CanvasDoc | null>(null);
+  const stateDocRef = React.useRef<CanvasDoc | null>(null);
+  const fieldsRef = React.useRef<SchemaField[]>(STATE_FIELDS);
+  const guidelinesRef = React.useRef<string[]>(DEFAULT_GUIDELINE_ITEMS);
+  // Canvas normalizes on mount; adopt that emit once per mount as the clean baseline.
+  const policyAdoptedRef = React.useRef(false);
+  const stateAdoptedRef = React.useRef(false);
+  policyDocRef.current = policyDoc;
+  stateDocRef.current = stateDoc;
+  fieldsRef.current = fields;
+  guidelinesRef.current = guidelineItems;
   const stateCompile = React.useMemo(
     () =>
       createStateExtractionCompiler(
@@ -1446,11 +1478,100 @@ export function useSleepSetup() {
     [fields],
   );
 
+  // Stable JSON for node data so key-order differences don't look like edits.
+  const stableValue = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(stableValue);
+    if (value && typeof value === "object") {
+      return Object.keys(value as Record<string, unknown>)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, key) => {
+          acc[key] = stableValue((value as Record<string, unknown>)[key]);
+          return acc;
+        }, {});
+    }
+    return value;
+  };
+
+  // Meaningful canvas content only: add/remove nodes & edges, rename canvases,
+  // edit node data (description). Ignore position, selection, and active tab.
+  const canvasFingerprint = (doc: CanvasDoc | null) => {
+    if (!doc) return "";
+    return JSON.stringify({
+      version: doc.version,
+      canvases: [...doc.canvases]
+        .map((c) => ({
+          id: c.id,
+          name: c.name,
+          freeText: c.freeText ?? "",
+          nodes: [...(c.graph?.nodes ?? [])]
+            .map((n) => ({
+              id: n.id,
+              type: n.type,
+              data: stableValue(n.data ?? {}),
+            }))
+            .sort((a, b) => a.id.localeCompare(b.id)),
+          edges: [...(c.graph?.edges ?? [])]
+            .map((e) => ({
+              id: e.id,
+              source: e.source,
+              target: e.target,
+              sourceHandle: e.sourceHandle ?? null,
+              targetHandle: e.targetHandle ?? null,
+              label: e.label ?? null,
+            }))
+            .sort((a, b) => a.id.localeCompare(b.id)),
+        }))
+        .sort((a, b) => a.id.localeCompare(b.id)),
+    });
+  };
+
+  const captureBaseline = (parts: {
+    policy: CanvasDoc | null;
+    state: CanvasDoc | null;
+    fields: SchemaField[];
+    guidelines: string[];
+  }) => {
+    baselineRef.current = {
+      policy: canvasFingerprint(parts.policy ?? POLICY_SEED_DOC),
+      state: canvasFingerprint(parts.state ?? STATE_SEED_DOC),
+      fields: JSON.stringify(parts.fields),
+      guidelines: JSON.stringify(parts.guidelines),
+    };
+  };
+
+  const syncDirty = (parts?: {
+    policy?: CanvasDoc | null;
+    state?: CanvasDoc | null;
+    fields?: SchemaField[];
+    guidelines?: string[];
+  }) => {
+    if (!dirtyArmedRef.current || !baselineRef.current) {
+      setDirty(false);
+      return;
+    }
+    const b = baselineRef.current;
+    const policy = parts?.policy !== undefined ? parts.policy : policyDocRef.current;
+    const state = parts?.state !== undefined ? parts.state : stateDocRef.current;
+    const nextFields = parts?.fields !== undefined ? parts.fields : fieldsRef.current;
+    const nextGuidelines =
+      parts?.guidelines !== undefined ? parts.guidelines : guidelinesRef.current;
+    setDirty(
+      canvasFingerprint(policy ?? POLICY_SEED_DOC) !== b.policy ||
+        canvasFingerprint(state ?? STATE_SEED_DOC) !== b.state ||
+        JSON.stringify(nextFields) !== b.fields ||
+        JSON.stringify(nextGuidelines) !== b.guidelines
+    );
+  };
+
   // Load the live configuration the chat runtime actually reads, so the studio
   // reflects (and overwrites) the same backend, not a local mock.
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
+      let nextFields = STATE_FIELDS;
+      let nextGuidelines = DEFAULT_GUIDELINE_ITEMS;
+      let nextPolicy: CanvasDoc | null = null;
+      let nextState: CanvasDoc | null = null;
       try {
         const res = await fetch(SLEEP_SETUP_ENDPOINT);
         if (res.ok) {
@@ -1474,16 +1595,15 @@ export function useSleepSetup() {
             // Honor an explicit empty array (user deleted every field). Only
             // keep the seeded STATE_FIELDS defaults when the column is absent.
             if (Array.isArray(schema)) {
-              setFields(
-                schema.map((f) => {
-                  const r = (f ?? {}) as Record<string, unknown>;
-                  return [
-                    String(r.field_name ?? ""),
-                    String(r.type ?? "string"),
-                    r.initial_value === null ? "null" : String(r.initial_value ?? ""),
-                  ] as SchemaField;
-                }),
-              );
+              nextFields = schema.map((f) => {
+                const r = (f ?? {}) as Record<string, unknown>;
+                return [
+                  String(r.field_name ?? ""),
+                  String(r.type ?? "string"),
+                  r.initial_value === null ? "null" : String(r.initial_value ?? ""),
+                ] as SchemaField;
+              });
+              setFields(nextFields);
             }
             // Dataset rows are the source of truth; legacy guideline blocks
             // (older configs) are converted to rows and merged in once.
@@ -1492,72 +1612,60 @@ export function useSleepSetup() {
               .map((block) => buildGuidelineItemText(block))
               .filter((text) => text.length > 0 && !datasetRows.includes(text));
             const restoredRows = [...datasetRows, ...legacyRows];
-            if (restoredRows.length > 0) setGuidelineItems(restoredRows);
-            const pDoc = buildCanvasDoc(policyCanvases);
-            if (pDoc) setPolicyDoc(pDoc);
-            const sDoc = buildCanvasDoc(statePolicyCanvases);
-            if (sDoc) setStateDoc(sDoc);
+            if (restoredRows.length > 0) {
+              nextGuidelines = restoredRows;
+              setGuidelineItems(restoredRows);
+            }
+            nextPolicy = buildCanvasDoc(policyCanvases);
+            if (nextPolicy) setPolicyDoc(nextPolicy);
+            nextState = buildCanvasDoc(statePolicyCanvases);
+            if (nextState) setStateDoc(nextState);
           }
         }
       } catch {
         /* ignore — start from the seeded defaults */
       } finally {
         if (!cancelled) {
+          captureBaseline({
+            policy: nextPolicy,
+            state: nextState,
+            fields: nextFields,
+            guidelines: nextGuidelines,
+          });
           setLoaded(true);
           setDirty(false);
           // Arm dirty-tracking only after the initial hydration settles, so
           // canvas seeding on mount doesn't register as an edit.
-          setTimeout(() => { dirtyArmedRef.current = true; }, 0);
+          setTimeout(() => {
+            dirtyArmedRef.current = true;
+            syncDirty();
+          }, 0);
         }
       }
     })();
     return () => { cancelled = true; };
   }, []);
 
-  const markDirty = () => { if (dirtyArmedRef.current) setDirty(true); };
-  // The canvas re-emits its doc on mount (each drawer open) and whenever a node
-  // is selected or the trace path animates over it — none of which are real
-  // edits. Compare only persisted content (id/type/position/data + edge routing),
-  // stripping transient UI flags (selected, drag, animation), so those don't
-  // falsely flag unsaved changes.
-  const stripTransient = (doc: CanvasDoc | null) =>
-    doc == null
-      ? null
-      : {
-          version: doc.version,
-          canvases: doc.canvases.map((c) => ({
-            id: c.id,
-            name: c.name,
-            freeText: c.freeText ?? "",
-            graph: {
-              nodes: (c.graph?.nodes ?? []).map((n) => ({
-                id: n.id,
-                type: n.type,
-                position: n.position,
-                data: n.data,
-              })),
-              edges: (c.graph?.edges ?? []).map((e) => ({
-                id: e.id,
-                source: e.source,
-                target: e.target,
-                sourceHandle: e.sourceHandle ?? null,
-                targetHandle: e.targetHandle ?? null,
-                label: e.label ?? null,
-              })),
-            },
-          })),
-        };
-  const sameCanvasDoc = (a: CanvasDoc | null, b: CanvasDoc | null) =>
-    JSON.stringify(stripTransient(a)) === JSON.stringify(stripTransient(b));
-
   const editGuidelineItems: React.Dispatch<React.SetStateAction<string[]>> = (updater) => {
-    setGuidelineItems(updater);
-    markDirty();
+    setGuidelineItems((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      syncDirty({ guidelines: next });
+      return next;
+    });
   };
   const editFields: React.Dispatch<React.SetStateAction<SchemaField[]>> = (updater) => {
-    setFields(updater);
-    markDirty();
+    setFields((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      syncDirty({ fields: next });
+      return next;
+    });
   };
+  const onStateCanvasCycle = React.useCallback((phase: "mount" | "unmount") => {
+    if (phase === "unmount") stateAdoptedRef.current = false;
+  }, []);
+  const onPolicyCanvasCycle = React.useCallback((phase: "mount" | "unmount") => {
+    if (phase === "unmount") policyAdoptedRef.current = false;
+  }, []);
 
   const save = async (overrides?: { fields?: SchemaField[] }) => {
     if (saving || !canEdit) return;
@@ -1614,6 +1722,12 @@ export function useSleepSetup() {
           };
         if (id) configIdRef.current = id;
         preservedRef.current.datasets = config.datasets;
+        captureBaseline({
+          policy: policyDocToSave,
+          state: stateDocToSave,
+          fields: fieldsToSave,
+          guidelines: guidelineItems,
+        });
         setDirty(false);
         // The canvas rows saved, but the execution plan that actually drives the
         // runtime (and the policy-canvas trajectory) is regenerated separately and
@@ -1670,7 +1784,18 @@ export function useSleepSetup() {
           fields={fields}
           setFields={editFields}
           stateDoc={stateDoc}
-          onStateChange={(doc) => { if (!sameCanvasDoc(stateDoc, doc)) markDirty(); setStateDoc(doc); }}
+          onStateChange={(doc) => {
+            setStateDoc(doc);
+            if (!dirtyArmedRef.current || !baselineRef.current) return;
+            const nextFp = canvasFingerprint(doc);
+            // First emit after (re)mount: adopt editor-normalized doc as clean.
+            if (!stateAdoptedRef.current) {
+              baselineRef.current = { ...baselineRef.current, state: nextFp };
+              stateAdoptedRef.current = true;
+            }
+            syncDirty({ state: doc });
+          }}
+          onCanvasCycle={onStateCanvasCycle}
           stateCompile={stateCompile}
           fillHeight={opts?.fillHeight}
           currentState={opts?.currentState}
@@ -1683,7 +1808,17 @@ export function useSleepSetup() {
       pane = (
         <PolicyPane
           policyDoc={policyDoc}
-          onPolicyChange={(doc) => { if (!sameCanvasDoc(policyDoc, doc)) markDirty(); setPolicyDoc(doc); }}
+          onPolicyChange={(doc) => {
+            setPolicyDoc(doc);
+            if (!dirtyArmedRef.current || !baselineRef.current) return;
+            const nextFp = canvasFingerprint(doc);
+            if (!policyAdoptedRef.current) {
+              baselineRef.current = { ...baselineRef.current, policy: nextFp };
+              policyAdoptedRef.current = true;
+            }
+            syncDirty({ policy: doc });
+          }}
+          onCanvasCycle={onPolicyCanvasCycle}
           fillHeight={opts?.fillHeight}
           fireSignal={opts?.fireSignal}
           loaded={loaded}

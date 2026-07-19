@@ -267,11 +267,14 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .sidebar:not(.rail) .role-pill{
   font-size:11px;letter-spacing:.4px;}
 
-/* compact rail (collapsed sidebar) */
-.ra-scope .sidebar.rail{width:64px;flex:0 0 64px;align-items:center;padding:16px 0 14px;gap:8px;}
+/* compact rail (collapsed sidebar) — first icon centered on the 60px header
+   band with the Sleep Assistant title (same math as .right-rail.floating). */
+.ra-scope .sidebar.rail{width:64px;flex:0 0 64px;align-items:center;
+  padding:calc((var(--studio-head-h,60px) - 44px) / 2) 0 14px;gap:8px;}
 /* collapsed right drawer rail — mirror of .sidebar.rail, docked on the right */
 .ra-scope .right-rail{width:64px;flex:0 0 64px;background:var(--panel);border-left:none;
-  display:flex;flex-direction:column;align-items:center;padding:16px 0 14px;gap:8px;min-height:0;}
+  display:flex;flex-direction:column;align-items:center;
+  padding:calc((var(--studio-head-h,60px) - 44px) / 2) 0 14px;gap:8px;min-height:0;}
 /* When a right drawer is open, the rail floats at the drawer's left edge (its
    `right` is set inline to the live drawer width, so it tracks resizing). It's
    out of the flex flow, transparent, and click-through except on the icons, and
@@ -576,11 +579,18 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    so the board isn't squeezed beside the 288px inspector. Pop out for the wide
    side-by-side editing view. */
 .ra-scope .obs-docked .sc-stage{grid-template-columns:1fr;}
-/* Canvas tabs wrap onto a second line in the narrow drawer instead of clipping. */
+/* Narrow drawer: keep (i) pinned; canvas titles scroll horizontally under it. */
 .ra-scope .obs-docked .rf-canvas-workspace > .rf-canvas-tabs{
-  flex:0 0 auto;flex-wrap:wrap;height:auto;min-height:46px;align-items:center;}
+  flex:0 0 46px;flex-wrap:nowrap;height:46px;min-height:46px;align-items:center;}
 .rf-canvas-fullscreen .rf-canvas-tabs{
-  flex-wrap:wrap;height:auto;min-height:46px;align-items:center;}
+  flex-wrap:nowrap;height:46px;min-height:46px;align-items:center;}
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-scroll,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-scroll{
+  min-width:0;flex:1 1 0;overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-end,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end{
+  flex:0 0 auto;align-self:center;}
 .ra-scope .obs-docked .rf-canvas-body{
   flex-direction:column !important;flex:1 1 0 !important;min-height:0 !important;
   max-height:100% !important;overflow:hidden !important;height:auto !important;}
@@ -926,11 +936,11 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
   height:2px;transform:translateY(-50%);background:transparent;}
 .ra-scope .bottom-drawer-resize:hover::before,
 .ra-scope .bottom-drawer-resize.active::before{background:var(--accent);}
-/* Workflow close (×) — default chrome; tab-end override sits next to (i). */
+/* Workflow close (×) — tab-end next to (i): color-only hover, no plate. */
 .ra-scope .bottom-drawer-close{display:flex;align-items:center;justify-content:center;
   width:30px;height:30px;border-radius:0;border:none;background:transparent;
   color:var(--text-2);cursor:pointer;margin-left:2px;}
-.ra-scope .bottom-drawer-close:hover{background:var(--surface);color:var(--text);}
+.ra-scope .bottom-drawer-close:hover{background:transparent;color:var(--text);box-shadow:none;}
 /* Fallback close, shown only below lg where the canvas tab bar (with the inline
    close) is hidden. Mutually exclusive with the inline close, so no overlap. */
 .ra-scope .bottom-drawer-close-fallback{position:absolute;top:7px;right:12px;z-index:7;
@@ -1061,14 +1071,15 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
   background:transparent;border:none;}
 .ra-scope .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover,
 .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover{
-  color:var(--text);background:var(--surface, #eceadd);}
+  color:var(--text);background:transparent !important;box-shadow:none !important;}
 .ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-actions,
 .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-actions{
   margin-left:0;display:flex;align-items:center;gap:4px;}
-.ra-scope .rf-canvas-chrome .rf-canvas-tab-btn:hover,
-.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn:hover,
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-btn:hover,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn:hover,
+/* Text chrome hover fill — exclude icon (i / ×) buttons. */
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
 .ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
 .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
 .ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
@@ -1076,17 +1087,32 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
 .ra-scope .rf-inspector-tabs .rf-inspector-fs-btn:hover,
 .rf-canvas-fullscreen .rf-inspector-tabs .rf-inspector-fs-btn:hover{
   background:var(--surface, #eceadd);}
-.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-btn:hover,
-.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-btn:hover,
+.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
+.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
 .ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
 .ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
 .ra-scope.ra-mono .rf-inspector-tabs .rf-inspector-fs-btn:hover,
-body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn:hover,
-body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn:not(.rf-canvas-tab-btn--icon):hover,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-inspector-tabs .rf-inspector-fs-btn:hover{
   background:#f2f2f2 !important;}
+/* i / × (Policy, State, workflow, fullscreen): never a hover plate. */
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-end .rf-canvas-tab-btn--icon:hover,
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover,
+.ra-scope .bottom-drawer .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+.ra-scope .bottom-drawer .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end .rf-canvas-tab-btn--icon:hover,
+.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+.ra-scope.ra-mono .bottom-drawer .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+.ra-scope.ra-mono .bottom-drawer .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end .rf-canvas-tab-btn--icon:hover{
+  background:transparent !important;box-shadow:none !important;filter:none !important;
+  color:var(--text) !important;}
 .ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled,
 .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled{
   opacity:.4;cursor:default;}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import type { Turn } from "../../../components/trace/TraceView";
 import { ObservabilityContent } from "./ObservabilityPanel";
 import { ExpertChatContent } from "./ExpertChatPanel";
@@ -130,16 +130,6 @@ export function RightDrawer({
   const tabIds = visibleTabIds;
   const activeId =
     active && visibleTabIds.includes(active) ? active : visibleTabIds[0] ?? null;
-
-  // Escape closes the active tab.
-  useEffect(() => {
-    if (open.length === 0) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && active) onClose(active);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open.length, active, onClose]);
 
   function onGrabDown(e: React.PointerEvent) {
     dragStartY.current = e.clientY;

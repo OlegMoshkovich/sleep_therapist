@@ -376,7 +376,7 @@ export default function SleepAssessmentPage() {
                     Start over
                   </button>
                   <Link
-                    href="/sleep"
+                    href="/demo/sleep/studio"
                     className="rounded-full bg-[#F05025] px-5 py-3 text-sm font-bold text-white transition hover:bg-black"
                   >
                     Continue to full sleep assistant

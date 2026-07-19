@@ -9,7 +9,7 @@ import SiteLogo from "./components/SiteLogo";
 
 // Where a signed-in visitor lands. Sign-in redirects straight here so the
 // landing page doubles as the login screen (see HomeContent).
-const STUDIO_PATH = "/sleep";
+const STUDIO_PATH = "/demo/sleep/studio";
 
 // Shared width so the intro copy and the Clerk sign-in card line up exactly.
 const CONTENT_WIDTH = "25rem";

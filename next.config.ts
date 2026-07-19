@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   // Tests can set NEXT_DIST_DIR=.next-test so the test dev server doesn't
   // collide with a separately-running `npm run dev`.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  // Hide the Next.js Dev Tools / route indicator overlay in development.
+  devIndicators: false,
   transpilePackages: ["@airlab/openclaw-discovery", "@airlab/openclaw-runtime", "@airlab/canvas-core", "@airlab/canvas-compiler", "@airlab/canvas-planner", "@airlab/canvas-rules", "@airlab/canvas-ui", "@airlab/chat-ui", "@airlab/orchestration-core", "@airlab/orchestration-runtime"],
   // Keep the MCP SDK out of the bundled function chunks: load it from
   // node_modules at runtime instead. The SDK uses Node built-ins (child_process
@@ -19,14 +21,6 @@ const nextConfig: NextConfig = {
   // Combined with the literal dynamic import() in app/lib/tools/mcp.ts, Vercel's
   // tracer still includes the package, so it's present at runtime.
   serverExternalPackages: ["@modelcontextprotocol/sdk"],
-  // Serve the sleep studio under the shorter /sleep endpoint. This is a rewrite
-  // (not a redirect), so the URL bar stays on /sleep while the existing
-  // /demo/sleep/studio route renders. The old path keeps working too.
-  async rewrites() {
-    return [
-      { source: "/sleep", destination: "/demo/sleep/studio" },
-    ];
-  },
 };
 
 export default nextConfig;

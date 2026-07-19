@@ -60,7 +60,26 @@ export const Ic = {
   Moon: mk(<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />),
   Panel: mk(<><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><line x1="9.5" y1="4.5" x2="9.5" y2="19.5" /></>),
   Close: mk(<><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></>),
-  Info: mk(<><circle cx="12" cy="12" r="9" /><line x1="12" y1="11" x2="12" y2="16.5" /><circle cx="12" cy="7.75" r="1" fill="currentColor" stroke="none" /></>),
+  /* Square frame (no corner radius) — matches canvas step badges / sharp chrome. */
+  Info: function InfoIcon({ size = 18, stroke = 1.6, fill = "none", ...rest }: IconProps) {
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill={fill}
+        stroke="currentColor"
+        strokeWidth={stroke}
+        strokeLinecap="square"
+        strokeLinejoin="miter"
+        {...rest}
+      >
+        <rect x="3" y="3" width="18" height="18" />
+        <line x1="12" y1="11" x2="12" y2="16.5" />
+        <circle cx="12" cy="7.75" r="1" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  },
 } as const;
 
 export type IconName = keyof typeof Ic;
