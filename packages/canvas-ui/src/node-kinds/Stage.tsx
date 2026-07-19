@@ -22,7 +22,7 @@ function StageNode({ data, selected }: NodeProps<CanvasNode>) {
 
   return (
     <div
-      className={`relative w-[290px] rounded-lg border-2 border-[#C7C7C7] bg-[#C7C7C7] px-4 py-3 text-left font-sans text-sm text-[#3d4a35] shadow-sm ${
+      className={`relative w-[290px] rounded-none border-2 border-[#C7C7C7] bg-[#C7C7C7] px-4 py-3 text-left font-sans text-sm text-[#3d4a35] shadow-sm ${
         selected ? "ring-2 ring-[#B0BEA5]" : ""
       }`}
     >
@@ -70,7 +70,7 @@ function StageNode({ data, selected }: NodeProps<CanvasNode>) {
         {data.label || "Describe this workflow stage..."}
       </ClampedNodeText>
       {childWorkflowCanvasName ? (
-        <div className="mt-2 rounded border border-[#B0BEA5] bg-white/70 px-2 py-1 text-[11px] font-medium text-[#3d4a35]">
+        <div className="mt-2 rounded-none border border-[#B0BEA5] bg-white/70 px-2 py-1 text-[11px] font-medium text-[#3d4a35]">
           Child workflow: {childWorkflowCanvasName}
         </div>
       ) : null}
@@ -115,7 +115,7 @@ export const STAGE: NodeKindDef = {
   toolbarLabel: "+ Stage",
   toolbarDescription: "A high-level workflow stage the run can enter.",
   toolbarClassName:
-    "rounded border border-[#B0BEA5] bg-[#eef1eb] px-3 py-2 text-xs font-sans uppercase tracking-widest text-[#3d4a35] hover:bg-[#e0e5da]",
+    "rounded-none border border-[#B0BEA5] bg-[#eef1eb] px-3 py-2 text-xs font-sans uppercase tracking-widest text-[#3d4a35] hover:bg-[#e0e5da]",
   component: StageNode,
   defaultLabel: "Stage: new workflow stage",
   inspector: {

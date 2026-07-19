@@ -161,7 +161,7 @@ export interface ToolCallData extends CanvasNodeData {
 }
 
 const baseClass =
-  "relative px-3 py-2 text-sm font-sans border rounded shadow-sm min-w-[9rem] max-w-[16rem] text-center";
+  "relative px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[9rem] max-w-[16rem] text-center";
 
 function toolSourceBadge(
   data: ToolCallData,
@@ -281,7 +281,7 @@ function ToolCallNode({ data, selected }: NodeProps<CanvasNode>) {
 
 const fieldLabel = "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const input =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 function ParametersEditor({
   schemaJson,
@@ -327,7 +327,7 @@ function ParametersEditor({
         <button
           type="button"
           onClick={add}
-          className="text-[10px] font-sans uppercase tracking-widest border border-gray-500 text-gray-700 hover:bg-gray-100 rounded px-2 py-0.5"
+          className="text-[10px] font-sans uppercase tracking-widest border border-gray-500 text-gray-700 hover:bg-gray-100 rounded-none px-2 py-0.5"
         >
           + Parameter
         </button>
@@ -356,7 +356,7 @@ function ParametersEditor({
                   },
                 ])
               }
-              className="text-[10px] font-mono border border-[#c0bdb0] bg-[#e0dccc] hover:bg-[#d4d0c0] text-gray-800 rounded px-1.5 py-0.5"
+              className="text-[10px] font-mono border border-[#c0bdb0] bg-[#e0dccc] hover:bg-[#d4d0c0] text-gray-800 rounded-none px-1.5 py-0.5"
               title={sample.description}
             >
               + {sample.name} ({sample.type})
@@ -368,7 +368,7 @@ function ParametersEditor({
           {rows.map((r) => (
             <div
               key={r.id}
-              className="border border-[#c0bdb0] rounded p-2 bg-[#e0dccc] space-y-1.5"
+              className="border border-[#c0bdb0] rounded-none p-2 bg-[#e0dccc] space-y-1.5"
             >
               <div className="flex items-center gap-1.5">
                 <input
@@ -727,7 +727,7 @@ export const TOOL_CALL: NodeKindDef = {
   kind: "tool_call",
   toolbarLabel: "+ Tool call",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-violet-400 text-violet-900 bg-violet-50 hover:bg-violet-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-violet-400 text-violet-900 bg-violet-50 hover:bg-violet-100 rounded-none",
   component: ToolCallNode,
   defaultLabel: "tool_name(args)",
   defaultData: {

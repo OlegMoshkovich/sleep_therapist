@@ -30,7 +30,34 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ conversations: data ?? [] });
+  // Attach a real turn count (assistant replies) per conversation so the
+  // Simulation panel can show the actual number of turns a run produced — more
+  // truthful than the requested count, and works for runs created before the
+  // turn count was encoded in the title. One light query (id column only).
+  const rows = (data ?? []) as Array<{ id: string }>;
+  const ids = rows.map((c) => c.id);
+  const turnCount = new Map<string, number>();
+  if (ids.length > 0) {
+    const { data: msgRows, error: msgError } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .in("conversation_id", ids)
+      .in("role", ["assistant", "ai"]);
+    if (msgError) {
+      console.error("[api/conversations] turn count error:", JSON.stringify(msgError));
+    } else {
+      for (const m of (msgRows ?? []) as Array<{ conversation_id: string }>) {
+        turnCount.set(m.conversation_id, (turnCount.get(m.conversation_id) ?? 0) + 1);
+      }
+    }
+  }
+
+  const conversations = rows.map((c) => ({
+    ...c,
+    turn_count: turnCount.get(c.id) ?? 0,
+  }));
+
+  return NextResponse.json({ conversations });
 }
 
 export async function POST(request: NextRequest) {

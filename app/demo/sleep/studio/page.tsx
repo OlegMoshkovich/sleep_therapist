@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import "./ra-theme.css";
 import { Ic, type IconName } from "./ra-icons";
 import { Avatar } from "./ra-shared";
@@ -11,7 +13,7 @@ import {
   SUGGESTIONS,
 } from "./sleep-data";
 import { RightDrawer, DRAWER_LABEL, type DrawerId } from "./RightDrawer";
-import { SetupBar } from "./config/page";
+import { SetupBar, turnExtractedStateKeys } from "./config/page";
 import { SimulationPanel, type SimRunControls } from "./SimulationPanel";
 import { FeedbackControls, type FeedbackEntry, type FeedbackSignal } from "./FeedbackControls";
 import type { Turn, TimedTraceEvent } from "../../../components/trace/TraceView";
@@ -25,6 +27,10 @@ import {
   WORKFLOW_OVERVIEW_CANVAS_MARKER,
   WORKFLOW_OVERVIEW_CANVAS_NAME,
 } from "@airlab/orchestration-core/general-orchestration";
+
+// Simulation conversations are titled "Simulation · …"; this prefix separates
+// them from hand-typed chats (they show in the Simulation panel, not the sidebar).
+const SIM_TITLE_PREFIX = "Simulation · ";
 
 const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
 /* v2: black & white is the default; old key auto-wrote "0" for greige. */
@@ -54,6 +60,10 @@ interface Message {
 interface Conversation {
   id: string;
   title: string;
+  /** Last-activity timestamp (ISO); shown as relative time in the simulation run list. */
+  updatedAt?: string;
+  /** Actual number of turns (assistant replies) — shown in the simulation run list. */
+  turnCount?: number;
 }
 
 // The function panels shown as drawer tabs on desktop. Opening any one of them
@@ -888,31 +898,315 @@ function VoiceReplyButton({
   );
 }
 
-function Bubble({ m, onOpenTrace }: { m: Message; onOpenTrace?: (turnId: string) => void }) {
-  if (m.role === "user") return <div className="msg-user">{m.text}</div>;
-  const clickable = !!(onOpenTrace && m.turnId);
+/**
+ * Fullscreen overlay for a reply — mirrors the canvas full mode. It has its own
+ * Feedback button: pressing it turns the reply into an editable input with a
+ * Submit button; submitting saves the edited text as the "ideal output" feedback
+ * signal, which tints the bubble and shows in the message's feedback component.
+ */
+function BubbleFullscreen({
+  text,
+  feedbackMode,
+  initialEntries,
+  onSubmitFeedback,
+  onClose,
+}: {
+  text: string;
+  feedbackMode?: boolean;
+  initialEntries?: FeedbackEntry[];
+  onSubmitFeedback?: (entries: FeedbackEntry[]) => void;
+  onClose: () => void;
+}) {
+  const canFeedback = !!onSubmitFeedback;
+  const existingIdeal = initialEntries?.find((e) => e.signal === "correct_output")?.comment ?? "";
+  const existingRating = initialEntries?.find((e) => e.signal === "score")?.rating ?? null;
+  // Feedback edit mode: opened by the Feedback button (or straight away when the
+  // studio's global feedback mode is on). Prefill with a prior correction if any.
+  const [editing, setEditing] = useState(!!feedbackMode && canFeedback);
+  const [draft, setDraft] = useState(existingIdeal || text);
+  const [rating, setRating] = useState<1 | -1 | null>(existingRating);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const submit = () => {
+    if (!onSubmitFeedback) return;
+    // Preserve any other signals already on this message; replace score + ideal.
+    const kept = (initialEntries ?? []).filter(
+      (e) => e.signal !== "score" && e.signal !== "correct_output"
+    );
+    const entries: FeedbackEntry[] = [...kept];
+    if (rating !== null) entries.push({ rating, signal: "score", comment: "" });
+    const corrected = draft.trim();
+    if (corrected && corrected !== text.trim()) {
+      entries.push({ rating: null, signal: "correct_output", comment: corrected });
+    }
+    onSubmitFeedback(entries);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1600);
+  };
+
+  // Mount inside `.ra-scope` so theme tokens (mono accent, surfaces) apply —
+  // portaling to <body> left the modal on the fallback orange accent.
+  const host =
+    (typeof document !== "undefined" &&
+      (document.querySelector(".ra-scope") as HTMLElement | null)) ||
+    document.body;
+
+  return createPortal(
+    <div className="bubble-fs-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="bubble-fs" onClick={(e) => e.stopPropagation()}>
+        <div className="bubble-fs-head">
+          <div className="bubble-fs-head-left">
+            {canFeedback && !editing && (
+              <button type="button" className="bubble-fs-fb" onClick={() => setEditing(true)}>
+                <Ic.Edit size={15} /> Feedback
+              </button>
+            )}
+            {editing && (
+              <>
+                <div className="bubble-fs-thumbs">
+                  <button
+                    type="button"
+                    className={"bubble-fs-thumb" + (rating === 1 ? " active" : "")}
+                    title="Thumbs up"
+                    onClick={() => setRating((r) => (r === 1 ? null : 1))}
+                  >
+                    👍
+                  </button>
+                  <button
+                    type="button"
+                    className={"bubble-fs-thumb" + (rating === -1 ? " active" : "")}
+                    title="Thumbs down"
+                    onClick={() => setRating((r) => (r === -1 ? null : -1))}
+                  >
+                    👎
+                  </button>
+                </div>
+                <span className="bubble-fs-hint">Edit the answer, then submit it as the ideal response.</span>
+              </>
+            )}
+          </div>
+          <div className="bubble-fs-head-right">
+            {editing && (
+              <>
+                <button
+                  type="button"
+                  className="bubble-fs-cancel"
+                  onClick={() => { setEditing(false); setDraft(existingIdeal || text); }}
+                >
+                  Cancel
+                </button>
+                <button type="button" className="bubble-fs-submit" onClick={submit}>
+                  {saved ? "Saved" : "Submit feedback"}
+                </button>
+              </>
+            )}
+            <button
+              className="bubble-fs-close"
+              type="button"
+              aria-label="Exit full screen"
+              title="Exit full screen"
+              onClick={onClose}
+            >
+              <Ic.Close size={20} />
+            </button>
+          </div>
+        </div>
+        <div className="bubble-fs-body">
+          {editing ? (
+            <textarea
+              className="bubble-fs-textarea"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              spellCheck
+              autoFocus
+            />
+          ) : (
+            <ReactMarkdown>{text}</ReactMarkdown>
+          )}
+        </div>
+      </div>
+    </div>,
+    host
+  );
+}
+
+function Bubble({
+  m,
+  onOpenTrace,
+  onOpenPolicy,
+  onOpenState,
+  onOpenFeedback,
+  hasState = false,
+  feedbackMode = false,
+  feedbackEntries,
+  onSubmitFeedback,
+  collapsed = false,
+  onToggleCollapse,
+}: {
+  m: Message;
+  onOpenTrace?: (turnId: string) => void;
+  onOpenPolicy?: (turnId: string) => void;
+  onOpenState?: (turnId: string) => void;
+  /** True when this turn extracted at least one piece of state (drives the State button). */
+  hasState?: boolean;
+  onOpenFeedback?: () => void;
+  /** In feedback mode the fullscreen view becomes editable + submittable. */
+  feedbackMode?: boolean;
+  feedbackEntries?: FeedbackEntry[];
+  onSubmitFeedback?: (entries: FeedbackEntry[]) => void;
+  /** When true the bubble is tucked to a single line. */
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
+}) {
+  const [fullscreen, setFullscreen] = useState(false);
+  const isUser = m.role === "user";
+  const turnId = m.turnId;
+  // Tint the bubble once feedback has been left on this message.
+  const hasFeedback = (feedbackEntries?.length ?? 0) > 0;
+  // Observability/Policy are assistant-only (they inspect the model's work). State
+  // + Feedback apply to both the patient and assistant bubble. Fullscreen is for
+  // assistant replies (the long ones). All trace views need the turn (turnId).
+  const showTrace = !isUser && !!turnId && !!onOpenTrace;
+  const showPolicy = !isUser && !!turnId && !!onOpenPolicy;
+  // State is extracted from the patient message only — show the button there.
+  const showStateBtn = isUser && !!turnId && !!onOpenState && hasState;
+  const showFeedback = !!onOpenFeedback;
+  // Fullscreen is available on both patient and assistant bubbles.
+  const showFullscreen = !!turnId;
+  const showCollapse = !!onToggleCollapse;
+  const showNavActions = showTrace || showPolicy || showStateBtn;
+  const showFootActions = showFeedback || showFullscreen;
+
+  const navActions = showNavActions ? (
+    <div className="trace-actions">
+      {showTrace && (
+        <button type="button" className="trace-act" title="Open the step-by-step Observability trace for this reply" onClick={() => onOpenTrace!(turnId!)}>
+          <Ic.Grid size={13} /> Observability
+        </button>
+      )}
+      {showPolicy && (
+        <button type="button" className="trace-act" title="Highlight this reply's path on the Policy canvas" onClick={() => onOpenPolicy!(turnId!)}>
+          <Ic.Sliders size={13} /> Policy trace
+        </button>
+      )}
+      {showStateBtn && (
+        <button type="button" className="trace-act" title="Show the state extracted from this turn, highlighted in the State panel" onClick={() => onOpenState!(turnId!)}>
+          <Ic.List size={13} /> State
+        </button>
+      )}
+    </div>
+  ) : null;
+
+  const footActions = showFootActions ? (
+    <div className="bubble-foot-actions">
+      {showFullscreen ? (
+        <button type="button" className="trace-act" title="View this message full screen" onClick={() => setFullscreen(true)}>
+          <Ic.Expand size={13} /> Fullscreen
+        </button>
+      ) : (
+        <span />
+      )}
+      {showFeedback ? (
+        <button type="button" className="trace-act" title="Leave feedback on this message" onClick={() => onOpenFeedback!()}>
+          <Ic.Edit size={13} /> Feedback
+        </button>
+      ) : (
+        <span />
+      )}
+    </div>
+  ) : null;
+
+  const collapseBtn = showCollapse ? (
+    <button
+      type="button"
+      className="bubble-collapse"
+      title={collapsed ? "Expand" : "Collapse"}
+      aria-label={collapsed ? "Expand message" : "Collapse message"}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleCollapse?.();
+      }}
+    >
+      <Ic.Chevron size={13} style={collapsed ? undefined : { transform: "rotate(180deg)" }} />
+      {collapsed ? "Expand" : "Collapse"}
+    </button>
+  ) : null;
+
+  const overlay = fullscreen ? (
+    <BubbleFullscreen
+      text={m.text}
+      feedbackMode={feedbackMode}
+      initialEntries={feedbackEntries}
+      onSubmitFeedback={onSubmitFeedback}
+      onClose={() => setFullscreen(false)}
+    />
+  ) : null;
+
+  // Collapsed preview is plain one-line text (markdown blocks clip badly under clamp).
+  const collapsedPreview = m.text.replace(/\s+/g, " ").trim();
+  // Toggle only on the body so nav/footer clicks don't collapse.
+  const bodyToggleProps = onToggleCollapse
+    ? {
+        role: "button" as const,
+        tabIndex: 0,
+        title: collapsed ? "Click to expand" : "Click to collapse",
+        // Ignore clicks that finish a text selection so highlight-drag doesn't toggle.
+        onClick: () => {
+          const sel = typeof window !== "undefined" ? window.getSelection() : null;
+          if (sel && !sel.isCollapsed && (sel.toString() || "").length > 0) return;
+          onToggleCollapse();
+        },
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggleCollapse();
+          }
+        },
+      }
+    : {};
+
+  const shellClass =
+    (isUser ? "msg-user" : "bubble") +
+    (hasFeedback ? " has-feedback" : "") +
+    (collapsed ? " is-collapsed" : "");
+
+  const shell = (
+    <div className={shellClass}>
+      <div className="bubble-nav">
+        {navActions}
+        {collapseBtn}
+      </div>
+      <div
+        className={"bubble-body" + (onToggleCollapse ? " is-toggleable" : "")}
+        {...bodyToggleProps}
+      >
+        {collapsed ? collapsedPreview : isUser ? m.text : <ReactMarkdown>{m.text}</ReactMarkdown>}
+      </div>
+      {footActions && <div className="bubble-foot">{footActions}</div>}
+    </div>
+  );
+
+  if (isUser) {
+    return (
+      <div className="msg-user-col">
+        {shell}
+        {overlay}
+      </div>
+    );
+  }
   return (
     <div className="msg-ai">
       <Avatar kind="assistant" size={28} mono="SA" />
-      <div
-        className={"bubble" + (clickable ? " bubble-traceable" : "")}
-        {...(clickable
-          ? {
-              role: "button" as const,
-              tabIndex: 0,
-              title: "View this turn's trace",
-              onClick: () => onOpenTrace!(m.turnId!),
-              onKeyDown: (e: React.KeyboardEvent) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onOpenTrace!(m.turnId!);
-                }
-              },
-            }
-          : {})}
-      >
-        {m.text}
+      <div className="bubble-col">
+        {shell}
       </div>
+      {overlay}
     </div>
   );
 }
@@ -927,6 +1221,12 @@ function MessageRow({
   onSave,
   onRemove,
   onOpenTrace,
+  onOpenPolicy,
+  onOpenState,
+  hasState,
+  allowFeedback,
+  collapsed,
+  onToggleCollapse,
 }: {
   m: Message;
   index: number;
@@ -937,10 +1237,30 @@ function MessageRow({
   onSave: (index: number, entries: FeedbackEntry[]) => void;
   onRemove: (index: number) => void;
   onOpenTrace?: (turnId: string) => void;
+  onOpenPolicy?: (turnId: string) => void;
+  onOpenState?: (turnId: string) => void;
+  hasState?: boolean;
+  allowFeedback?: boolean;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
 }) {
   return (
     <div className="msg-block">
-      <Bubble m={m} onOpenTrace={onOpenTrace} />
+      <Bubble
+        m={m}
+        onOpenTrace={onOpenTrace}
+        onOpenPolicy={onOpenPolicy}
+        onOpenState={onOpenState}
+        hasState={hasState}
+        // The Feedback button opens the editor inline for this message (patient or assistant).
+        onOpenFeedback={allowFeedback ? () => onToggle(index) : undefined}
+        // In feedback mode the fullscreen view can edit + submit the reply as feedback.
+        feedbackMode={feedbackMode}
+        feedbackEntries={entries}
+        onSubmitFeedback={allowFeedback ? (e) => onSave(index, e) : undefined}
+        collapsed={collapsed}
+        onToggleCollapse={onToggleCollapse}
+      />
       <FeedbackControls
         mode={feedbackMode}
         entries={entries}
@@ -966,6 +1286,10 @@ function Thread({
   onSaveFeedback,
   onRemoveFeedback,
   onOpenTrace,
+  onOpenPolicy,
+  onOpenState,
+  stateTurnIds,
+  allowFeedback,
 }: {
   messages: Message[];
   typing: boolean;
@@ -978,8 +1302,27 @@ function Thread({
   onSaveFeedback: (index: number, entries: FeedbackEntry[]) => void;
   onRemoveFeedback: (index: number) => void;
   onOpenTrace?: (turnId: string) => void;
+  onOpenPolicy?: (turnId: string) => void;
+  onOpenState?: (turnId: string) => void;
+  /** Turn ids that extracted at least one piece of state (drives the State button). */
+  stateTurnIds?: Set<string>;
+  /** Gates the per-reply Feedback button (admin-only, like the other panels). */
+  allowFeedback?: boolean;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
+  // Per-bubble collapse; driven by each row's Collapse button or the top toggle.
+  const [collapsedByIdx, setCollapsedByIdx] = useState<Record<number, boolean>>({});
+  const allCollapsed =
+    messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i]);
+  const toggleCollapseAll = () => {
+    if (allCollapsed) {
+      setCollapsedByIdx({});
+      return;
+    }
+    const next: Record<number, boolean> = {};
+    for (let i = 0; i < messages.length; i++) next[i] = true;
+    setCollapsedByIdx(next);
+  };
   // Auto-scroll to the latest message as the conversation grows — but NOT when
   // a feedback editor opens (editingIdx), or it would jump away from the bubble
   // you just clicked. The editor renders inline under that bubble, already in view.
@@ -989,7 +1332,23 @@ function Thread({
   return (
     <div className="thread">
       <div className="thread-inner">
-        <div className="day-divider">TODAY</div>
+        <div className="thread-top">
+          {messages.length > 0 && (
+            <button
+              type="button"
+              className="thread-collapse-all"
+              onClick={toggleCollapseAll}
+              title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
+            >
+              <Ic.Chevron
+                size={13}
+                style={allCollapsed ? undefined : { transform: "rotate(180deg)" }}
+              />
+              {allCollapsed ? "Expand all" : "Collapse all"}
+            </button>
+          )}
+          <div className="day-divider">TODAY</div>
+        </div>
         {messages.map((m, i) => (
           <MessageRow
             key={i}
@@ -1002,6 +1361,14 @@ function Thread({
             onSave={onSaveFeedback}
             onRemove={onRemoveFeedback}
             onOpenTrace={onOpenTrace}
+            onOpenPolicy={onOpenPolicy}
+            onOpenState={onOpenState}
+            hasState={!!m.turnId && !!stateTurnIds?.has(m.turnId)}
+            allowFeedback={allowFeedback}
+            collapsed={!!collapsedByIdx[i]}
+            onToggleCollapse={() =>
+              setCollapsedByIdx((prev) => ({ ...prev, [i]: !prev[i] }))
+            }
           />
         ))}
         {streaming && <Bubble m={{ role: "ai", text: streaming }} />}
@@ -1585,12 +1952,16 @@ function SleepStudioChat() {
   const [openDrawers, setOpenDrawers] = useState<DrawerId[]>([]);
   const [activeDrawer, setActiveDrawer] = useState<DrawerId | null>(null);
   // Live simulation controls, lifted from SimulationPanel so Pause/Stop can dock
-  // in the drawer tab bar (next to ×) while a run is in progress.
+  // in the drawer tab bar (next to ×) while a run is in progress — or float when
+  // the drawer is closed so the run stays controllable.
   const [simRunControls, setSimRunControls] = useState<SimRunControls | null>(null);
   // The Model Setup pane's container inside the drawer. The page-level SetupBar
   // portals its docked view here; keeping SetupBar mounted at the page level (not
   // inside the drawer) lets its popped-out floating window survive drawer close.
   const [modelSetupSlot, setModelSetupSlot] = useState<HTMLElement | null>(null);
+  // Simulation pane slot — same pattern as Model Setup so a live run survives
+  // the drawer closing.
+  const [simulationSlot, setSimulationSlot] = useState<HTMLElement | null>(null);
   // Height reserved at the top of the frame for the top-docked Model Setup window
   // so the chat and side panels reflow below it instead of hiding behind it.
   const [topDockH, setTopDockH] = useState(0);
@@ -1627,6 +1998,12 @@ function SleepStudioChat() {
     setActiveDrawer(null);
   }, []);
   const [turns, setTurns] = useState<Turn[]>([]); // observability trace, one per send
+  // Turn ids that extracted at least one piece of state this turn — drives which
+  // replies show a "State" button (and it highlights those exact fields).
+  const stateTurnIds = useMemo(
+    () => new Set(turnExtractedStateKeys(turns).keys()),
+    [turns]
+  );
   // Clicking an assistant bubble opens Observability and expands that turn's
   // trace. `n` bumps on every click so re-clicking the same bubble re-focuses.
   const [traceFocus, setTraceFocus] = useState<{ id: string; n: number }>({
@@ -1638,6 +2015,35 @@ function SleepStudioChat() {
       if (!isAdmin) return; // Observability is admin-only.
       setTraceFocus((prev) => ({ id: turnId, n: prev.n + 1 }));
       openDrawer("observability");
+    },
+    [isAdmin, openDrawer]
+  );
+  // Policy-canvas trace focus: clicking a reply's "Policy trace" button opens
+  // Model Setup (which lands on Policy) and re-animates that specific turn's path
+  // on the canvas. `n` bumps each click so re-clicking the same reply re-fires.
+  const [policyFocus, setPolicyFocus] = useState<{ id: string; n: number }>({
+    id: "",
+    n: 0,
+  });
+  const focusPolicy = useCallback(
+    (turnId: string) => {
+      if (!isAdmin) return; // Model Setup / Policy is admin-only.
+      openDrawer("modelsetup");
+      setPolicyFocus((prev) => ({ id: turnId, n: prev.n + 1 }));
+    },
+    [isAdmin, openDrawer]
+  );
+  // State-panel focus: clicking a reply's "State" button opens Model Setup on the
+  // State section and highlights the fields that reply extracted.
+  const [stateFocus, setStateFocus] = useState<{ id: string; n: number }>({
+    id: "",
+    n: 0,
+  });
+  const focusState = useCallback(
+    (turnId: string) => {
+      if (!isAdmin) return; // Model Setup / State is admin-only.
+      openDrawer("modelsetup");
+      setStateFocus((prev) => ({ id: turnId, n: prev.n + 1 }));
     },
     [isAdmin, openDrawer]
   );
@@ -1751,9 +2157,14 @@ function SleepStudioChat() {
       const res = await fetch("/api/conversations?topic=sleep");
       if (!res.ok) { setConvos([]); return; }
       const { conversations } = (await res.json()) as {
-        conversations: Array<{ id: string; title: string }>;
+        conversations: Array<{ id: string; title: string; updated_at?: string; turn_count?: number }>;
       };
-      setConvos((conversations ?? []).map((c) => ({ id: c.id, title: c.title })));
+      setConvos((conversations ?? []).map((c) => ({
+        id: c.id,
+        title: c.title,
+        updatedAt: c.updated_at,
+        turnCount: c.turn_count,
+      })));
     } catch {
       setConvos([]);
     } finally {
@@ -1787,10 +2198,12 @@ function SleepStudioChat() {
       const rebuiltMessages: Message[] = [];
       const rebuiltTurns: Turn[] = [];
       let lastUserText = "";
+      let lastUserIdx = -1;
       for (const m of rows ?? []) {
         if (m.role === "user") {
           lastUserText = m.content;
           rebuiltMessages.push({ role: "user", text: m.content });
+          lastUserIdx = rebuiltMessages.length - 1;
           continue;
         }
         const meta = m.trace && typeof m.trace === "object" ? m.trace : null;
@@ -1810,8 +2223,12 @@ function SleepStudioChat() {
               tMs: (e as { ts?: number }).ts ?? startedAt,
             })),
           });
+          // Give the preceding patient message the same turn id so its bubble can
+          // open the same turn's State/Feedback after a reload.
+          if (lastUserIdx >= 0) rebuiltMessages[lastUserIdx].turnId = turnId;
         }
         rebuiltMessages.push({ role: "ai", text: m.content, turnId });
+        lastUserIdx = -1;
       }
       setMessages(rebuiltMessages);
       setTurns(rebuiltTurns);
@@ -1861,16 +2278,19 @@ function SleepStudioChat() {
       // If voice replies are on, mark the next assistant message to be spoken.
       speakNextAssistantRef.current = autoSpeakRef.current;
 
-      // Show the user message and open an observability turn up front, so even
-      // a failure before the chat call (e.g. creating the conversation) is
-      // visible in the thread and the trace — never a silent "nothing happens".
-      setMessages((prev) => [...prev, { role: "user", text: trimmed }]);
-      setTyping(true);
-      setStreaming("");
-
       // Observability: ask the endpoint for the REAL server-side trace
       // (system prompt, model, every OpenAI round-trip) instead of faking it.
       const turnId = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+      // Show the user message and open an observability turn up front, so even
+      // a failure before the chat call (e.g. creating the conversation) is
+      // visible in the thread and the trace — never a silent "nothing happens".
+      // The user message shares the turn's id so its bubble can open the same
+      // turn's State/Feedback (the state is extracted from what the patient said).
+      setMessages((prev) => [...prev, { role: "user", text: trimmed, turnId }]);
+      setTyping(true);
+      setStreaming("");
+
       const startedAt = Date.now();
       setTurns((prev) => [
         ...prev,
@@ -2027,14 +2447,29 @@ function SleepStudioChat() {
   // messages land in the main window, the trace fills Observability, and the
   // policy canvas animates, exactly like a hand-typed conversation.
   const beginSimulation = useCallback(
-    (scenario: string) => {
+    (scenario: string, turns: number) => {
       onNew();
-      simulationTitleRef.current = `Simulation · ${scenario.trim().slice(0, 40) || "run"}`;
+      // Title encodes the run's turn count + scenario so the Simulation panel's run
+      // list can show them: "Simulation · {n} turns · {scenario}".
+      const label = scenario.trim().slice(0, 80) || "Improvised patient";
+      const plural = turns === 1 ? "turn" : "turns";
+      simulationTitleRef.current = `Simulation · ${turns} ${plural} · ${label}`;
     },
     // onNew is a stable inline function defined every render; the values it
     // touches are all setState/refs, so it's safe to omit from deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
+  );
+
+  // Simulation runs live in the Simulation panel's own list, not the main sidebar
+  // conversation list. Split the conversations so each surface shows its own set.
+  const simulationRuns = useMemo(
+    () => convos.filter((c) => c.title.startsWith(SIM_TITLE_PREFIX)),
+    [convos]
+  );
+  const regularConvos = useMemo(
+    () => convos.filter((c) => !c.title.startsWith(SIM_TITLE_PREFIX)),
+    [convos]
   );
 
   const onSelect = (id: string) => {
@@ -2106,36 +2541,56 @@ function SleepStudioChat() {
   const onToggleFeedback = (index: number) =>
     setEditingIdx((prev) => (prev === index ? null : index));
 
-  const onSaveFeedback = (index: number, entries: FeedbackEntry[]) => {
+  // Surfaces a failed feedback save/delete instead of letting it fail silently.
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+  const onSaveFeedback = async (index: number, entries: FeedbackEntry[]) => {
     // Empty set means the expert cleared everything → treat as remove.
     if (entries.length === 0) {
       onRemoveFeedback(index);
       return;
     }
+    const msg = messages[index];
+    if (!activeId || !msg) {
+      // No conversation to attach to yet — don't drop the input silently.
+      setFeedbackError("Can't save feedback: no active conversation for this reply.");
+      return;
+    }
+    // Optimistic update; reconciled/reverted based on the server response.
     setFeedbackByIdx((prev) => ({ ...prev, [index]: entries }));
     setEditingIdx(null);
-    const msg = messages[index];
-    if (!activeId || !msg) return;
-    // Persist the full signal set; the server reconciles (upserts present
-    // signals, deletes cleared ones). Best-effort — the UI already updated.
-    fetch("/api/feedback", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        conversationId: activeId,
-        messageIndex: index,
-        messageRole: msg.role,
-        messageExcerpt: msg.text,
-        entries: entries.map((e) => ({
-          signal: e.signal,
-          rating: e.rating,
-          comment: e.comment,
-        })),
-      }),
-    }).catch(() => {});
+    setFeedbackError(null);
+    try {
+      // Persist the full signal set; the server reconciles (upserts present
+      // signals, deletes cleared ones).
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: activeId,
+          messageIndex: index,
+          messageRole: msg.role,
+          messageExcerpt: msg.text,
+          entries: entries.map((e) => ({
+            signal: e.signal,
+            rating: e.rating,
+            comment: e.comment,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Feedback save failed (HTTP ${res.status}).`);
+      }
+    } catch (err) {
+      console.error("[feedback] save failed", err);
+      setFeedbackError(
+        err instanceof Error ? err.message : "Feedback save failed. Please try again."
+      );
+    }
   };
 
-  const onRemoveFeedback = (index: number) => {
+  const onRemoveFeedback = async (index: number) => {
     setFeedbackByIdx((prev) => {
       const next = { ...prev };
       delete next[index];
@@ -2143,10 +2598,22 @@ function SleepStudioChat() {
     });
     setEditingIdx(null);
     if (!activeId) return;
-    fetch(
-      `/api/feedback?conversationId=${encodeURIComponent(activeId)}&messageIndex=${index}`,
-      { method: "DELETE" }
-    ).catch(() => {});
+    setFeedbackError(null);
+    try {
+      const res = await fetch(
+        `/api/feedback?conversationId=${encodeURIComponent(activeId)}&messageIndex=${index}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Feedback delete failed (HTTP ${res.status}).`);
+      }
+    } catch (err) {
+      console.error("[feedback] delete failed", err);
+      setFeedbackError(
+        err instanceof Error ? err.message : "Feedback delete failed. Please try again."
+      );
+    }
   };
 
   return (
@@ -2178,7 +2645,7 @@ function SleepStudioChat() {
           {sidebarOpen ? (
             <>
               <Sidebar
-                convos={convos}
+                convos={regularConvos}
                 activeId={activeId}
                 onSelect={onSelect}
                 onNew={onNew}
@@ -2242,9 +2709,25 @@ function SleepStudioChat() {
                 onSaveFeedback={onSaveFeedback}
                 onRemoveFeedback={onRemoveFeedback}
                 onOpenTrace={isAdmin ? focusTrace : undefined}
+                onOpenPolicy={isAdmin ? focusPolicy : undefined}
+                onOpenState={isAdmin ? focusState : undefined}
+                stateTurnIds={stateTurnIds}
+                allowFeedback={isAdmin}
               />
             ) : (
               <EmptyState onSuggest={send} compact={canvasOpen} />
+            )}
+            {feedbackError && (
+              <div className="fb-error-toast" role="alert">
+                <span>{feedbackError}</span>
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => setFeedbackError(null)}
+                >
+                  <Ic.Close size={14} />
+                </button>
+              </div>
             )}
             <Composer
               value={input}
@@ -2306,7 +2789,7 @@ function SleepStudioChat() {
             onDismiss={closeAllDrawers}
             chatsContent={
               <ChatsPane
-                convos={convos}
+                convos={regularConvos}
                 activeId={activeId}
                 onSelect={(id) => { onSelect(id); closeDrawer("chats"); }}
                 onNew={() => { onNew(); closeDrawer("chats"); }}
@@ -2330,12 +2813,7 @@ function SleepStudioChat() {
               />
             }
             modelSetupContent={<div className="drawer-pane" ref={setModelSetupSlot} />}
-            simulationContent={
-              <SimulationPanel
-                controller={{ begin: beginSimulation, send }}
-                onRunControls={setSimRunControls}
-              />
-            }
+            simulationContent={<div className="drawer-pane" ref={setSimulationSlot} />}
             tabBarControls={
               simRunControls ? (
                 <div className="sim-run-controls">
@@ -2350,10 +2828,45 @@ function SleepStudioChat() {
             }
             activeConversationId={activeId}
           />
+          {/* Pause/Stop stay available while a run is in progress even if the
+              drawer is closed (the tab bar is gone in that case). */}
+          {simRunControls && openDrawers.length === 0 && (
+            <div className="sim-run-controls-float" role="toolbar" aria-label="Simulation controls">
+              <span className="sim-run-controls-float-label">
+                {simRunControls.paused ? "Paused" : "Running"}
+              </span>
+              {simRunControls.paused ? (
+                <button type="button" className="sim-btn sim-btn-run" onClick={simRunControls.resume}>Resume</button>
+              ) : (
+                <button type="button" className="sim-btn" onClick={simRunControls.pause}>Pause</button>
+              )}
+              <button type="button" className="sim-btn" onClick={simRunControls.stop}>Stop</button>
+            </div>
+          )}
           {/* SetupBar is mounted here (page level), not inside the drawer, so its
               popped-out floating window survives the drawer closing. It portals
               its docked view into the drawer's Model Setup slot when open. */}
-          {isAdmin && <SetupBar turns={turns} slot={modelSetupSlot} onTopDockChange={setTopDockH} />}
+          {isAdmin && <SetupBar turns={turns} slot={modelSetupSlot} onTopDockChange={setTopDockH} policyFocus={policyFocus} stateFocus={stateFocus} />}
+          {/* SimulationPanel is mounted here (page level) for the same reason:
+              closing the drawer must not tear down a live run or clear Pause/Stop. */}
+          {isAdmin && (
+            <SimulationPanel
+              controller={{
+                begin: beginSimulation,
+                send,
+                renameCurrent: (title) => {
+                  const id = activeIdRef.current;
+                  if (id) void onRename(id, title);
+                },
+              }}
+              onRunControls={setSimRunControls}
+              runs={simulationRuns}
+              activeRunId={activeId}
+              onSelectRun={onSelect}
+              onDeleteRun={onDelete}
+              slot={simulationSlot}
+            />
+          )}
 
           {/* Bottom canvas drawer. Its launcher lives in the right rail, under
               the Model Setup (drawer) icon — see RightRail. */}

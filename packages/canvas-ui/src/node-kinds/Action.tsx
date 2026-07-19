@@ -23,11 +23,11 @@ import { ClampedNodeText } from "./ClampedNodeText";
 import type { ToolCallData } from "./ToolCall";
 
 const baseClass =
-  "px-3 py-2 text-sm font-sans border rounded-lg shadow-sm min-w-[9rem] max-w-[16rem] text-left";
+  "px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[9rem] max-w-[16rem] text-left";
 const fieldLabel =
   "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const input =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 export interface PromptData extends CanvasNodeData {
   actionType?: PromptNodeSubtype | "default" | "summarize";
@@ -124,11 +124,11 @@ function CodeNode({ data, selected }: NodeProps<CanvasNode>) {
         <div className="text-[10px] uppercase tracking-widest text-slate-300">
           Code
         </div>
-        <span className="rounded border border-slate-500 bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-[0.18em] text-slate-200">
+        <span className="rounded-none border border-slate-500 bg-slate-800 px-1.5 py-0.5 text-[9px] font-mono uppercase tracking-[0.18em] text-slate-200">
           Code
         </span>
       </div>
-      <div className="rounded border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-[11px] leading-relaxed text-slate-100">
+      <div className="rounded-none border border-slate-700 bg-slate-950 px-2 py-1.5 font-mono text-[11px] leading-relaxed text-slate-100">
         <ClampedNodeText lines={6} title={body}>
           {body}
         </ClampedNodeText>
@@ -267,7 +267,7 @@ export const CODE: NodeKindDef = {
   kind: "code",
   toolbarLabel: "+ Code",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-slate-700 text-slate-50 bg-slate-900 hover:bg-slate-800 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-slate-700 text-slate-50 bg-slate-900 hover:bg-slate-800 rounded-none",
   component: CodeNode,
   defaultLabel: "state mutation",
   defaultData: {

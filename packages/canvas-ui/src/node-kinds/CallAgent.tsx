@@ -4,11 +4,11 @@ import type { CanvasNode, CanvasNodeData, NodeKindDef } from "../types";
 import { ClampedNodeText } from "./ClampedNodeText";
 
 const baseClass =
-  "relative px-3 py-2 text-sm font-sans border rounded shadow-sm min-w-[10rem] max-w-[17rem] text-center";
+  "relative px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[10rem] max-w-[17rem] text-center";
 const inspectorFieldLabel =
   "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const inspectorInput =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 type CallAgentType =
   | "default"
@@ -137,7 +137,7 @@ export const CALL_AGENT: NodeKindDef = {
   kind: "call_agent",
   toolbarLabel: "+ Call agent",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-cyan-600 text-cyan-950 bg-cyan-50 hover:bg-cyan-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-cyan-600 text-cyan-950 bg-cyan-50 hover:bg-cyan-100 rounded-none",
   component: CallAgentNode,
   defaultLabel: "when another agent should be called",
   defaultData: {

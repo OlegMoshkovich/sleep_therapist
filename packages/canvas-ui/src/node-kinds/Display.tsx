@@ -13,11 +13,11 @@ import {
 import { ClampedNodeText } from "./ClampedNodeText";
 
 const baseClass =
-  "px-3 py-2 text-sm font-sans border rounded shadow-sm min-w-[9rem] max-w-[16rem] text-center";
+  "px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[9rem] max-w-[16rem] text-center";
 const fieldLabel =
   "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const input =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 export interface DisplayData extends CanvasNodeData {
   displayType?: DisplayNodeType;
@@ -122,7 +122,7 @@ export const DISPLAY: NodeKindDef = {
   kind: "display",
   toolbarLabel: "+ Display",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-500 text-emerald-900 bg-emerald-50 hover:bg-emerald-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-500 text-emerald-900 bg-emerald-50 hover:bg-emerald-100 rounded-none",
   component: DisplayNode,
   defaultLabel: "display output",
   defaultData: {

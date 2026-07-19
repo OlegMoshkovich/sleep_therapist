@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Avatar } from "./ra-shared";
 
 /**
@@ -101,7 +102,9 @@ export function ExpertChatContent({ active }: { active: boolean }) {
             ) : (
               <div key={i} className="msg-ai">
                 <Avatar kind="assistant" size={28} mono="EX" />
-                <div className="bubble">{m.text}</div>
+                <div className="bubble">
+                  <ReactMarkdown>{m.text}</ReactMarkdown>
+                </div>
               </div>
             )
           )

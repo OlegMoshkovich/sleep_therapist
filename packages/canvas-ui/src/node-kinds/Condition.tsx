@@ -3,7 +3,7 @@ import type { CanvasNode, NodeKindDef } from "../types";
 import { ClampedNodeText } from "./ClampedNodeText";
 
 const baseClass =
-  "relative px-3 py-2 text-sm font-sans border rounded-lg shadow-sm min-w-[9rem] max-w-[16rem] text-left";
+  "relative px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[9rem] max-w-[16rem] text-left";
 
 function ConditionNode({ data, selected }: NodeProps<CanvasNode>) {
   return (

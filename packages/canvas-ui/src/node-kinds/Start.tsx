@@ -5,7 +5,7 @@ import { ClampedNodeText } from "./ClampedNodeText";
 function StartNode({ data, selected }: NodeProps<CanvasNode>) {
   return (
     <div
-      className={`px-4 py-3 text-sm font-sans bg-[#eef1eb] border-2 border-[#B0BEA5] text-[#3d4a35] rounded-lg shadow-sm w-[280px] ${
+      className={`px-4 py-3 text-sm font-sans bg-[#eef1eb] border border-[#B0BEA5] text-[#3d4a35] rounded-none shadow-none w-[280px] ${
         selected ? "ring-2 ring-[#B0BEA5]" : ""
       }`}
     >

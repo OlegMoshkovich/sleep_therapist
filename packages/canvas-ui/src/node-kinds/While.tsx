@@ -36,7 +36,7 @@ function WhileNode({ data, selected }: NodeProps<CanvasNode>) {
 
   return (
     <div
-      className={`px-3 py-2 text-sm font-sans border rounded shadow-sm min-w-[10rem] max-w-[17rem] text-center bg-orange-50 border-orange-500 text-orange-950 ${
+      className={`px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[10rem] max-w-[17rem] text-center bg-orange-50 border-orange-500 text-orange-950 ${
         selected ? "ring-2 ring-orange-500" : ""
       }`}
     >
@@ -70,14 +70,14 @@ function WhileNode({ data, selected }: NodeProps<CanvasNode>) {
 
 const fieldLabel = "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const input =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 export const WHILE: NodeKindDef = {
   kind: "while",
   toolbarLabel: "+ While",
   toolbarDescription: "Repeat a body while a condition holds.",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-orange-500 text-orange-900 bg-orange-50 hover:bg-orange-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-orange-500 text-orange-900 bg-orange-50 hover:bg-orange-100 rounded-none",
   component: WhileNode,
   defaultLabel: "condition?",
   sourceHandles: [

@@ -326,11 +326,12 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .conv-select-action.danger:hover:not(:disabled){background:rgba(224,130,111,.12);color:var(--danger);}
 .ra-scope .conv-select-action:disabled{opacity:.4;cursor:default;}
 /* `button.conv-check` beats the global `button { border:none }` reset so empty boxes stay visible. */
-.ra-scope button.conv-check{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
-  border:1.5px solid var(--text-3);border-radius:5px;background:transparent;color:var(--text);padding:0;cursor:pointer;}
+.ra-scope button.conv-check{flex:0 0 auto;width:14px;height:14px;display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--text-3);border-radius:0;background:transparent;color:var(--text);padding:0;cursor:pointer;}
 .ra-scope button.conv-check:hover{border-color:var(--text-2);background:var(--surface);}
 .ra-scope button.conv-check.on{background:var(--text);border-color:var(--text);color:var(--elevated,#fff);}
 .ra-scope button.conv-check.on:hover{background:var(--text);border-color:var(--text);}
+.ra-scope button.conv-check svg{width:10px;height:10px;}
 .ra-scope .conv-item.selected{background:var(--surface);}
 
 /* Right padding + stable gutter so the scrollbar never covers the ⋯ menu. */
@@ -406,13 +407,13 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .help-btn:hover{background:none;color:var(--text);}
 .ra-scope .help-btn.open{background:none;border:none;color:var(--text);}
 .ra-scope .help-popover{position:absolute;left:0;right:0;bottom:62px;background:var(--elevated);border:1px solid var(--line);
-  border-radius:14px;box-shadow:0 18px 40px -12px rgba(40,36,28,.35);z-index:31;animation:ra-popIn .16s ease;
+  border-radius:0;box-shadow:none;z-index:31;animation:ra-popIn .16s ease;
   max-height:min(70vh,460px);display:flex;flex-direction:column;overflow:hidden;}
 .ra-scope .help-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 12px 10px;
   border-bottom:1px solid var(--line-soft);}
 .ra-scope .help-title{display:flex;align-items:center;gap:8px;font-family:var(--serif);font-size:14.5px;color:var(--text);}
 .ra-scope .help-title .ic{color:var(--accent);display:flex;}
-.ra-scope .help-close{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:8px;
+.ra-scope .help-close{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:0;
   color:var(--text-3);flex:0 0 auto;}
 .ra-scope .help-close:hover{background:var(--surface);color:var(--text);}
 .ra-scope .help-body{padding:12px 14px 14px;overflow-y:auto;}
@@ -444,7 +445,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    not filled buttons. Selection is shown with a neutral underline — no accent
    fill. */
 /* Right pad 8px matches drawer × and canvas tab-btn inset so (i) stacks with Save. */
-.ra-scope .obs-setup{display:flex;gap:22px;padding:0 8px 0 16px;height:46px;align-items:stretch;border-bottom:1px solid var(--line-soft);}
+.ra-scope .obs-setup{display:flex;gap:22px;padding:0 8px 0 16px;height:46px;align-items:center;border-bottom:1px solid var(--line-soft);}
 /* "How each turn reaches the model" info trigger, at the right of the nav. */
 .ra-scope .obs-setup .obs-setup-info{display:flex;align-items:center;justify-content:center;flex:0 0 auto;
   margin-left:auto;color:var(--text-3);background:none;border:none;cursor:pointer;padding:6px;border-radius:0;}
@@ -452,17 +453,16 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* Selectors are scoped under `.obs-setup` so they out-specify the global
    `.ra-scope button{border:none;color:inherit}` reset — otherwise the underline
    (a border) and the muted inactive color would be wiped out. */
+/* Active underline: 2px border, 4px under the label (same as .drawer-tab). */
 .ra-scope .obs-setup .obs-setup-chip{display:flex;align-items:center;gap:6px;flex:0 0 auto;min-width:0;
-  border:none;border-bottom:2px solid transparent;border-radius:0;padding:0 2px;background:none;
-  color:var(--text);font-size:14px;font-weight:400;white-space:nowrap;margin-bottom:-1px;
+  border:none;border-bottom:2px solid transparent;border-radius:0;padding:0 2px 4px;background:none;
+  color:var(--text);font-size:14px;font-weight:400;white-space:nowrap;margin-bottom:0;height:auto;align-self:center;
   outline:none;box-shadow:none;}
 .ra-scope .obs-setup .obs-setup-chip:hover{background:none;color:var(--text);}
 .ra-scope .obs-setup .obs-setup-chip:focus,
 .ra-scope .obs-setup .obs-setup-chip:focus-visible{outline:none;box-shadow:none;}
 .ra-scope .obs-setup .obs-setup-chip svg{flex:0 0 auto;color:currentColor;}
-/* Active tab while its section is docked inline below — same 2px text-width
-   underline as Model Setup (.drawer-tab.on). */
-.ra-scope .obs-setup .obs-setup-chip.on{background:none;color:var(--text);border-bottom-color:var(--text);}
+.ra-scope .obs-setup .obs-setup-chip.on{background:none;color:var(--text);border-bottom:2px solid var(--text);}
 .ra-scope .obs-setup .obs-setup-chip.on svg{color:currentColor;}
 /* Save + Pop out, right-aligned on the nav bar (no separate title row). Scoped
    under `.obs-setup` to out-specify the global button reset. */
@@ -591,6 +591,13 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .rf-canvas-tabs .rf-canvas-tab-end,
 .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end{
   flex:0 0 auto;align-self:center;}
+/* Main / Sleep Intake / Inspector: 2px underline, 4px under the label. */
+.ra-scope .rf-canvas-tabs .rf-canvas-tab,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab,
+.ra-scope .rf-inspector-tabs .rf-inspector-tab,
+.rf-canvas-fullscreen .rf-inspector-tabs .rf-inspector-tab{
+  height:auto !important;padding-bottom:4px !important;margin-bottom:0 !important;
+  border-bottom-width:2px !important;border-radius:0 !important;align-self:center;}
 .ra-scope .obs-docked .rf-canvas-body{
   flex-direction:column !important;flex:1 1 0 !important;min-height:0 !important;
   max-height:100% !important;overflow:hidden !important;height:auto !important;}
@@ -603,7 +610,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   min-height:46px !important;overflow:hidden;border:none;
   display:flex;flex-direction:column;color:var(--sc-ink, #1c1b16);}
 .ra-scope .obs-docked .rf-inspector-tabs{
-  flex:0 0 46px;height:46px;z-index:2;
+  flex:0 0 46px;height:46px;z-index:2;align-items:center !important;
   background:var(--sc-bg, #dddacb);}
 /* Only inspector content scrolls — the docked pane itself never scrolls. */
 .ra-scope .obs-docked .rf-inspector-body{
@@ -663,18 +670,50 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   text-transform:none !important;
   line-height:1.2 !important;
   padding:2px 6px !important;
-  border-radius:2px !important;
+  border-radius:0 !important;
   white-space:nowrap;}
 .ra-scope .rf-canvas-surface .rf-edge-branch-label--true,
 .rf-canvas-fullscreen .rf-canvas-surface .rf-edge-branch-label--true{background:#007E27 !important;}
 .ra-scope .rf-canvas-surface .rf-edge-branch-label--false,
 .rf-canvas-fullscreen .rf-canvas-surface .rf-edge-branch-label--false{background:#D9582B !important;}
-/* Node shells: 8px radius (same as the docked sidebar canvas). */
+/* Sharp corners + 1px borders on canvas chrome / nodes (Tools, Start, etc.). */
+.ra-scope .rf-canvas-surface,
+.ra-scope .rf-inspector,
+.ra-scope .rf-canvas-fullscreen,
+.ra-scope .rf-canvas-help,
+.ra-scope .rf-canvas-chrome,
+.ra-scope .rf-canvas-chrome *,
+.ra-scope .rf-canvas-tools,
+.ra-scope .rf-canvas-tools *,
+.ra-scope .bottom-drawer,
+.rf-canvas-fullscreen,
+.rf-canvas-fullscreen .rf-canvas-surface,
+.rf-canvas-fullscreen .rf-inspector,
+.rf-canvas-fullscreen .rf-canvas-help,
+.rf-canvas-fullscreen .rf-canvas-chrome,
+.rf-canvas-fullscreen .rf-canvas-chrome *,
+.rf-canvas-fullscreen .rf-canvas-tools,
+.rf-canvas-fullscreen .rf-canvas-tools *{
+  border-radius:0 !important;}
+.ra-scope .rf-canvas-chrome,
+.ra-scope .rf-canvas-tools,
+.rf-canvas-fullscreen .rf-canvas-chrome,
+.rf-canvas-fullscreen .rf-canvas-tools{
+  border-width:1px !important;}
 .ra-scope .rf-canvas-surface .react-flow__node,
-.ra-scope .rf-canvas-surface .react-flow__node > div,
+.ra-scope .rf-canvas-surface .react-flow__node *,
+.ra-scope .rf-canvas-surface .react-flow__controls,
+.ra-scope .rf-canvas-surface .react-flow__controls-button,
+.ra-scope .rf-canvas-surface .react-flow__panel,
 .rf-canvas-fullscreen .rf-canvas-surface .react-flow__node,
+.rf-canvas-fullscreen .rf-canvas-surface .react-flow__node *,
+.rf-canvas-fullscreen .rf-canvas-surface .react-flow__controls,
+.rf-canvas-fullscreen .rf-canvas-surface .react-flow__controls-button,
+.rf-canvas-fullscreen .rf-canvas-surface .react-flow__panel{
+  border-radius:0 !important;}
+.ra-scope .rf-canvas-surface .react-flow__node > div,
 .rf-canvas-fullscreen .rf-canvas-surface .react-flow__node > div{
-  border-radius:8px !important;}
+  border-radius:0 !important;}
 /* Tools bar: same 14px / spacing as Model Setup · Knowledge nav chrome.
    Also target .rf-canvas-fullscreen — that shell portals to document.body and
    would otherwise miss these .ra-scope rules. */
@@ -736,11 +775,19 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
    nested box, no inset padding around the compiled prompt. */
 .ra-scope .obs-docked .rf-inspector-tabs,
 .ra-scope .bottom-drawer .rf-inspector-tabs{
-  width:100%;margin:0;padding-left:16px;padding-right:16px;box-sizing:border-box;}
+  width:100%;margin:0;padding-left:16px;padding-right:16px;box-sizing:border-box;
+  display:flex !important;align-items:center !important;}
 .ra-scope .obs-docked .rf-inspector-tabs button,
-.ra-scope .bottom-drawer .rf-inspector-tabs button{
+.ra-scope .bottom-drawer .rf-inspector-tabs button,
+.ra-scope .obs-docked .rf-inspector-tabs button.rf-inspector-tab,
+.ra-scope .bottom-drawer .rf-inspector-tabs button.rf-inspector-tab,
+.rf-canvas-fullscreen .rf-inspector-tabs button.rf-inspector-tab{
   border-radius:0 !important;box-shadow:none !important;outline:none !important;
-  background:transparent !important;}
+  background:transparent !important;
+  /* Match drawer tabs: 2px underline, 4px under the label — not on the divider. */
+  height:auto !important;align-self:center !important;
+  padding:0 2px 4px !important;margin:0 !important;
+  border-bottom-width:2px !important;border-bottom-style:solid !important;}
 .ra-scope .obs-docked .rf-compiler-output,
 .ra-scope .bottom-drawer .rf-compiler-output{
   border:none !important;border-radius:0 !important;background:transparent !important;
@@ -830,7 +877,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
    - done:   nodes already passed (steady accent ring)
    - real:   tool nodes confirmed by the trace (green = measured, not inferred) */
 .react-flow__node.rf-fire-done,
-.react-flow__node.rf-fire-active{border-radius:9px;transition:box-shadow .25s ease;}
+.react-flow__node.rf-fire-active{border-radius:0;transition:box-shadow .25s ease;}
 .react-flow__node.rf-fire-done{box-shadow:0 0 0 2px rgba(194,97,31,.55);}
 .react-flow__node.rf-fire-active{box-shadow:0 0 0 3px #c2611f,0 0 18px 3px rgba(194,97,31,.45);
   animation:rfFirePulse 1s ease-in-out infinite;z-index:6;}
@@ -885,26 +932,37 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
 .ra-scope .upload-item-x:hover{background:var(--surface-2);color:var(--text);}
 /* Shared right drawer — tab strip when multiple panels are open */
 /* Tab bar: the scrollable tab row plus a pinned "close panel" button. */
-/* Align with sidebar "Sleep Assistant" / chat thread-head (not the shorter
-   Knowledge/State/Policy row below). Tabs stretch so labels sit on that midline. */
-/* overflow:visible so the active tab's 2px underline (margin-bottom:-1px) isn't
-   clipped to ~1px — must match Knowledge/State/Policy (.obs-setup-chip). */
-.ra-scope .drawer-tabbar{flex:0 0 auto;height:var(--studio-head-h,60px);display:flex;align-items:center;border-bottom:1px solid var(--line-soft);
-  overflow:visible;box-sizing:border-box;}
+/* Header band matches sidebar / thread-head height. Tabs, Pause/Stop, and ×
+   share one top edge so the row stays aligned when sim controls appear. */
+.ra-scope .drawer-tabbar{flex:0 0 auto;height:var(--studio-head-h,60px);display:flex;align-items:flex-start;
+  padding-top:18px;border-bottom:1px solid var(--line-soft);overflow:visible;box-sizing:border-box;}
 /* Close button: same right inset as canvas tab actions (px-4 + tab-btn pad)
    so the × lines up with Save / Fullscreen / Tools below. */
-.ra-scope .drawer-tabbar .drawer-close-btn{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
-  width:auto;height:auto;margin-left:auto;margin-right:8px;padding:6px;border:none;background:transparent;color:var(--text-2);
-  cursor:pointer;border-radius:8px;}
+.ra-scope .drawer-tabbar .drawer-close-btn{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:center;
+  width:auto;height:auto;margin-left:auto;margin-right:8px;padding:0 6px;border:none;background:transparent;color:var(--text-2);
+  cursor:pointer;border-radius:0;line-height:1.2;}
 .ra-scope .drawer-tabbar .drawer-close-btn:hover{background:var(--surface);color:var(--text);}
 /* Live simulation controls (Pause/Stop) docked in the tab bar, left of the ×. */
-.ra-scope .drawer-tabbar-controls{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:0 4px 0 12px;align-self:stretch;}
-.ra-scope .drawer-tabbar-controls .sim-run-controls{display:flex;align-items:center;gap:8px;}
-.ra-scope .drawer-tabbar-controls .sim-btn{padding:5px 12px;border-radius:8px;}
+.ra-scope .drawer-tabbar-controls{flex:0 0 auto;display:flex;align-items:flex-start;gap:8px;padding:0 4px 0 12px;align-self:flex-start;}
+.ra-scope .drawer-tabbar-controls .sim-run-controls{display:flex;align-items:flex-start;gap:14px;}
+.ra-scope .drawer-tabbar-controls .sim-btn{
+  padding:0 2px 4px;border:none;border-bottom:2px solid transparent;border-radius:0;
+  background:transparent;color:var(--text);font-family:inherit;font-size:14px;font-weight:400;
+  line-height:1.2;cursor:pointer;white-space:nowrap;}
+.ra-scope .drawer-tabbar-controls .sim-btn:hover{color:var(--text);}
+.ra-scope .drawer-tabbar-controls .sim-btn.sim-btn-run{background:transparent;border-color:transparent;color:var(--text);}
+/* Same controls when the drawer is closed mid-run — keep Pause/Stop reachable. */
+.ra-scope .sim-run-controls-float{position:fixed;top:12px;right:68px;z-index:55;
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  background:var(--panel);border:1px solid var(--line);}
+.ra-scope .sim-run-controls-float-label{font-family:inherit;font-size:13px;color:var(--text-3);padding:0 4px 0 2px;}
+.ra-scope .sim-run-controls-float .sim-btn{padding:5px 12px;border-radius:0;}
+@media (max-width:1023px){
+  .ra-scope .sim-run-controls-float{right:12px;top:auto;bottom:84px;}
+}
 /* Tabs stay on ONE line and scroll horizontally. Do not set overflow-y:hidden —
-   that clipped the Model Setup underline thinner than Knowledge.
-   Stretch so the active underline sits on the shared header baseline. */
-.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;align-self:stretch;gap:22px;padding:0 16px;
+   that clipped the Model Setup underline thinner than Knowledge. */
+.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:flex-start;align-self:flex-start;gap:22px;padding:0 16px;
   overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
 .ra-scope .drawer-tabs::-webkit-scrollbar{display:none;}
 /* Close the whole drawer in one click (no need to × each tab). */
@@ -989,23 +1047,25 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 .rf-canvas-fullscreen,
 .rf-canvas-fullscreen *{
   border-radius:0 !important;}
-/* Canvas nodes keep an 8px shell — wins over the square chrome rule above. */
+/* Nodes stay square (overrides any earlier 8px shell). */
 .ra-scope .obs-panel .react-flow__node,
 .ra-scope .obs-panel .react-flow__node > div,
 .ra-scope .bottom-drawer .react-flow__node,
 .ra-scope .bottom-drawer .react-flow__node > div,
 .rf-canvas-fullscreen .react-flow__node,
 .rf-canvas-fullscreen .react-flow__node > div{
-  border-radius:8px !important;}
-/* Branch label chips keep a slight radius in fullscreen too. */
-.rf-canvas-fullscreen .rf-edge-branch-label{border-radius:2px !important;}
+  border-radius:0 !important;}
+.rf-canvas-fullscreen .rf-edge-branch-label{border-radius:0 !important;}
 /* Fullscreen tabs / inspector nav match the docked canvas underline chrome. */
 .rf-canvas-fullscreen .rf-canvas-tabs,
 .rf-canvas-fullscreen .rf-inspector-tabs{
-  border-radius:0 !important;}
+  border-radius:0 !important;align-items:center !important;}
 .rf-canvas-fullscreen .rf-inspector-tabs button:not(.rf-inspector-fs-btn){
   border-radius:0 !important;box-shadow:none !important;outline:none !important;
-  background:transparent !important;}
+  background:transparent !important;
+  height:auto !important;align-self:center !important;
+  padding:0 2px 4px !important;margin:0 !important;
+  border-bottom-width:2px !important;border-bottom-style:solid !important;}
 /* Canvas chrome (Info / Fullscreen / Tools / Save / Close). Square corners,
    hover fill. Save arrives via tabBarTrailing. */
 .ra-scope .rf-canvas-chrome,
@@ -1127,19 +1187,16 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
 .ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled:hover,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled:hover{
   background:transparent !important;}
-/* Same spacing model as the Knowledge/State/Policy nav (padding 0 2px + gap on
-   the row) so the active underline hugs the label identically instead of
-   spreading across wide tab padding. */
-.ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:0 2px;cursor:pointer;white-space:nowrap;
-  color:var(--text);font-family:inherit;font-size:14px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:-1px;
-  outline:none;box-shadow:none;}
+/* Active underline sits 4px under the label (2px border), not on the tab-bar divider. */
+.ra-scope .drawer-tab{display:flex;align-items:center;gap:7px;padding:0 2px 4px;cursor:pointer;white-space:nowrap;
+  color:var(--text);font-family:inherit;font-size:14px;font-weight:400;border-bottom:2px solid transparent;margin-bottom:0;
+  height:auto;align-self:flex-start;outline:none;box-shadow:none;border-radius:0;line-height:1.2;}
 .ra-scope .drawer-tab:hover{color:var(--text);}
 .ra-scope .drawer-tab:focus,
 .ra-scope .drawer-tab:focus-visible{outline:none;box-shadow:none;}
-/* Same 2px text-hugging underline as Knowledge/State/Policy (.obs-setup-chip.on). */
-.ra-scope .drawer-tab.on{color:var(--text);border-bottom-width:2px;border-bottom-color:var(--text);}
+.ra-scope .drawer-tab.on{color:var(--text);border-bottom:2px solid var(--text);}
 .ra-scope .drawer-tab-x{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
-  border-radius:5px;color:var(--text-3);font-size:10px;line-height:1;}
+  border-radius:0;color:var(--text-3);font-size:10px;line-height:1;}
 .ra-scope .drawer-tab-x:hover{background:var(--surface-2);color:var(--text);}
 .ra-scope .drawer-pane-wrap{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden;}
 .ra-scope .drawer-pane{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
@@ -1246,19 +1303,130 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .thread-inner{width:100%;max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
 .ra-scope .day-divider{display:flex;align-items:center;gap:14px;color:var(--text-4);font-size:11px;letter-spacing:1.6px;}
 .ra-scope .day-divider::before,.ra-scope .day-divider::after{content:"";flex:1;height:1px;background:var(--line-soft);}
+/* TODAY + Collapse all / Expand all on one row. */
+.ra-scope .thread-top{display:flex;align-items:center;gap:12px;}
+.ra-scope .thread-top .day-divider{flex:1;min-width:0;}
+.ra-scope .thread-collapse-all{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;
+  font-family:inherit;font-size:12px;font-weight:400;color:var(--text-3);
+  background:transparent;border:1px solid var(--line);border-radius:0;padding:3px 9px;
+  cursor:pointer;white-space:nowrap;}
+.ra-scope .thread-collapse-all:hover{color:var(--text);background:var(--surface-2);border-color:var(--text-4);}
 
 .ra-scope .msg-ai{display:flex;gap:13px;align-self:stretch;animation:ra-fadeUp .35s ease both;}
 .ra-scope .msg-ai .avatar{width:28px;height:28px;margin-top:2px;}
-.ra-scope .msg-ai .bubble{flex:1;font-family:var(--serif);font-size:16.5px;line-height:1.62;color:var(--text);}
-.ra-scope .msg-ai .bubble.bubble-traceable{cursor:pointer;border-radius:6px;margin:-2px -6px;padding:2px 6px;transition:background .12s ease;}
+/* Bubble shell: thin nav + full-width body + thin footer. */
+.ra-scope .msg-ai .bubble,
+.ra-scope .msg-user{
+  display:flex; flex-direction:column; max-width:100%; min-width:0; width:100%;
+  border:1px solid var(--line); border-radius:0; padding:0; overflow:hidden;
+  color:var(--text); animation:ra-fadeUp .3s ease both;}
+.ra-scope .msg-ai .bubble{font-family:var(--serif); background:var(--surface);}
+.ra-scope .msg-user{background:var(--surface-2);}
+.ra-scope .bubble-nav{
+  flex:0 0 auto; display:flex; align-items:center; justify-content:flex-start; flex-wrap:wrap; gap:6px;
+  min-height:26px; padding:4px 8px; border:none;}
+.ra-scope .bubble-nav .trace-actions{flex:1 1 auto; min-width:0;}
+.ra-scope .bubble-nav .bubble-collapse{flex:0 0 auto; margin-left:auto;}
+.ra-scope .bubble-body{
+  flex:1 1 auto; min-width:0; padding:10px 16px;
+  font-size:16.5px; line-height:1.62;}
+.ra-scope .bubble-body.is-toggleable{cursor:pointer;}
+.ra-scope .bubble-foot{
+  flex:0 0 auto; min-height:28px; padding:4px 8px; border:none;}
+.ra-scope .bubble-foot-actions{
+  display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;}
+.ra-scope .bubble-collapse{
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 4px; border:none; border-radius:0; background:transparent;
+  color:var(--text-3); font-family:inherit; font-size:12px; font-weight:400;
+  line-height:1.2; cursor:pointer; white-space:nowrap;}
+.ra-scope .bubble-collapse:hover{color:var(--text); background:transparent;}
+/* Collapsed: body is one line; nav/footer stay. */
+.ra-scope .msg-user.is-collapsed .bubble-body,
+.ra-scope .msg-ai .bubble.is-collapsed .bubble-body{
+  overflow:hidden; white-space:nowrap; text-overflow:ellipsis;}
+/* A message that has feedback left on it gets tinted. */
+.ra-scope .msg-ai .bubble.has-feedback{background:#D1E7F3;border-color:#b7d4e6;}
+.ra-scope .msg-user.has-feedback{background:#D1E7F3;border-color:#b7d4e6;}
+/* Inline code stays legible on the tinted bubble. */
+.ra-scope .msg-ai .bubble.has-feedback .bubble-body code{background:rgba(255,255,255,0.5);}
+/* Markdown in assistant bubbles (**bold**, lists, links). */
+.ra-scope .msg-ai .bubble .bubble-body p{margin:0 0 .65em;}
+.ra-scope .msg-ai .bubble .bubble-body p:last-child{margin-bottom:0;}
+.ra-scope .msg-ai .bubble .bubble-body strong,.ra-scope .msg-ai .bubble .bubble-body b{font-weight:600;color:var(--text);}
+.ra-scope .msg-ai .bubble .bubble-body em,.ra-scope .msg-ai .bubble .bubble-body i{font-style:italic;}
+.ra-scope .msg-ai .bubble .bubble-body ul,.ra-scope .msg-ai .bubble .bubble-body ol{margin:.4em 0 .65em;padding-left:1.25em;}
+.ra-scope .msg-ai .bubble .bubble-body li{margin:.15em 0;}
+.ra-scope .msg-ai .bubble .bubble-body li > p{margin:0;}
+.ra-scope .msg-ai .bubble .bubble-body a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;}
+.ra-scope .msg-ai .bubble .bubble-body code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.9em;
+  background:var(--surface-2);padding:.1em .35em;border-radius:0;}
+.ra-scope .msg-ai .bubble.bubble-traceable{cursor:pointer;border-radius:0;margin:-2px -6px;padding:2px 6px;transition:background .12s ease;}
 .ra-scope .msg-ai .bubble.bubble-traceable:hover{background:var(--surface-2);}
+/* Reply column: the bubble shell fills the column width. */
+.ra-scope .msg-ai .bubble-col{flex:1;min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:0;}
+.ra-scope .msg-ai .bubble-col .bubble{flex:0 0 auto;max-width:100%;width:100%;}
+/* Per-reply trace buttons live in the bubble footer. */
+.ra-scope .trace-actions{display:flex;flex-wrap:wrap;gap:6px;opacity:0.72;transition:opacity .12s ease;}
+.ra-scope .msg-ai:hover .trace-actions,
+.ra-scope .msg-user-col:hover .trace-actions{opacity:1;}
+.ra-scope .trace-act{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:12px;font-weight:400;
+  color:var(--text-3);background:transparent;border:none;border-radius:0;padding:2px 4px;
+  cursor:pointer;white-space:nowrap;transition:color .12s ease;}
+.ra-scope .trace-act:hover{color:var(--text);background:transparent;border-color:transparent;}
+.ra-scope .trace-act svg{opacity:0.85;}
 .ra-scope .msg-actions{display:flex;gap:4px;margin-top:8px;opacity:0;}
 .ra-scope .msg-ai:hover .msg-actions{opacity:1;}
 .ra-scope .mini-btn{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:7px;color:var(--text-4);}
 .ra-scope .mini-btn:hover{background:var(--surface);color:var(--text-2);}
 
-.ra-scope .msg-user{align-self:flex-end;max-width:74%;background:var(--surface-2);border:1px solid var(--line);
-  border-radius:15px;padding:6px 15px;font-size:15px;line-height:1.5;color:var(--text);animation:ra-fadeUp .3s ease both;}
+/* Patient (user) column. */
+.ra-scope .msg-user-col{align-self:flex-end;max-width:74%;display:flex;flex-direction:column;align-items:stretch;gap:0;}
+.ra-scope .msg-user-col .trace-actions{justify-content:flex-start;}
+/* Fullscreen reply / feedback — flat chrome matching the inline feedback editor. */
+.ra-scope .bubble-fs-overlay,.bubble-fs-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.35);padding:32px;animation:ra-fadeUp .18s ease both;}
+.ra-scope .bubble-fs,.bubble-fs{position:relative;display:flex;flex-direction:column;width:min(820px,100%);max-height:calc(100vh - 64px);overflow:hidden;
+  background:var(--elevated,#fff);border:1px solid var(--line,#dcdcdc);border-radius:0;
+  padding:16px 20px 20px;box-shadow:none;font-family:inherit;}
+.ra-scope .bubble-fs-head,.bubble-fs-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:0 0 14px;min-height:34px;padding-bottom:12px;border-bottom:1px solid var(--line-soft,#ededed);}
+.ra-scope .bubble-fs-head-left,.bubble-fs-head-left{display:flex;align-items:center;gap:12px;min-width:0;}
+.ra-scope .bubble-fs-head-right,.bubble-fs-head-right{display:flex;align-items:center;gap:8px;flex:0 0 auto;}
+.ra-scope .bubble-fs-thumbs,.bubble-fs-thumbs{display:flex;align-items:center;gap:6px;}
+.ra-scope .bubble-fs-thumb,.bubble-fs-thumb{display:inline-flex;align-items:center;justify-content:center;
+  min-width:28px;height:28px;padding:0 8px;font-size:14px;line-height:1;
+  border:1px solid transparent;background:transparent;border-radius:0;cursor:pointer;color:var(--text-2);
+  outline:none;box-shadow:none;}
+.ra-scope .bubble-fs-thumb:hover,.bubble-fs-thumb:hover{border-color:var(--line);color:var(--text);background:var(--surface-2);}
+.ra-scope .bubble-fs-thumb.active,.bubble-fs-thumb.active{border:1px solid var(--text);background:transparent;color:var(--text);}
+.ra-scope .bubble-fs-hint,.bubble-fs-hint{font-family:inherit;font-size:13px;font-weight:400;color:var(--text-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .bubble-fs-submit,.bubble-fs-submit{font-family:inherit;font-size:13px;font-weight:400;padding:6px 12px;border-radius:0;
+  border:1px solid var(--text);background:var(--text);color:var(--elevated,#fff);cursor:pointer;white-space:nowrap;}
+.ra-scope .bubble-fs-submit:hover,.bubble-fs-submit:hover{filter:none;background:var(--text);color:var(--elevated,#fff);}
+.ra-scope .bubble-fs-fb,.bubble-fs-fb,
+.ra-scope .bubble-fs-cancel,.bubble-fs-cancel{display:inline-flex;align-items:center;gap:6px;font-family:inherit;
+  font-size:13px;font-weight:400;padding:6px 12px;border:1px solid var(--line);background:transparent;color:var(--text-2);
+  border-radius:0;cursor:pointer;white-space:nowrap;}
+.ra-scope .bubble-fs-fb:hover,.bubble-fs-fb:hover,
+.ra-scope .bubble-fs-cancel:hover,.bubble-fs-cancel:hover{background:var(--surface-2);color:var(--text);border-color:var(--text-3);}
+.ra-scope .bubble-fs-close,.bubble-fs-close{display:flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border:none;background:transparent;color:var(--text-3);border-radius:0;cursor:pointer;padding:0;}
+.ra-scope .bubble-fs-close:hover,.bubble-fs-close:hover{background:var(--surface-2);color:var(--text);}
+.ra-scope .bubble-fs-body,.bubble-fs-body{flex:1 1 auto;min-height:0;overflow:auto;font-family:inherit;font-size:16.5px;line-height:1.62;color:var(--text);}
+.ra-scope .bubble-fs-textarea,.bubble-fs-textarea{width:100%;min-height:50vh;resize:vertical;box-sizing:border-box;
+  font-family:inherit;font-size:16.5px;line-height:1.62;color:var(--text);
+  background:var(--frame,#fff);border:1px solid var(--line);border-radius:0;padding:12px 14px;outline:none;}
+.ra-scope .bubble-fs-textarea:focus,.bubble-fs-textarea:focus{border-color:var(--text-3);box-shadow:none;}
+.ra-scope .bubble-fs-body p,.bubble-fs-body p{margin:0 0 .65em;}
+.ra-scope .bubble-fs-body p:last-child,.bubble-fs-body p:last-child{margin-bottom:0;}
+.ra-scope .bubble-fs-body strong,.bubble-fs-body strong,
+.ra-scope .bubble-fs-body b,.bubble-fs-body b{font-weight:600;}
+.ra-scope .bubble-fs-body ul,.bubble-fs-body ul,
+.ra-scope .bubble-fs-body ol,.bubble-fs-body ol{margin:.4em 0 .65em;padding-left:1.25em;}
+.ra-scope .bubble-fs-body li,.bubble-fs-body li{margin:.15em 0;}
+.ra-scope .bubble-fs-body a,.bubble-fs-body a{color:var(--text);text-decoration:underline;text-underline-offset:2px;}
 
 .ra-scope .typing{display:flex;align-items:center;gap:13px;align-self:stretch;}
 .ra-scope .typing .avatar{width:28px;height:28px;}
@@ -1287,6 +1455,27 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .sim-status{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
 .ra-scope .sim-error{font-family:inherit;font-size:14px;font-weight:400;color:var(--danger);}
 .ra-scope .sim-note{margin:16px;color:var(--text-3);font-family:inherit;font-size:14px;font-weight:400;line-height:1.6;max-width:520px;}
+/* Past simulation runs, relocated here from the sidebar. Fills the panel below
+   the note and scrolls independently. */
+.ra-scope .sim-runs{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--line-soft);}
+.ra-scope .sim-runs-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:12px 16px 8px;
+  font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3);}
+.ra-scope .sim-runs-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;
+  border-radius:9px;background:var(--surface-2);color:var(--text-3);font-size:11px;font-weight:600;letter-spacing:0;}
+.ra-scope .sim-runs-empty{padding:4px 16px 16px;color:var(--text-4);font-family:inherit;font-size:13px;}
+.ra-scope .sim-runs-list{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:0 8px 12px;}
+.ra-scope .sim-run{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer;
+  border:1px solid transparent;transition:background .12s ease,border-color .12s ease;}
+.ra-scope .sim-run:hover{background:var(--surface-2);}
+.ra-scope .sim-run.active{background:var(--surface-2);border-color:var(--line);}
+.ra-scope .sim-run-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.ra-scope .sim-run-scenario{font-family:inherit;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .sim-run-meta{display:flex;align-items:center;gap:6px;font-family:inherit;font-size:12px;color:var(--text-3);}
+.ra-scope .sim-run-dot{opacity:.6;}
+.ra-scope .sim-run-del{flex:0 0 auto;display:flex;align-items:center;justify-content:center;width:28px;height:28px;
+  border:none;background:transparent;color:var(--text-4);border-radius:7px;cursor:pointer;opacity:0;transition:opacity .12s ease,background .12s ease,color .12s ease;}
+.ra-scope .sim-run:hover .sim-run-del{opacity:1;}
+.ra-scope .sim-run-del:hover{background:var(--surface);color:var(--danger);}
 
 /* empty state */
 .ra-scope .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;}
@@ -1622,11 +1811,14 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .sysconf .sc-curstate-head .sc-curstate-chev.open{transform:rotate(90deg);}
 .sysconf .sc-curstate-body{flex:1 1 auto;min-height:0;overflow:auto;padding:0 0 12px;}
 .sysconf .sc-curstate-rows{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px;}
-.sysconf .sc-curstate-row{display:flex;align-items:baseline;gap:8px;border:1px solid var(--sc-line);border-radius:8px;padding:5px 11px;background:var(--sc-panel-2);}
+.sysconf .sc-curstate-row{display:flex;align-items:baseline;gap:8px;border:1px solid var(--sc-line);border-radius:0;padding:5px 11px;background:var(--sc-panel-2);}
 .sysconf .sc-curstate-k{font-family:var(--sc-mono);font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--sc-ink-3);}
 .sysconf .sc-curstate-v{font-family:var(--sc-serif);font-size:13.5px;color:var(--sc-ink);font-weight:600;}
 .sysconf .sc-curstate-row.unset{opacity:.5;}
 .sysconf .sc-curstate-row.unset .sc-curstate-v{font-weight:400;}
+/* Fields a specific turn extracted, highlighted when opened from a reply's State button. */
+.sysconf .sc-curstate-row.extracted{opacity:1;border:1px solid #D1E7F3;background:#D1E7F3;box-shadow:none;}
+.sysconf .sc-curstate-row.extracted .sc-curstate-k{color:#2a6f8f;}
 /* Edit / Done / + Add — same chrome as Policy tab-bar actions (Fullscreen / Save). */
 .sysconf .sc-curstate-actions{display:flex;align-items:center;gap:4px;margin:0 0 0 auto;padding:0;flex:0 0 auto;}
 .sysconf .sc-var-edit{
@@ -1876,58 +2068,87 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
    align-self (msg-user flex-end / msg-ai stretch) and the feedback row sits
    directly under it. */
 .ra-scope .msg-block{ display:flex; flex-direction:column; gap:6px; }
+/* Feedback editor — flat chrome to match drawer / canvas tabs (no radius, 1px borders). */
 .ra-scope .fb-row{ display:flex; margin:4px 0 2px; }
 .ra-scope .fb-row.right{ justify-content:flex-end; }
 .ra-scope .fb-row.left{ justify-content:flex-start; padding-left:40px; }
 .ra-scope .fb-add{
   display:inline-flex; align-items:center; justify-content:center;
-  width:26px; height:26px; border-radius:999px; border:1px dashed var(--line);
+  width:26px; height:26px; border-radius:0; border:1px dashed var(--line);
   background:transparent; color:var(--text-3); cursor:pointer;
 }
-.ra-scope .fb-add:hover{ color:var(--accent); border-color:var(--accent); background:var(--accent-soft); }
+.ra-scope .fb-add:hover{ color:var(--text); border-color:var(--text-3); background:var(--surface); }
 .ra-scope .fb-chip{
   display:inline-flex; align-items:center; gap:6px; max-width:100%;
-  padding:4px 10px; border-radius:999px; border:1px solid var(--line-soft);
+  padding:4px 10px; border-radius:0; border:1px solid var(--line);
   background:var(--elevated); color:var(--text-2); font-size:12px; cursor:pointer;
 }
-.ra-scope .fb-chip:hover{ border-color:var(--accent); color:var(--text); }
+.ra-scope .fb-chip:hover{ border-color:var(--text-3); color:var(--text); }
 .ra-scope .fb-editor{
-  width:min(420px,100%); background:var(--elevated); border:1px solid var(--line-soft);
-  border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:8px;
-  box-shadow:0 6px 24px rgba(0,0,0,.08);
+  width:min(420px,100%); background:var(--elevated); border:1px solid var(--line);
+  border-radius:0; padding:12px; display:flex; flex-direction:column; gap:10px;
+  box-shadow:none;
 }
-.ra-scope .fb-thumbs{ display:flex; gap:8px; }
-.ra-scope .fb-thumb{
-  display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border-radius:8px;
-  border:1px solid var(--line-soft); background:var(--surface); color:var(--text-2);
-  font-size:13px; cursor:pointer;
+/* Thumbs + note types on one row.
+   Scoped under `.fb-thumbs` so we out-specify `.ra-scope button{border:none}`. */
+.ra-scope .fb-options{ display:flex; align-items:center; gap:14px; flex-wrap:nowrap; min-width:0; }
+.ra-scope .fb-thumbs{ display:flex; align-items:center; gap:6px; flex:0 0 auto; }
+.ra-scope .fb-thumbs .fb-thumb{
+  display:inline-flex; align-items:center; justify-content:center; gap:4px;
+  min-width:28px; height:28px; padding:0 8px; border-radius:0;
+  border:1px solid transparent; background:transparent; color:var(--text-2);
+  font-size:14px; cursor:pointer; outline:none; box-shadow:none;
 }
-.ra-scope .fb-thumb.up.active{ border-color:#3f7d4f; background:rgba(63,125,79,.14); color:#2c5c39; }
-.ra-scope .fb-thumb.down.active{ border-color:var(--danger); background:rgba(224,130,111,.16); color:#9a4634; }
-.ra-scope .fb-types{ display:flex; gap:6px; flex-wrap:wrap; }
-.ra-scope .fb-type{
-  padding:3px 9px; border-radius:999px; border:1px solid var(--line-soft);
-  background:transparent; color:var(--text-3); font-size:11px; cursor:pointer;
+.ra-scope .fb-thumbs .fb-thumb:hover{ border-color:var(--line); color:var(--text); background:var(--surface); }
+.ra-scope .fb-thumbs .fb-thumb:focus,
+.ra-scope .fb-thumbs .fb-thumb:focus-visible{ outline:none; box-shadow:none; }
+.ra-scope .fb-thumbs .fb-thumb.active{
+  border:1px solid var(--text); background:transparent; color:var(--text);
 }
-.ra-scope .fb-type.active{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
-.ra-scope .fb-type.filled:not(.active){ border-color:var(--accent); color:var(--text-2); }
+/* Note / Text correction / Ideal output — selected = 2px underline.
+   Scoped under `.fb-types` so we out-specify `.ra-scope button{border:none}`
+   (same pattern as `.obs-setup .obs-setup-chip`). */
+.ra-scope .fb-types{ display:flex; align-items:center; gap:14px; flex-wrap:nowrap; min-width:0; }
+.ra-scope .fb-types .fb-type{
+  padding:0 2px 4px; border:none; border-bottom:2px solid transparent; border-radius:0;
+  background:transparent; color:var(--text-3); font-family:inherit; font-size:13px; font-weight:400;
+  cursor:pointer; white-space:nowrap; box-shadow:none; outline:none;
+}
+.ra-scope .fb-types .fb-type:hover{ color:var(--text); background:transparent; }
+.ra-scope .fb-types .fb-type:focus,
+.ra-scope .fb-types .fb-type:focus-visible{ outline:none; box-shadow:none; }
+.ra-scope .fb-types .fb-type.active{
+  color:var(--text); border-bottom:2px solid var(--text); background:transparent;
+}
+.ra-scope .fb-types .fb-type.filled:not(.active){ color:var(--text-2); }
 .ra-scope .fb-textarea{
-  width:100%; resize:vertical; border:1px solid var(--line-soft); border-radius:8px;
-  background:var(--frame); color:var(--text); font:inherit; font-size:13px; padding:8px;
+  width:100%; resize:vertical; border:1px solid var(--line); border-radius:0;
+  background:var(--frame); color:var(--text); font:inherit; font-size:13px; padding:8px 10px;
 }
-.ra-scope .fb-textarea:focus{ outline:none; border-color:var(--accent); }
+.ra-scope .fb-textarea:focus{ outline:none; border-color:var(--text-3); }
 .ra-scope .fb-actions{ display:flex; align-items:center; gap:8px; }
 .ra-scope .fb-spacer{ flex:1; }
 .ra-scope .fb-btn{
-  padding:5px 12px; border-radius:8px; border:1px solid var(--line-soft);
-  background:var(--surface); color:var(--text-2); font-size:12px; cursor:pointer;
+  padding:6px 12px; border-radius:0; border:1px solid var(--line);
+  background:transparent; color:var(--text-2); font-family:inherit; font-size:13px; font-weight:400; cursor:pointer;
 }
-.ra-scope .fb-btn.primary{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
-.ra-scope .fb-btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
-.ra-scope .fb-btn.ghost{ background:transparent; }
+.ra-scope .fb-btn:hover{ color:var(--text); border-color:var(--text-3); }
+.ra-scope .fb-btn.primary{ background:var(--text); border-color:var(--text); color:var(--elevated,#fff); }
+.ra-scope .fb-btn.primary:hover{ background:var(--text); border-color:var(--text); color:var(--elevated,#fff); filter:none; }
+.ra-scope .fb-btn.primary:disabled{ opacity:.4; cursor:not-allowed; }
+.ra-scope .fb-btn.ghost{ background:transparent; border-color:transparent; }
+.ra-scope .fb-btn.ghost:hover{ border-color:transparent; background:transparent; color:var(--text); }
 .ra-scope .fb-btn.danger{ background:transparent; border-color:var(--danger); color:#9a4634; }
 .ra-scope .fb-banner{
-  display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:999px;
-  background:var(--accent-soft); color:var(--accent); font-size:12px;
+  display:inline-flex; align-items:center; gap:8px; padding:4px 10px; border-radius:0;
+  border:1px solid var(--line); background:transparent; color:var(--text-2); font-size:12px;
 }
-.ra-scope .fb-banner button{ border:none; background:transparent; color:var(--accent); cursor:pointer; text-decoration:underline; font:inherit; }
+.ra-scope .fb-banner button{ border:none; background:transparent; color:var(--text); cursor:pointer; text-decoration:underline; font:inherit; }
+/* Feedback save/delete failure — shown so a failed save is never silent. */
+.ra-scope .fb-error-toast{display:flex;align-items:center;gap:10px;margin:8px 16px 0;padding:8px 12px;
+  border:1px solid var(--danger);border-radius:8px;background:rgba(240,80,37,0.08);color:var(--danger);
+  font-family:inherit;font-size:13px;}
+.ra-scope .fb-error-toast span{flex:1;min-width:0;}
+.ra-scope .fb-error-toast button{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  border:none;background:transparent;color:var(--danger);cursor:pointer;padding:2px;border-radius:5px;}
+.ra-scope .fb-error-toast button:hover{background:rgba(240,80,37,0.15);}

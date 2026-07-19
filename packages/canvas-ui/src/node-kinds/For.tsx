@@ -36,7 +36,7 @@ function ForNode({ data, selected }: NodeProps<CanvasNode>) {
 
   return (
     <div
-      className={`px-3 py-2 text-sm font-sans border rounded shadow-sm min-w-[10rem] max-w-[17rem] text-center bg-lime-50 border-lime-500 text-lime-950 ${
+      className={`px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[10rem] max-w-[17rem] text-center bg-lime-50 border-lime-500 text-lime-950 ${
         selected ? "ring-2 ring-lime-500" : ""
       }`}
     >
@@ -66,14 +66,14 @@ function ForNode({ data, selected }: NodeProps<CanvasNode>) {
 
 const fieldLabel = "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const input =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 export const FOR: NodeKindDef = {
   kind: "for",
   toolbarLabel: "+ For",
   toolbarDescription: "Repeat a body a set number of times.",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-lime-500 text-lime-900 bg-lime-50 hover:bg-lime-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-lime-500 text-lime-900 bg-lime-50 hover:bg-lime-100 rounded-none",
   component: ForNode,
   defaultLabel: "Repeat the body.",
   sourceHandles: [

@@ -159,6 +159,9 @@ const CORPUS_DEMO_QUESTIONS: { grounded: string[]; control: string } = {
   control: "What's the capital of France?",
 };
 
+/** Below this board height, Tools / Fullscreen / zoom / Save overlap — hide them. */
+const MIN_BOARD_CHROME_H = 168;
+
 // True when the active canvas contains the corpus retrieval tool — i.e. it is
 // the RAG example, however it was loaded (tab switch or the "RAG example"
 // button). Matches the { server: "corpus", tool: "search_documents" } binding.
@@ -2069,6 +2072,9 @@ export function EditorInner<TOutput>({
   // The canvas + inspector row, and its measured fill height (see effect below).
   const canvasBodyRef = useRef<HTMLDivElement | null>(null);
   const [fillRowHeight, setFillRowHeight] = useState<number | null>(null);
+  // Hide Tools / Fullscreen / Save / zoom when the board is too short for them
+  // to sit without overlapping (top chrome vs bottom chrome).
+  const [boardChromeVisible, setBoardChromeVisible] = useState(true);
 
   const active = canvases.find((c) => c.id === activeId) ?? canvases[0];
 
@@ -2194,6 +2200,27 @@ export function EditorInner<TOutput>({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [canvasFullscreen]);
+
+  // Watch board height; tuck floating controls away before they collide.
+  useEffect(() => {
+    if (typeof ResizeObserver === "undefined") return;
+    const el = canvasSurfaceRef.current;
+    if (!el) return;
+    const sync = () => {
+      const h = el.clientHeight;
+      if (h <= 0) return;
+      const visible = h >= MIN_BOARD_CHROME_H;
+      setBoardChromeVisible(visible);
+      if (!visible) {
+        setToolbarOpen(false);
+        setIsControlStructureMenuOpen(false);
+      }
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fillRowHeight, canvasIsCollapsed, canvasFullscreen, fillHeight]);
 
   useEffect(() => {
     if (!isControlStructureMenuOpen) {
@@ -2779,7 +2806,7 @@ export function EditorInner<TOutput>({
               boxShadow: extra.includes("rf-fire-active")
                 ? "0 0 0 4px #0f766e, 0 0 22px rgba(15, 118, 110, 0.6)"
                 : "0 0 0 3px rgba(194, 97, 31, 0.75)",
-              borderRadius: 10,
+              borderRadius: 0,
             },
           }
         : node;
@@ -3215,7 +3242,7 @@ export function EditorInner<TOutput>({
           ? // fillHeight / fullscreen: borderless — the rf-vsplit / rf-hsplit is
             // the only separator between board and inspector.
             "rf-canvas-surface relative block h-full min-h-0 overflow-hidden bg-[#f3f1e6]"
-          : "rf-canvas-surface relative hidden lg:block flex-1 min-h-[300px] h-[360px] overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6]"
+          : "rf-canvas-surface relative hidden lg:block flex-1 min-h-[300px] h-[360px] overflow-hidden rounded-none border border-[#c8c4b4] bg-[#f3f1e6]"
       }
       role={fullscreen ? "dialog" : undefined}
       aria-modal={fullscreen || undefined}
@@ -3280,8 +3307,10 @@ export function EditorInner<TOutput>({
           }}
         />
         <Background />
-        {/* Zoom top-right; Info / Fullscreen / Tools / Save sit bottom-right. */}
-        <Controls showInteractive={false} position="top-right" orientation="vertical" />
+        {/* Zoom top-right — hidden when the board is too short for chrome. */}
+        {boardChromeVisible ? (
+          <Controls showInteractive={false} position="top-right" orientation="vertical" />
+        ) : null}
         {graphTag && graphFrame && (
           <ViewportPortal>
             <div
@@ -3295,8 +3324,8 @@ export function EditorInner<TOutput>({
                 pointerEvents: "none",
               }}
             >
-              <div className="h-full w-full rounded-2xl border-2 border-dashed border-[#c2611f]/70" />
-              <span className="absolute -top-3 left-5 whitespace-nowrap rounded bg-[#c2611f] px-2.5 py-1 text-[11px] font-sans uppercase tracking-widest text-white">
+              <div className="h-full w-full rounded-none border-2 border-dashed border-[#c2611f]/70" />
+              <span className="absolute -top-3 left-5 whitespace-nowrap rounded-none bg-[#c2611f] px-2.5 py-1 text-[11px] font-sans uppercase tracking-widest text-white">
                 {graphTag}
               </span>
             </div>
@@ -3304,8 +3333,9 @@ export function EditorInner<TOutput>({
         )}
       </ReactFlow>
       ) : null}
-      {/* Tools — top-left. Fullscreen — bottom-left. Save — bottom-right. */}
-      {!canvasIsCollapsed && (
+      {/* Tools — top-left. Fullscreen — bottom-left. Save — bottom-right.
+          Hidden when board height would make top/bottom controls overlap. */}
+      {!canvasIsCollapsed && boardChromeVisible && (
         <>
           {toolbarOpen && (
             <div className="rf-canvas-tools absolute top-14 left-3 z-20 flex max-w-[calc(100%-4.5rem)] flex-col overflow-y-auto overflow-x-hidden rounded-none border border-[#c8c4b4] bg-white p-3">
@@ -3350,7 +3380,7 @@ export function EditorInner<TOutput>({
                       </button>
                       {isControlStructureMenuOpen && (
                         <div
-                          className="absolute left-0 top-full z-30 mt-2 min-w-[14rem] rounded-lg border border-[#c8c4b4] bg-[#f7f4e8] p-2 shadow-xl"
+                          className="absolute left-0 top-full z-30 mt-2 min-w-[14rem] rounded-none border border-[#c8c4b4] bg-[#f7f4e8] p-2 shadow-xl"
                           role="menu"
                         >
                           <div className="mb-2 px-2 text-[14px] font-sans text-gray-500">
@@ -3363,7 +3393,7 @@ export function EditorInner<TOutput>({
                                 type="button"
                                 onClick={() => addNode(k)}
                                 title={k.toolbarDescription}
-                                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-[14px] font-sans text-gray-700 hover:bg-[#ece7d6]"
+                                className="flex w-full items-center justify-between rounded-none px-2 py-2 text-left text-[14px] font-sans text-gray-700 hover:bg-[#ece7d6]"
                                 role="menuitem"
                               >
                                 <span>{k.toolbarLabel.replace(/^\+\s*/, "")}</span>
@@ -3505,7 +3535,7 @@ export function EditorInner<TOutput>({
               return (
                 <div
                   key={c.id}
-                  className={`group flex h-[46px] shrink-0 items-center gap-1 px-0.5 border-b-2 -mb-px cursor-pointer whitespace-nowrap text-[14px] font-sans text-[#1c1b16] ${
+                  className={`rf-canvas-tab group flex h-auto shrink-0 items-center gap-1 px-0.5 pb-1 border-b-2 cursor-pointer whitespace-nowrap text-[14px] font-sans text-[#1c1b16] ${
                     isActive ? "border-[#1c1b16]" : "border-transparent"
                   }`}
                   onClick={() => selectCanvas(c.id)}
@@ -3703,7 +3733,7 @@ export function EditorInner<TOutput>({
             fullscreen || fillHeight
               ? // Drawer / fullscreen: no outer border/radius — flush to the drag split.
                 "rf-inspector flex w-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#dddacb] text-[14px] text-[#1c1b16]"
-              : "rf-inspector flex w-full min-h-0 flex-col lg:w-72 lg:h-[360px] shrink-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#dddacb] text-[14px] text-[#1c1b16]"
+              : "rf-inspector flex w-full min-h-0 flex-col lg:w-72 lg:h-[360px] shrink-0 overflow-hidden rounded-none border border-[#c8c4b4] bg-[#dddacb] text-[14px] text-[#1c1b16]"
           }
           style={
             fillHeight && !splitPanels && !fullscreen
@@ -3724,7 +3754,7 @@ export function EditorInner<TOutput>({
           }
         >
           {/* Same underline nav as Main / Sleep Intake / Knowledge (46px · 22px gap · 16px inset). */}
-          <div className="rf-inspector-tabs flex h-[46px] shrink-0 items-stretch gap-[22px] border-b border-[#c8c4b4] px-4">
+          <div className="rf-inspector-tabs flex h-[46px] shrink-0 items-center gap-[22px] border-b border-[#c8c4b4] px-4">
             {[
               ["inspector", "Inspector"],
               ["compiler", "Compiler"],
@@ -3734,7 +3764,7 @@ export function EditorInner<TOutput>({
                 key={id}
                 type="button"
                 onClick={() => setInspectorTab(id)}
-                className={`flex items-center self-stretch px-0.5 border-b-2 -mb-px bg-transparent text-[14px] font-sans text-[#1c1b16] outline-none focus:outline-none focus-visible:outline-none ${
+                className={`rf-inspector-tab flex h-auto items-center self-center px-0.5 pb-1 border-b-2 bg-transparent text-[14px] font-sans text-[#1c1b16] outline-none focus:outline-none focus-visible:outline-none rounded-none ${
                   inspectorTab === id
                     ? "border-[#1c1b16]"
                     : "border-transparent text-gray-500 hover:text-[#1c1b16]"
@@ -3765,7 +3795,7 @@ export function EditorInner<TOutput>({
                 <select
                   value={promptGroupConnectTargetId}
                   onChange={(event) => setPromptGroupConnectTargetId(event.target.value)}
-                  className="w-full rounded border border-[#c0bdb0] bg-[#cbc8b8] px-2 py-1.5 text-xs font-serif text-gray-800 focus:outline-none focus:border-gray-500"
+                  className="w-full rounded-none border border-[#c0bdb0] bg-[#cbc8b8] px-2 py-1.5 text-xs font-serif text-gray-800 focus:outline-none focus:border-gray-500"
                 >
                   {promptGroupConnectTargets.length === 0 ? (
                     <option value="">No target nodes</option>
@@ -3781,7 +3811,7 @@ export function EditorInner<TOutput>({
                   type="button"
                   disabled={!selectedPromptGroupOutputNode || !promptGroupConnectTargetId}
                   onClick={connectSelectedPromptGroupToTarget}
-                  className="w-full rounded border border-gray-500 px-3 py-1.5 text-[10px] font-sans uppercase tracking-widest text-gray-700 hover:bg-gray-100 disabled:opacity-40"
+                  className="w-full rounded-none border border-gray-500 px-3 py-1.5 text-[10px] font-sans uppercase tracking-widest text-gray-700 hover:bg-gray-100 disabled:opacity-40"
                 >
                   Connect
                 </button>
@@ -3796,7 +3826,7 @@ export function EditorInner<TOutput>({
               <button
                 type="button"
                 onClick={() => deleteCollapsedEdge(selectedCollapsedEdge.edge.id)}
-                className="w-full rounded border border-red-300 bg-red-50 px-3 py-2 text-xs font-sans uppercase tracking-widest text-red-700 hover:bg-red-100"
+                className="w-full rounded-none border border-red-300 bg-red-50 px-3 py-2 text-xs font-sans uppercase tracking-widest text-red-700 hover:bg-red-100"
               >
                 Delete combined edge
               </button>
@@ -3804,7 +3834,7 @@ export function EditorInner<TOutput>({
           ) : selectedNode ? (
             <>
               {selectedNodeNonEditable && (
-                <div className="rounded border border-slate-300 bg-slate-100 px-3 py-2 text-[11px] font-serif leading-relaxed text-slate-700">
+                <div className="rounded-none border border-slate-300 bg-slate-100 px-3 py-2 text-[11px] font-serif leading-relaxed text-slate-700">
                   <p>
                     This node is managed by the runtime and is read-only.
                   </p>
@@ -3842,7 +3872,7 @@ export function EditorInner<TOutput>({
                   {selectedNodeWarnings.map((warning, index) => (
                     <div
                       key={`${warning.nodeId}:${index}:${warning.message}`}
-                      className="rounded border border-rose-300 bg-rose-50 px-3 py-2 text-[11px] font-serif leading-relaxed text-rose-900"
+                      className="rounded-none border border-rose-300 bg-rose-50 px-3 py-2 text-[11px] font-serif leading-relaxed text-rose-900"
                     >
                       {warning.message}
                     </div>
@@ -3864,7 +3894,7 @@ export function EditorInner<TOutput>({
                     onChange={(e) => updateSelectedNodeLabel(e.target.value)}
                     rows={textareaRows}
                     readOnly={selectedNodeNonEditable}
-                    className={`w-full border border-[#c0bdb0] rounded px-3 py-2 text-sm font-serif text-gray-800 focus:outline-none focus:border-gray-500 leading-relaxed ${
+                    className={`w-full border border-[#c0bdb0] rounded-none px-3 py-2 text-sm font-serif text-gray-800 focus:outline-none focus:border-gray-500 leading-relaxed ${
                       selectedNodeNonEditable
                         ? "bg-[#d8d5c8] cursor-not-allowed opacity-80"
                         : "bg-[#cbc8b8]"
@@ -3892,13 +3922,13 @@ export function EditorInner<TOutput>({
                 type="text"
                 value={typeof selectedEdge.label === "string" ? selectedEdge.label : ""}
                 onChange={(e) => updateSelectedEdgeLabel(e.target.value)}
-                className="w-full border border-[#c0bdb0] rounded bg-[#cbc8b8] px-3 py-2 text-sm font-serif text-gray-800 focus:outline-none focus:border-gray-500"
+                className="w-full border border-[#c0bdb0] rounded-none bg-[#cbc8b8] px-3 py-2 text-sm font-serif text-gray-800 focus:outline-none focus:border-gray-500"
               />
             </>
           ) : (
             <div className="space-y-3">
               {isCorpusCanvas && (
-                <div className="rounded border border-sky-300 bg-sky-50 px-3 py-3">
+                <div className="rounded-none border border-sky-300 bg-sky-50 px-3 py-3">
                   <p className="text-[10px] uppercase tracking-widest text-sky-900 font-sans">
                     Try the RAG example
                   </p>
@@ -3966,7 +3996,7 @@ export function EditorInner<TOutput>({
                 <span className="font-medium text-[#1c1b16]">+ Canvas</span> tab above to add another flow.
               </p>
               {nodeWarnings.length > 0 && (
-                <div className="rounded border border-rose-300 bg-rose-50 px-3 py-3">
+                <div className="rounded-none border border-rose-300 bg-rose-50 px-3 py-3">
                   <p className="text-[10px] uppercase tracking-widest text-rose-900 font-sans">
                     Canvas issues
                   </p>
@@ -4028,7 +4058,7 @@ export function EditorInner<TOutput>({
                   setInspectorMaximized(false);
                 }}
               />
-              <div className="rf-canvas-fullscreen fixed inset-4 z-[100] flex flex-col overflow-hidden rounded border border-[#c8c4b4] bg-[#f3f1e6] shadow-2xl">
+              <div className="rf-canvas-fullscreen fixed inset-4 z-[100] flex flex-col overflow-hidden rounded-none border border-[#c8c4b4] bg-[#f3f1e6] shadow-2xl">
                 {renderEditorWorkspace(true)}
               </div>
             </>,
@@ -4047,7 +4077,7 @@ export function EditorInner<TOutput>({
               onClick={() => setHelpOpen(false)}
             >
               <div
-                className="rf-canvas-help w-[min(560px,100%)] max-h-[85vh] overflow-auto rounded-[14px] border border-[#a8a698] bg-[#d8d6c7] shadow-2xl"
+                className="rf-canvas-help w-[min(560px,100%)] max-h-[85vh] overflow-auto rounded-none border border-[#a8a698] bg-[#d8d6c7] shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="rf-canvas-help-head sticky top-0 flex items-center justify-between gap-3 border-b border-[#bcbaad] bg-[#d8d6c7] px-[18px] py-4">
@@ -4058,7 +4088,7 @@ export function EditorInner<TOutput>({
                     type="button"
                     onClick={() => setHelpOpen(false)}
                     aria-label="Close"
-                    className="flex h-7 w-7 items-center justify-center rounded text-[#86806f] hover:bg-[#c9c7b9] hover:text-[#1f1d18]"
+                    className="flex h-7 w-7 items-center justify-center rounded-none text-[#86806f] hover:bg-[#c9c7b9] hover:text-[#1f1d18]"
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                       <path d="M6 6l12 12M18 6L6 18" />
@@ -4099,9 +4129,9 @@ export function EditorInner<TOutput>({
                       <div className="mb-1 text-[14px] font-semibold text-[#1f1d18]">How the Policy canvas works</div>
                       <p className="mb-2">
                         The <b className="font-semibold text-[#1f1d18]">Policy canvas</b> is the flowchart of{" "}
-                        <span className="rounded border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">IF</span>{" "}
+                        <span className="rounded-none border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">IF</span>{" "}
                         conditions and{" "}
-                        <span className="rounded border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">PROMPT</span>{" "}
+                        <span className="rounded-none border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">PROMPT</span>{" "}
                         nodes. It compiles into the policy prompt — the instructions that decide the assistant&apos;s reply.
                       </p>
                       <p className="mb-2">
@@ -4157,7 +4187,7 @@ export function EditorInner<TOutput>({
                       <div className="flex h-6 w-6 flex-none items-center justify-center bg-[#1c1b16] text-[13px] font-semibold text-[#f6f7f2]">3</div>
                       <div>
                         <div className="mb-0.5 text-[14px] font-semibold text-[#1f1d18]">Connect nodes</div>
-                        <p>Drag from the small handle (dot) on one node to another. IF nodes have separate <span className="rounded border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">TRUE</span> / <span className="rounded border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">FALSE</span> outputs.</p>
+                        <p>Drag from the small handle (dot) on one node to another. IF nodes have separate <span className="rounded-none border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">TRUE</span> / <span className="rounded-none border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">FALSE</span> outputs.</p>
                       </div>
                     </div>
                     <div className="flex gap-3">
@@ -4171,7 +4201,7 @@ export function EditorInner<TOutput>({
                       <div className="flex h-6 w-6 flex-none items-center justify-center bg-[#1c1b16] text-[13px] font-semibold text-[#f6f7f2]">5</div>
                       <div>
                         <div className="mb-0.5 text-[14px] font-semibold text-[#1f1d18]">Delete</div>
-                        <p>Select a node or edge and press <span className="rounded border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">Delete</span>, or use the delete control in Tools.</p>
+                        <p>Select a node or edge and press <span className="rounded-none border border-[#bcbaad] bg-[#c9c7b9] px-1 font-mono text-[11px] text-[#1f1d18]">Delete</span>, or use the delete control in Tools.</p>
                       </div>
                     </div>
                     <div className="flex gap-3">

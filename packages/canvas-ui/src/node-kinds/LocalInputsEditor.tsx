@@ -24,7 +24,7 @@ const FIELD_TYPES: FieldType[] = [
 
 const fieldLabel = "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const input =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 function makeRowId(): string {
   return typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -107,7 +107,7 @@ export function LocalInputsEditor({
         <button
           type="button"
           onClick={add}
-          className="text-[10px] font-sans uppercase tracking-widest border border-gray-500 text-gray-700 hover:bg-gray-100 rounded px-2 py-0.5"
+          className="text-[10px] font-sans uppercase tracking-widest border border-gray-500 text-gray-700 hover:bg-gray-100 rounded-none px-2 py-0.5"
         >
           + Input field
         </button>
@@ -122,7 +122,7 @@ export function LocalInputsEditor({
           {rows.map((row) => (
             <div
               key={row.id}
-              className="border border-[#c0bdb0] rounded p-2 bg-[#e0dccc] space-y-1.5"
+              className="border border-[#c0bdb0] rounded-none p-2 bg-[#e0dccc] space-y-1.5"
             >
               <div className="flex items-center gap-1.5">
                 <input

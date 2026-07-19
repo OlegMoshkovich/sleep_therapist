@@ -3,11 +3,11 @@ import type { CanvasNode, CanvasNodeData, NodeKindDef } from "../types";
 import { ClampedNodeText } from "./ClampedNodeText";
 
 const baseClass =
-  "px-3 py-2 text-sm font-sans border rounded shadow-sm min-w-[10rem] max-w-[16rem] text-center";
+  "px-3 py-2 text-sm font-sans border rounded-none shadow-sm min-w-[10rem] max-w-[16rem] text-center";
 const inspectorFieldLabel =
   "block text-[10px] uppercase tracking-widest text-gray-500 font-sans mt-2";
 const inspectorInput =
-  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
+  "w-full bg-[#cbc8b8] border border-[#c0bdb0] rounded-none px-2 py-1.5 text-xs font-mono text-gray-800 focus:outline-none focus:border-gray-500";
 
 function readString(data: CanvasNodeData, key: string): string {
   const value = data[key];
@@ -87,7 +87,7 @@ export const TERMINATE_STAGE: NodeKindDef = {
   kind: "terminate_stage",
   toolbarLabel: "+ Terminate stage",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-600 text-emerald-950 bg-emerald-50 hover:bg-emerald-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-emerald-600 text-emerald-950 bg-emerald-50 hover:bg-emerald-100 rounded-none",
   component: TerminateStageNode,
   defaultLabel: "finish this stage; continue on the next turn",
   inspector: {
@@ -101,7 +101,7 @@ export const TERMINATE_STAGE_IMMEDIATE: NodeKindDef = {
   kind: "terminate_stage_immediate",
   toolbarLabel: "+ Move immediately",
   toolbarClassName:
-    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-teal-700 text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-full",
+    "text-xs font-sans uppercase tracking-widest px-2.5 py-1 border border-teal-700 text-teal-950 bg-teal-50 hover:bg-teal-100 rounded-none",
   component: TerminateStageImmediateNode,
   defaultLabel: "finish this stage; run the next state canvas now",
   inspector: {

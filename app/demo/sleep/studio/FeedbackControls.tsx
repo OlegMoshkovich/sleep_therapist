@@ -60,7 +60,10 @@ export function FeedbackControls({
   onSave: (entries: FeedbackEntry[]) => void;
   onRemove: () => void;
 }) {
-  if (!mode) return null;
+  // The collapsed chip/add affordance only shows in global feedback mode, but the
+  // editor also opens on demand from a reply's "Feedback" button (editing=true),
+  // so allow it through even when mode is off.
+  if (!mode && !editing) return null;
 
   if (editing) {
     return (
@@ -113,7 +116,14 @@ function FeedbackEditor({
     text_correction: textOf(initial, "text_correction"),
     correct_output: textOf(initial, "correct_output"),
   });
-  const [noteType, setNoteType] = useState<FeedbackSignal>("comment");
+  // Open on the tab that already has content, preferring the ideal output — so
+  // feedback submitted from the fullscreen view (a correction) lands on that tab,
+  // underlined, instead of the empty Note tab.
+  const [noteType, setNoteType] = useState<FeedbackSignal>(() => {
+    if (textOf(initial, "correct_output").trim()) return "correct_output";
+    if (textOf(initial, "text_correction").trim()) return "text_correction";
+    return "comment";
+  });
 
   const setText = (key: FeedbackSignal, v: string) =>
     setTexts((prev) => ({ ...prev, [key]: v }));
@@ -134,39 +144,40 @@ function FeedbackEditor({
   return (
     <div className={"fb-row " + align}>
       <div className="fb-editor">
-        <div className="fb-thumbs">
-          <button
-            className={"fb-thumb up" + (rating === 1 ? " active" : "")}
-            onClick={() => setRating((r) => (r === 1 ? null : 1))}
-            title="Thumbs up"
-          >
-            <Ic.Wave size={15} /> 👍
-          </button>
-          <button
-            className={"fb-thumb down" + (rating === -1 ? " active" : "")}
-            onClick={() => setRating((r) => (r === -1 ? null : -1))}
-            title="Thumbs down"
-          >
-            👎
-          </button>
-        </div>
-
-        <div className="fb-types">
-          {NOTE_TYPES.map((t) => (
+        <div className="fb-options">
+          <div className="fb-thumbs">
             <button
-              key={t.key}
-              className={
-                "fb-type" +
-                (noteType === t.key ? " active" : "") +
-                (texts[t.key].trim() ? " filled" : "")
-              }
-              onClick={() => setNoteType(t.key)}
-              title={texts[t.key].trim() ? "Has content" : undefined}
+              className={"fb-thumb up" + (rating === 1 ? " active" : "")}
+              onClick={() => setRating((r) => (r === 1 ? null : 1))}
+              title="Thumbs up"
             >
-              {t.label}
-              {texts[t.key].trim() ? " •" : ""}
+              👍
             </button>
-          ))}
+            <button
+              className={"fb-thumb down" + (rating === -1 ? " active" : "")}
+              onClick={() => setRating((r) => (r === -1 ? null : -1))}
+              title="Thumbs down"
+            >
+              👎
+            </button>
+          </div>
+          <div className="fb-types">
+            {NOTE_TYPES.map((t) => (
+              <button
+                key={t.key}
+                className={
+                  "fb-type" +
+                  (noteType === t.key ? " active" : "") +
+                  (texts[t.key].trim() ? " filled" : "")
+                }
+                onClick={() => setNoteType(t.key)}
+                title={texts[t.key].trim() ? "Has content" : undefined}
+              >
+                {t.label}
+                {texts[t.key].trim() ? " •" : ""}
+              </button>
+            ))}
+          </div>
         </div>
 
         <textarea

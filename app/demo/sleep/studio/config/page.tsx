@@ -728,6 +728,8 @@ function StatePane({
   stateCompile,
   fillHeight,
   currentState,
+  stateOverride,
+  highlightKeys,
   loaded = true,
   tabBarTrailing,
   onPersistFields,
@@ -740,6 +742,10 @@ function StatePane({
   stateCompile: ReturnType<typeof createStateExtractionCompiler>;
   fillHeight?: boolean;
   currentState?: Record<string, unknown> | null;
+  /** A specific turn's snapshot to show instead of the live state (from a reply's State button). */
+  stateOverride?: Record<string, unknown> | null;
+  /** Field names to highlight (the ones the focused turn extracted). */
+  highlightKeys?: Set<string> | null;
   loaded?: boolean;
   tabBarTrailing?: React.ReactNode;
   /** Persist the next schema immediately (used after delete so reload keeps it). */
@@ -755,16 +761,19 @@ function StatePane({
   // conversation state may still hold keys for deleted fields — don't resurface
   // those after the user removed them from the schema.
   const schemaNames = new Set(fields.map(([name]) => name));
-  const currentEntries: [string, unknown][] = currentState
-    ? Object.entries(currentState).filter(([key]) => schemaNames.has(key))
+  // A reply's "State" button pins the panel to that turn's snapshot (stateOverride)
+  // and highlights the fields it extracted; otherwise show the live state.
+  const effectiveState = stateOverride ?? currentState;
+  const currentEntries: [string, unknown][] = effectiveState
+    ? Object.entries(effectiveState).filter(([key]) => schemaNames.has(key))
     : fields.map(([name, , initialValue]) => [name, initialValue]);
   // If live state was filtered down to nothing but the schema still has rows,
   // fall back to schema defaults so the panel doesn't look empty mid-edit.
   const displayEntries: [string, unknown][] =
-    currentEntries.length > 0 || !currentState
+    currentEntries.length > 0 || !effectiveState
       ? currentEntries
       : fields.map(([name, , initialValue]) => [name, initialValue]);
-  const hasLiveState = !!currentState && currentEntries.length > 0;
+  const hasLiveState = !!effectiveState && currentEntries.length > 0;
   const [stateOpen, setStateOpen] = useState(true);
   // Pixel height of the expanded State variables block (null = content-sized).
   // Drag the handle under it to resize; persisted in localStorage.
@@ -932,8 +941,16 @@ function StatePane({
                   <div className="sc-curstate-rows">
                     {displayEntries.map(([k, v]) => {
                       const set = fmtStateVal(v) !== "—";
+                      const highlighted = !!highlightKeys?.has(k);
                       return (
-                        <div key={k} className={"sc-curstate-row" + (set ? "" : " unset")}>
+                        <div
+                          key={k}
+                          className={
+                            "sc-curstate-row" +
+                            (set ? "" : " unset") +
+                            (highlighted ? " extracted" : "")
+                          }
+                        >
                           <span className="sc-curstate-k">{k}</span>
                           <span className="sc-curstate-v">{fmtStateVal(v)}</span>
                         </div>
@@ -1764,6 +1781,10 @@ export function useSleepSetup() {
       fillHeight?: boolean;
       fireSignal?: CanvasFireSignal | null;
       currentState?: Record<string, unknown> | null;
+      /** When a reply's State button is clicked, show this turn's snapshot instead of the live state. */
+      stateOverride?: Record<string, unknown> | null;
+      /** Fields to highlight in the State panel (the ones that turn extracted). */
+      stateHighlight?: Set<string> | null;
       /** Optional content docked at the trailing edge of the Policy canvas tab bar. */
       tabBarTrailing?: React.ReactNode;
     }
@@ -1799,6 +1820,8 @@ export function useSleepSetup() {
           stateCompile={stateCompile}
           fillHeight={opts?.fillHeight}
           currentState={opts?.currentState}
+          stateOverride={opts?.stateOverride}
+          highlightKeys={opts?.stateHighlight}
           loaded={loaded}
           tabBarTrailing={opts?.tabBarTrailing}
           onPersistFields={(next) => save({ fields: next })}
@@ -1840,6 +1863,37 @@ export function useSleepSetup() {
  * the section panes pick up the System Configuration palette even though they
  * live under the chat's `.ra-scope` theme.
  */
+/** True when a state value counts as "empty" (nothing was extracted for it). */
+function isEmptyStateValue(v: unknown): boolean {
+  if (v === null || v === undefined) return true;
+  if (Array.isArray(v)) return v.length === 0;
+  const s = String(v).trim();
+  return s === "" || s === "null";
+}
+
+/**
+ * Maps each turn id to the state fields it *extracted this turn* — i.e. fields
+ * whose value became non-empty or changed from the previous turn's state. Drives
+ * the per-reply "State" button (only shown when a turn extracted something) and
+ * the highlight of those fields in the State panel.
+ */
+export function turnExtractedStateKeys(turns: Turn[] | undefined): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  if (!turns) return map;
+  for (let i = 0; i < turns.length; i++) {
+    const cur = turns[i].state;
+    if (!cur) continue;
+    const prev = (i > 0 ? turns[i - 1].state : null) ?? {};
+    const changed = Object.keys(cur).filter((k) => {
+      const cv = cur[k];
+      if (isEmptyStateValue(cv)) return false;
+      return JSON.stringify(cv) !== JSON.stringify((prev as Record<string, unknown>)[k]);
+    });
+    if (changed.length > 0) map.set(turns[i].id, changed);
+  }
+  return map;
+}
+
 /** Unique tool names actually dispatched in a turn's trace (real signal). */
 function traceToolNames(trace: TimedTraceEvent[]): string[] {
   const names = new Set<string>();
@@ -1856,12 +1910,24 @@ export function SetupBar({
   turns,
   slot,
   onTopDockChange,
+  policyFocus,
+  stateFocus,
 }: {
   /** Notifies the host (Observability pane) when a section is docked inline so it
    *  can yield space (e.g. hide the trace) to the embedded component. */
   onDockedChange?: (docked: boolean) => void;
   /** Chat turns; the latest completed one drives the policy traversal animation. */
   turns?: Turn[];
+  /**
+   * Bumped when a reply's "Policy trace" button is clicked: switches to the Policy
+   * section and re-animates that specific turn's path (instead of the latest turn).
+   */
+  policyFocus?: { id: string; n: number };
+  /**
+   * Bumped when a reply's "State" button is clicked: switches to the State section
+   * and highlights the fields that turn extracted (showing that turn's snapshot).
+   */
+  stateFocus?: { id: string; n: number };
   /**
    * DOM node inside the drawer's Model Setup pane to portal the docked (inline)
    * view into. SetupBar itself is mounted at the page level so the popped-out
@@ -1885,26 +1951,44 @@ export function SetupBar({
   // they're sent in), opened from the "i" on the left of the section nav.
   const [compileInfoOpen, setCompileInfoOpen] = useState(false);
 
-  // Build a fire signal from the latest completed turn so the Policy canvas
-  // animates the path the model took. The signal id is the turn id (a new turn
-  // re-triggers the walk); `tools` are the tool names actually dispatched that
-  // turn (real data from the trace), used to mark matching tool nodes.
+  // When a reply's "Policy trace" button is clicked (policyFocus.n bumps), switch
+  // to the Policy section and pin the animation to that specific turn until the
+  // next click. Otherwise the canvas animates the latest completed turn (live).
+  const [focusedTurn, setFocusedTurn] = React.useState<{ id: string; n: number } | null>(null);
+  React.useEffect(() => {
+    if (policyFocus && policyFocus.n > 0) {
+      setActive("policy");
+      setFocusedTurn(policyFocus);
+    }
+    // Only react to a new click (n change), not to identity changes of the object.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [policyFocus?.n]);
+
+  // Build a fire signal so the Policy canvas animates the path the model took.
+  // A focused turn (from a bubble's Policy button) wins; otherwise the latest
+  // completed turn drives the walk. `tools` are the tool names actually dispatched
+  // that turn (real trace data), used to mark matching tool nodes.
   const lastTurn = turns && turns.length > 0 ? turns[turns.length - 1] : null;
   const lastDoneTurn =
     lastTurn && (lastTurn.finalAnswer != null || lastTurn.error != null)
       ? lastTurn
       : null;
   const fireSignal = React.useMemo<CanvasFireSignal | null>(() => {
-    if (!lastDoneTurn) return null;
+    const focusTurn = focusedTurn
+      ? turns?.find((t) => t.id === focusedTurn.id) ?? null
+      : null;
+    const turn = focusTurn ?? lastDoneTurn;
+    if (!turn) return null;
     return {
-      id: lastDoneTurn.id,
-      tools: traceToolNames(lastDoneTurn.trace),
+      // Include the focus nonce so re-clicking the same reply re-triggers the walk.
+      id: focusTurn ? `${turn.id}#focus${focusedTurn!.n}` : turn.id,
+      tools: traceToolNames(turn.trace),
       // Exact canvas nodes the runtime traversed this turn — the renderer
       // animates only from these (it never infers a path from the answer).
-      exactNodeRefs: lastDoneTurn.nodeRefs ?? [],
-      answer: lastDoneTurn.finalAnswer ?? "",
+      exactNodeRefs: turn.nodeRefs ?? [],
+      answer: turn.finalAnswer ?? "",
     };
-  }, [lastDoneTurn]);
+  }, [focusedTurn, lastDoneTurn, turns]);
   // The most recent extracted patient state, shown in the State pane.
   const currentState = React.useMemo<Record<string, unknown> | null>(() => {
     if (!turns) return null;
@@ -1914,6 +1998,33 @@ export function SetupBar({
     }
     return null;
   }, [turns]);
+
+  // State focus: clicking a reply's "State" button switches to the State section
+  // and pins the panel to that turn's snapshot, highlighting the fields it
+  // extracted. Cleared to null → the panel shows the latest state (live).
+  const [focusedStateTurn, setFocusedStateTurn] = React.useState<{ id: string; n: number } | null>(null);
+  React.useEffect(() => {
+    if (stateFocus && stateFocus.n > 0) {
+      setActive("state");
+      setFocusedStateTurn(stateFocus);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stateFocus?.n]);
+  const extractedKeysByTurn = React.useMemo(() => turnExtractedStateKeys(turns), [turns]);
+  // When a turn is focused, override the panel's state with that turn's snapshot
+  // and highlight only the fields it extracted; otherwise show the live state.
+  const { stateOverride, stateHighlight } = React.useMemo<{
+    stateOverride: Record<string, unknown> | null;
+    stateHighlight: Set<string> | null;
+  }>(() => {
+    if (!focusedStateTurn) return { stateOverride: null, stateHighlight: null };
+    const turn = turns?.find((t) => t.id === focusedStateTurn.id) ?? null;
+    if (!turn?.state) return { stateOverride: null, stateHighlight: null };
+    return {
+      stateOverride: turn.state,
+      stateHighlight: new Set(extractedKeysByTurn.get(turn.id) ?? []),
+    };
+  }, [focusedStateTurn, turns, extractedKeysByTurn]);
   const OPTS: { id: string; label: string; ico: IconName }[] = [
     { id: "knowledge", label: "Knowledge", ico: "Book" },
     { id: "state", label: "State", ico: "List" },
@@ -2013,6 +2124,8 @@ export function SetupBar({
               fillHeight: true,
               fireSignal,
               currentState,
+              stateOverride,
+              stateHighlight,
               tabBarTrailing: canvasSection ? navActions : undefined,
             })}
           </div>
