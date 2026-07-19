@@ -234,10 +234,13 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .sidebar:not(.rail){border-right:1px solid var(--line);}
 /* One content column: title, + New, search field edge, Recent, and list titles
    share the same left inset (no extra per-row offsets). */
-/* Same 60px band as Model Setup / Observability + chat thread-head. */
-.ra-scope .side-head{display:flex;align-items:center;gap:10px;height:var(--studio-head-h,60px);margin-bottom:14px;padding:0;}
-.ra-scope .side-title{line-height:1.4;}
-.ra-scope .side-close{margin-left:auto;flex:0 0 auto;align-self:center;width:28px;height:28px;margin-top:0;}
+/* Same 60px band as Model Setup / Observability + chat thread-head.
+   Content stays left-aligned; flex centers it vertically so all three panes share one line. */
+.ra-scope .side-head{display:flex;align-items:center;gap:10px;height:var(--studio-head-h,60px);margin-bottom:14px;padding:0;
+  box-sizing:border-box;}
+.ra-scope .side-title{line-height:1.25;display:flex;align-items:center;}
+.ra-scope .side-close{margin-left:auto;flex:0 0 auto;align-self:center;width:28px;height:28px;margin-top:0;
+  display:flex;align-items:center;justify-content:center;}
 .ra-scope .topbar-toggle{padding:6px;}
 /* One type size across the expanded left rail (title, actions, list, account). */
 .ra-scope .sidebar:not(.rail){--side-text:14px;font-size:var(--side-text);}
@@ -247,6 +250,8 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .sidebar:not(.rail) .conv-title,
 .ra-scope .sidebar:not(.rail) .conv-rename,
 .ra-scope .sidebar:not(.rail) .conv-empty p,
+.ra-scope .sidebar:not(.rail) .recent-head,
+.ra-scope .sidebar:not(.rail) .conv-select-action,
 .ra-scope .sidebar:not(.rail) .acct-name,
 .ra-scope .sidebar:not(.rail) .acct-sub,
 .ra-scope .sidebar:not(.rail) .avatar .mono,
@@ -259,7 +264,6 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .sidebar:not(.rail) .help-section-body{
   font-size:var(--side-text);}
 /* Caps labels read larger at the same px — keep them a step smaller. */
-.ra-scope .sidebar:not(.rail) .recent-head,
 .ra-scope .sidebar:not(.rail) .role-pill{
   font-size:11px;letter-spacing:.4px;}
 
@@ -273,7 +277,9 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    out of the flex flow, transparent, and click-through except on the icons, and
    sits just below the drawer's resize handle so dragging still works. */
 .ra-scope .right-rail.floating{position:absolute;top:0;bottom:0;right:0;width:64px;flex:none;
-  z-index:22;background:transparent;pointer-events:none;padding-top:12px;}
+  z-index:22;background:transparent;pointer-events:none;
+  /* Center the first rail icon on the shared 60px header midline. */
+  padding-top:calc((var(--studio-head-h,60px) - 44px) / 2);}
 .ra-scope .right-rail.floating > *{pointer-events:auto;}
 /* Floating over the chat, the rail is transparent, so the day divider (TODAY)
    and other thread lines would show through under the icons. Give the floating
@@ -287,7 +293,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .rail-btn.accent:hover{background:var(--surface);}
 .ra-scope .rail-div{display:flex;color:var(--text-3);padding:6px 0;border-top:1px solid var(--line-soft);border-bottom:1px solid var(--line-soft);width:32px;justify-content:center;}
 .ra-scope .rail-spacer{flex:1;}
-.ra-scope .side-title{font-family:var(--serif);font-size:16px;font-weight:500;letter-spacing:.2px;white-space:nowrap;}
+.ra-scope .side-title{font-family:var(--serif);font-size:18px;font-weight:500;letter-spacing:.2px;white-space:nowrap;}
 .ra-scope .side-sub{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:14px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-3);}
 
 /* Text link — no card padding, so "+" lines up with the title / list. */
@@ -303,24 +309,43 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .side-search::placeholder{color:var(--text-3);}
 .ra-scope .side-search:focus{background:var(--surface-2);}
 
-.ra-scope .recent-head{display:flex;align-items:center;gap:7px;color:var(--text-3);font-size:11px;margin:18px 0 8px;
-  font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;}
+.ra-scope .recent-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:18px 0 8px;
+  font-size:14px;font-weight:400;color:var(--text-2);letter-spacing:normal;text-transform:none;}
+.ra-scope .recent-head .recent-label{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
 .ra-scope .recent-head .chev{margin-left:2px;opacity:.7;}
 
-.ra-scope .conv-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0;margin:0;padding:0;}
+/* Multi-select: Select sits on the Recent row; actions expand to the right. */
+.ra-scope .conv-select-bar{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:0 0 0 auto;}
+.ra-scope .conv-select-action{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-2);
+  background:transparent;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;white-space:nowrap;}
+.ra-scope .conv-select-action:hover:not(:disabled){background:var(--surface);color:var(--text);}
+.ra-scope .conv-select-action.danger{color:var(--danger);}
+.ra-scope .conv-select-action.danger:hover:not(:disabled){background:rgba(224,130,111,.12);color:var(--danger);}
+.ra-scope .conv-select-action:disabled{opacity:.4;cursor:default;}
+/* `button.conv-check` beats the global `button { border:none }` reset so empty boxes stay visible. */
+.ra-scope button.conv-check{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
+  border:1.5px solid var(--text-3);border-radius:5px;background:transparent;color:var(--text);padding:0;cursor:pointer;}
+.ra-scope button.conv-check:hover{border-color:var(--text-2);background:var(--surface);}
+.ra-scope button.conv-check.on{background:var(--text);border-color:var(--text);color:var(--elevated,#fff);}
+.ra-scope button.conv-check.on:hover{background:var(--text);border-color:var(--text);}
+.ra-scope .conv-item.selected{background:var(--surface);}
+
+/* Right padding + stable gutter so the scrollbar never covers the ⋯ menu. */
+.ra-scope .conv-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0;
+  margin:0;padding:0 10px 0 0;scrollbar-gutter:stable;}
 .ra-scope .conv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:var(--text-3);padding:20px 0;}
 .ra-scope .conv-empty .ce-orb{width:38px;height:38px;border-radius:50%;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--text-4);}
 .ra-scope .conv-empty p{margin:0;font-size:14px;line-height:1.35;}
 
-.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-radius:8px;cursor:pointer;
+.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 2px 9px 0;border-radius:8px;cursor:pointer;
   position:relative;color:var(--text-2);}
 .ra-scope .conv-item:hover{background:var(--surface);color:var(--text);}
 .ra-scope .conv-item.active{background:var(--surface);color:var(--text);}
 .ra-scope .conv-item.active::before{content:"";position:absolute;left:-10px;top:9px;bottom:9px;width:2.5px;border-radius:3px;background:var(--accent);}
-.ra-scope .conv-title{flex:1;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .conv-title{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ra-scope .conv-rename{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--text);
   background:var(--elevated);border:1px solid var(--accent);border-radius:6px;padding:3px 7px;outline:none;}
-.ra-scope .conv-kebab{opacity:1;color:var(--text-3);display:flex;border-radius:6px;padding:2px;}
+.ra-scope .conv-kebab{flex:0 0 auto;opacity:1;color:var(--text-3);display:flex;border-radius:6px;padding:2px;}
 .ra-scope .conv-kebab:hover{background:var(--surface-2);color:var(--text);}
 .ra-scope .conv-kebab.open{background:var(--surface-2);color:var(--text);}
 .ra-scope .conv-menu{position:absolute;top:34px;right:0;z-index:30;min-width:138px;
@@ -374,9 +399,9 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .side-bottom-row{display:flex;align-items:center;gap:8px;}
 .ra-scope .side-bottom-row .acct-chip{flex:1;min-width:0;}
 .ra-scope .help-btn{width:38px;height:38px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
-  border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--text-3);}
-.ra-scope .help-btn:hover{background:var(--surface-2);color:var(--text);}
-.ra-scope .help-btn.open{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+  border-radius:0;background:none;border:none;color:var(--text-3);}
+.ra-scope .help-btn:hover{background:none;color:var(--text);}
+.ra-scope .help-btn.open{background:none;border:none;color:var(--text);}
 .ra-scope .help-popover{position:absolute;left:0;right:0;bottom:62px;background:var(--elevated);border:1px solid var(--line);
   border-radius:14px;box-shadow:0 18px 40px -12px rgba(40,36,28,.35);z-index:31;animation:ra-popIn .16s ease;
   max-height:min(70vh,460px);display:flex;flex-direction:column;overflow:hidden;}
@@ -415,11 +440,12 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 /* Section switcher styled as underline nav tabs (like the drawer tabs above),
    not filled buttons. Selection is shown with a neutral underline — no accent
    fill. */
-.ra-scope .obs-setup{display:flex;gap:22px;padding:0 16px;height:46px;align-items:stretch;border-bottom:1px solid var(--line-soft);}
+/* Right pad 8px matches drawer × and canvas tab-btn inset so (i) stacks with Save. */
+.ra-scope .obs-setup{display:flex;gap:22px;padding:0 8px 0 16px;height:46px;align-items:stretch;border-bottom:1px solid var(--line-soft);}
 /* "How each turn reaches the model" info trigger, at the right of the nav. */
-.ra-scope .obs-setup .obs-setup-info{display:flex;align-items:center;flex:0 0 auto;
-  margin-left:auto;color:var(--text-3);background:none;border:none;cursor:pointer;padding:0;}
-.ra-scope .obs-setup .obs-setup-info:hover{color:var(--text);}
+.ra-scope .obs-setup .obs-setup-info{display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+  margin-left:auto;color:var(--text-3);background:none;border:none;cursor:pointer;padding:6px;border-radius:0;}
+.ra-scope .obs-setup .obs-setup-info:hover{color:var(--text);background:none;}
 /* Selectors are scoped under `.obs-setup` so they out-specify the global
    `.ra-scope button{border:none;color:inherit}` reset — otherwise the underline
    (a border) and the muted inactive color would be wiped out. */
@@ -480,19 +506,30 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .obs-docked .obs-docked-body .sc-pane-inner{max-width:none;}
 .ra-scope .obs-docked .obs-docked-body .sc-pane-head{display:none;}
 .ra-scope .obs-docked .obs-docked-body .sc-pane-fill{min-height:100%;display:flex;flex-direction:column;}
+/* Canvas panes: fill the pinned body via flex, not min-height:100% (that
+   percentage can resolve against a scrollport and leave the board at 0). */
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-pane-fill{
+  min-height:0;flex:1 1 0;}
 /* Canvas panes (State/Policy) sit flush under the Knowledge/State/Policy nav so
    the canvas tab bar reads as the next stacked row — matching the tight rhythm
    of the Model Setup / Knowledge rows above. Zero ALL body padding (not just
    top/bottom): the previous 14px side inset stacked on the tab bar's own px-4
    and pushed "Main" right of Knowledge / Model Setup. Text panes (Knowledge)
    keep the 18px/14px breathing room. */
+/* Flex chain: canvas host fills the pinned body without growing it.
+   Must include `.rf-canvas-shell` — the editor wraps `.rf-canvas` in a shell, so
+   `.sc-canvas-host > .rf-canvas` never matches and used to leave Policy with a
+   zero-height inspector body (tabs visible, content blank). */
 .ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host){
-  padding:0;overflow:hidden;}
-/* Flex chain: canvas host fills the pinned body without growing it. */
+  padding:0;overflow:hidden !important;
+  display:flex;flex-direction:column;min-height:0;max-height:100%;}
+/* Flex-only sizing — board + inspector share the pinned body; never grow it. */
 .ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-pane-fill,
 .ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-canvas-host,
-.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-canvas-host > .rf-canvas{
-  flex:1 1 auto;min-height:0;max-height:100%;overflow:hidden;
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-canvas-host > .rf-canvas-shell,
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .sc-canvas-host .rf-canvas-shell > .rf-canvas,
+.ra-scope .obs-docked .obs-docked-body:has(.sc-canvas-host) .rf-canvas-workspace{
+  flex:1 1 0;min-height:0;max-height:100%;overflow:hidden;
   display:flex;flex-direction:column;}
 /* Knowledge guideline rows: full-bleed, stacked with hairline separators only. */
 .ra-scope .obs-docked .sc-guidelines{
@@ -527,32 +564,42 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    canvas tabs sit flush under the row above (no blank band over "Main"). */
 .ra-scope .obs-docked .obs-docked-body .sc-canvas-host,
 .sysconf.obs-docked .sc-canvas-host{
-  margin-top:0 !important;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  margin-top:0 !important;flex:1 1 0;min-height:0;display:flex;flex-direction:column;}
 .ra-scope .obs-docked .obs-docked-body .sc-canvas-host > *,
 .ra-scope .obs-docked .obs-docked-body .sc-canvas-host .rf-canvas-shell{
-  flex:1 1 auto;min-height:0;display:flex;flex-direction:column;height:100%;}
+  flex:1 1 0;min-height:0;display:flex;flex-direction:column;}
 .ra-scope .obs-docked .obs-docked-body .sc-canvas-host .rf-canvas-shell > *{
-  flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
+  flex:1 1 0;min-height:0;display:flex;flex-direction:column;}
 /* In the narrow drawer the canvas inspector stacks below the board. The canvas
    keys its board/inspector split off the `lg:` viewport breakpoint (≥1024px),
    which is wrong inside a ~420px drawer — force the stacked, full-width layout
    so the board isn't squeezed beside the 288px inspector. Pop out for the wide
    side-by-side editing view. */
 .ra-scope .obs-docked .sc-stage{grid-template-columns:1fr;}
-.ra-scope .obs-docked .rf-canvas-body{flex-direction:column;flex:1 1 auto;min-height:0;}
+/* Canvas tabs wrap onto a second line in the narrow drawer instead of clipping. */
+.ra-scope .obs-docked .rf-canvas-workspace > .rf-canvas-tabs{
+  flex:0 0 auto;flex-wrap:wrap;height:auto;min-height:46px;align-items:center;}
+.rf-canvas-fullscreen .rf-canvas-tabs{
+  flex-wrap:wrap;height:auto;min-height:46px;align-items:center;}
+.ra-scope .obs-docked .rf-canvas-body{
+  flex-direction:column !important;flex:1 1 0 !important;min-height:0 !important;
+  max-height:100% !important;overflow:hidden !important;height:auto !important;}
 .ra-scope .obs-docked .rf-canvas-body > *{width:100%;max-width:none;}
-/* Canvas/inspector heights are driven by the drag split in EditorInner
-   (flex-basis %). Slot + aside fill their assigned share. */
-.ra-scope .obs-docked .rf-canvas-slot{min-height:0;}
+.ra-scope .obs-docked .rf-canvas-slot{min-height:0;overflow:hidden;}
 .ra-scope .obs-docked .rf-canvas-slot .rf-canvas-surface{height:100%;min-height:0;max-height:none;}
 .ra-scope .obs-docked .rf-canvas-body > aside.rf-inspector,
 .ra-scope .obs-docked .rf-inspector{
-  min-height:0;max-height:none;overflow:hidden;border:none;
-  display:flex;flex-direction:column;}
-.ra-scope .obs-docked .rf-inspector-tabs{flex:0 0 auto;}
-/* Only this region scrolls — Inspector/Compiler title stays fixed. */
+  /* Never shrink below the nav band — Compiler stays on screen while dragging. */
+  min-height:46px !important;overflow:hidden;border:none;
+  display:flex;flex-direction:column;color:var(--sc-ink, #1c1b16);}
+.ra-scope .obs-docked .rf-inspector-tabs{
+  flex:0 0 46px;height:46px;z-index:2;
+  background:var(--sc-bg, #dddacb);}
+/* Only inspector content scrolls — the docked pane itself never scrolls. */
 .ra-scope .obs-docked .rf-inspector-body{
-  flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;}
+  flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;
+  color:var(--sc-ink, #1c1b16);
+  background:var(--sc-bg, #dddacb);}
 /* Canvas graph: true/false tags at 12px; node titles + descriptions match at 20px.
    Include .rf-canvas-fullscreen — it portals to document.body outside .ra-scope. */
 .ra-scope .rf-canvas-surface .react-flow__node,
@@ -622,7 +669,17 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
    Also target .rf-canvas-fullscreen — that shell portals to document.body and
    would otherwise miss these .ra-scope rules. */
 .ra-scope .rf-canvas-tools,
-.rf-canvas-fullscreen .rf-canvas-tools{padding:8px 16px !important;gap:0 !important;overflow:visible;}
+.rf-canvas-fullscreen .rf-canvas-tools{
+  padding:12px !important;gap:0 !important;
+  width:max-content;box-sizing:border-box;
+  /* Leave clear air for React Flow zoom controls (top-right). */
+  max-width:calc(100% - 72px) !important;
+  /* Two tool-button rows + one gap + padding; scroll for the rest. */
+  max-height:calc(12px + 12px + 2 * (14px * 1.25 + 12px) + 8px) !important;
+  overflow-x:hidden !important;overflow-y:auto !important;}
+.ra-scope .rf-canvas-surface .react-flow__controls,
+.rf-canvas-fullscreen .rf-canvas-surface .react-flow__controls{
+  z-index:30 !important;}
 .ra-scope .rf-canvas-tools .rf-tool-btn,
 .ra-scope .rf-canvas-tools button.rf-tool-btn,
 .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-btn,
@@ -634,7 +691,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   text-transform:none !important;
   line-height:1.25 !important;
   padding:6px 10px !important;
-  border-radius:8px !important;
+  border-radius:0 !important;
   white-space:nowrap;}
 /* Tools hover tips — short description under each toolbar control. */
 .ra-scope .rf-canvas-tools .rf-tool-tip-wrap,
@@ -644,7 +701,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
   position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);
   z-index:40;min-width:9.5rem;max-width:15rem;width:max-content;
-  padding:6px 9px;border-radius:8px !important;
+  padding:6px 9px;border-radius:0 !important;
   background:#1f1d18;color:#f6f7f2;
   font-family:inherit;font-size:12px;font-weight:400;line-height:1.35;
   text-align:center;white-space:normal;
@@ -822,18 +879,22 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
    Knowledge/State/Policy row below). Tabs stretch so labels sit on that midline. */
 /* overflow:visible so the active tab's 2px underline (margin-bottom:-1px) isn't
    clipped to ~1px — must match Knowledge/State/Policy (.obs-setup-chip). */
-.ra-scope .drawer-tabbar{flex:0 0 auto;height:var(--studio-head-h,60px);display:flex;align-items:stretch;border-bottom:1px solid var(--line-soft);
-  overflow:visible;}
-/* Close button at the right of the drawer tab bar — borderless icon aligned to
-   the same 16px right gutter as the nav (i), State Edit, and canvas Save so they
-   stack in one vertical line. */
+.ra-scope .drawer-tabbar{flex:0 0 auto;height:var(--studio-head-h,60px);display:flex;align-items:center;border-bottom:1px solid var(--line-soft);
+  overflow:visible;box-sizing:border-box;}
+/* Close button: same right inset as canvas tab actions (px-4 + tab-btn pad)
+   so the × lines up with Save / Fullscreen / Tools below. */
 .ra-scope .drawer-tabbar .drawer-close-btn{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
-  margin-left:auto;margin-right:16px;padding:0;border:none;background:transparent;color:var(--text-2);
+  width:auto;height:auto;margin-left:auto;margin-right:8px;padding:6px;border:none;background:transparent;color:var(--text-2);
   cursor:pointer;border-radius:8px;}
 .ra-scope .drawer-tabbar .drawer-close-btn:hover{background:var(--surface);color:var(--text);}
+/* Live simulation controls (Pause/Stop) docked in the tab bar, left of the ×. */
+.ra-scope .drawer-tabbar-controls{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:0 4px 0 12px;align-self:stretch;}
+.ra-scope .drawer-tabbar-controls .sim-run-controls{display:flex;align-items:center;gap:8px;}
+.ra-scope .drawer-tabbar-controls .sim-btn{padding:5px 12px;border-radius:8px;}
 /* Tabs stay on ONE line and scroll horizontally. Do not set overflow-y:hidden —
-   that clipped the Model Setup underline thinner than Knowledge. */
-.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;gap:22px;padding:0 16px;
+   that clipped the Model Setup underline thinner than Knowledge.
+   Stretch so the active underline sits on the shared header baseline. */
+.ra-scope .drawer-tabs{flex:1 1 auto;min-width:0;display:flex;flex-wrap:nowrap;align-items:stretch;align-self:stretch;gap:22px;padding:0 16px;
   overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none;}
 .ra-scope .drawer-tabs::-webkit-scrollbar{display:none;}
 /* Close the whole drawer in one click (no need to × each tab). */
@@ -865,12 +926,9 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
   height:2px;transform:translateY(-50%);background:transparent;}
 .ra-scope .bottom-drawer-resize:hover::before,
 .ra-scope .bottom-drawer-resize.active::before{background:var(--accent);}
-/* Close button lives inline in the canvas tab bar (docked via tabBarTrailing),
-   so the drawer header and the Main/+Canvas · Tools · Collapse row are one line.
-   It sits inside .rf-canvas (exempt from the .ra-scope button reset), so it's
-   styled explicitly here. */
+/* Workflow close (×) — default chrome; tab-end override sits next to (i). */
 .ra-scope .bottom-drawer-close{display:flex;align-items:center;justify-content:center;
-  width:30px;height:30px;border-radius:8px;border:none;background:transparent;
+  width:30px;height:30px;border-radius:0;border:none;background:transparent;
   color:var(--text-2);cursor:pointer;margin-left:2px;}
 .ra-scope .bottom-drawer-close:hover{background:var(--surface);color:var(--text);}
 /* Fallback close, shown only below lg where the canvas tab bar (with the inline
@@ -938,61 +996,110 @@ body.ra-resizing-h,body.ra-resizing-h *{cursor:col-resize !important;user-select
 .rf-canvas-fullscreen .rf-inspector-tabs button:not(.rf-inspector-fs-btn){
   border-radius:0 !important;box-shadow:none !important;outline:none !important;
   background:transparent !important;}
-/* Tab-bar trailing controls (Info / Fullscreen / Tools / Save / Close): shared
-   padding, 8px radius, and hover fill. Beats the drawer square-chrome rule.
-   Save arrives via tabBarTrailing as .obs-setup-action (outside .obs-setup). */
+/* Canvas chrome (Info / Fullscreen / Tools / Save / Close). Square corners,
+   hover fill. Save arrives via tabBarTrailing. */
+.ra-scope .rf-canvas-chrome,
+.rf-canvas-fullscreen .rf-canvas-chrome,
+.ra-scope .rf-canvas-tools,
+.rf-canvas-fullscreen .rf-canvas-tools{border-radius:0 !important;}
+/* Chrome paper: no inset — hover fills the whole bordered box. */
+.ra-scope .rf-canvas-chrome--tools,
+.ra-scope .rf-canvas-chrome--fs,
+.ra-scope .rf-canvas-chrome--save,
+.rf-canvas-fullscreen .rf-canvas-chrome--tools,
+.rf-canvas-fullscreen .rf-canvas-chrome--fs,
+.rf-canvas-fullscreen .rf-canvas-chrome--save{
+  padding:0 !important;gap:0 !important;}
+.ra-scope .rf-canvas-chrome--tools .rf-canvas-tab-btn,
+.ra-scope .rf-canvas-chrome--fs .rf-canvas-tab-btn,
+.rf-canvas-fullscreen .rf-canvas-chrome--tools .rf-canvas-tab-btn,
+.rf-canvas-fullscreen .rf-canvas-chrome--fs .rf-canvas-tab-btn{
+  width:100%;height:100%;margin:0 !important;padding:8px 12px !important;
+  border-radius:0 !important;}
+.ra-scope .rf-canvas-chrome--save .rf-canvas-tab-trailing .obs-setup-action,
+.rf-canvas-fullscreen .rf-canvas-chrome--save .rf-canvas-tab-trailing .obs-setup-action,
+.ra-scope .rf-canvas-chrome--save .rf-canvas-tab-trailing .bottom-drawer-close,
+.rf-canvas-fullscreen .rf-canvas-chrome--save .rf-canvas-tab-trailing .bottom-drawer-close{
+  margin:0 !important;padding:8px 12px !important;border-radius:0 !important;}
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-btn,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn,
 .ra-scope .rf-canvas-tabs .rf-canvas-tab-btn,
 .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn,
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action,
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .bottom-drawer-close,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .bottom-drawer-close,
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action,
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close,
 .ra-scope .rf-inspector-tabs .rf-inspector-fs-btn,
 .rf-canvas-fullscreen .rf-inspector-tabs .rf-inspector-fs-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   margin:0;border:none;background:transparent;cursor:pointer;
-  padding:6px 8px;border-radius:8px !important;
+  padding:6px 8px;border-radius:0 !important;
   font-family:inherit;font-size:14px;font-weight:400;line-height:1.25;
   color:#1c1b16;white-space:nowrap;}
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-btn--icon,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn--icon,
 .ra-scope .rf-canvas-tabs .rf-canvas-tab-btn--icon,
 .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn--icon{
-  padding:6px;color:var(--text-3);}
+  padding:6px;color:var(--text-3);background:transparent !important;}
+/* Info icons: no hover fill — only the icon ink darkens a notch. */
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-btn--icon:hover,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn--icon:hover,
 .ra-scope .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover{color:var(--text);}
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-actions,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-actions{
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-btn--icon:hover,
+.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn--icon:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn--icon:hover{
+  color:var(--text) !important;background:transparent !important;}
+/* Info (i) + optional end chrome (workflow ×) sit at the far right of the tab nav. */
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-end,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end{
+  margin-left:auto;}
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close{
+  width:auto;height:46px;padding:6px;border-radius:0;color:var(--text-3);
+  background:transparent;border:none;}
+.ra-scope .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover,
+.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-end .bottom-drawer-close:hover{
+  color:var(--text);background:var(--surface, #eceadd);}
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-actions,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-actions{
   margin-left:0;display:flex;align-items:center;gap:4px;}
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-btn:hover,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn:hover,
 .ra-scope .rf-canvas-tabs .rf-canvas-tab-btn:hover,
 .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn:hover,
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:hover,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:hover,
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .bottom-drawer-close:hover,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .bottom-drawer-close:hover,
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
 .ra-scope .rf-inspector-tabs .rf-inspector-fs-btn:hover,
 .rf-canvas-fullscreen .rf-inspector-tabs .rf-inspector-fs-btn:hover{
   background:var(--surface, #eceadd);}
+.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-btn:hover,
 .ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-btn:hover,
-.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:hover,
-.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-trailing .bottom-drawer-close:hover,
+.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
+.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
 .ra-scope.ra-mono .rf-inspector-tabs .rf-inspector-fs-btn:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-btn:hover,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-btn:hover,
-body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:hover,
-body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .bottom-drawer-close:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .bottom-drawer-close:hover,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-inspector-tabs .rf-inspector-fs-btn:hover{
   background:#f2f2f2 !important;}
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:disabled,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:disabled{
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled{
   opacity:.4;cursor:default;}
 /* Unsaved-changes callout: the Save button turns accent + shows a dot the moment
    the setup is dirty, so pending edits are obvious against the muted clean state. */
 .ra-scope .obs-setup-action.dirty{color:var(--accent) !important;font-weight:600 !important;}
 .ra-scope .obs-setup-action.dirty .unsaved-dot{display:inline-block;width:7px;height:7px;border-radius:50%;
   background:var(--accent);margin-right:6px;vertical-align:middle;}
-.ra-scope .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:disabled:hover,
-.rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:disabled:hover{
+.ra-scope .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled:hover,
+.rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled:hover{
   background:transparent;}
-.ra-scope.ra-mono .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:disabled:hover,
-body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab-trailing .obs-setup-action:disabled:hover{
+.ra-scope.ra-mono .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled:hover,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-tab-trailing .obs-setup-action:disabled:hover{
   background:transparent !important;}
 /* Same spacing model as the Knowledge/State/Policy nav (padding 0 2px + gap on
    the row) so the active underline hugs the label identically instead of
@@ -1008,10 +1115,11 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
 .ra-scope .drawer-tab-x{flex:0 0 auto;width:18px;height:18px;display:flex;align-items:center;justify-content:center;
   border-radius:5px;color:var(--text-3);font-size:10px;line-height:1;}
 .ra-scope .drawer-tab-x:hover{background:var(--surface-2);color:var(--text);}
-.ra-scope .drawer-pane-wrap{flex:1;min-height:0;flex-direction:column;}
+.ra-scope .drawer-pane-wrap{display:flex;flex:1;min-height:0;flex-direction:column;overflow:hidden;}
 .ra-scope .drawer-pane{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
 .ra-scope .drawer-pane > .obs-setup{flex:0 0 auto;}
-.ra-scope .drawer-pane > .obs-docked{flex:1 1 auto;min-height:0;overflow:hidden;}
+.ra-scope .drawer-pane > .obs-docked{
+  flex:1 1 auto;min-height:0;max-height:100%;overflow:hidden !important;}
 /* The sheet drag-handle is mobile-only; the media query re-shows it. */
 .ra-scope .drawer-grabber-wrap{display:none;}
 /* Chats/Account panes (unified mobile drawer): pad the body and let the
@@ -1044,7 +1152,8 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
   background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .ra-scope .drawer-pane > .newbtn:hover{background:var(--accent);filter:brightness(.96);}
 .ra-scope .drawer-pane > .newbtn .nb-ic{color:var(--accent-ink);}
-.ra-scope .drawer-pane > .conv-list{flex:1;min-height:0;overflow-y:auto;margin-left:14px;margin-right:14px;padding:0;}
+.ra-scope .drawer-pane > .conv-list{flex:1;min-height:0;overflow-y:auto;margin-left:14px;margin-right:8px;
+  padding:0 10px 0 0;scrollbar-gutter:stable;}
 /* Same 46px band + 16px inset as Knowledge / State / Policy (.obs-setup). */
 .ra-scope .drawer-subhead{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:18px;
   height:46px;padding:0 16px;box-sizing:border-box;border-bottom:1px solid var(--line-soft);}
@@ -1102,7 +1211,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
 /* Shared header band with the right-drawer Model Setup / Observability tabs. */
 .ra-scope{--studio-head-h:60px;}
 .ra-scope .thread-head{display:flex;align-items:center;gap:13px;height:var(--studio-head-h);padding:0 22px;box-sizing:border-box;border-bottom:none;}
-.ra-scope .th-meta{flex:1;min-width:0;overflow:hidden;}
+.ra-scope .th-meta{flex:1;min-width:0;overflow:hidden;display:flex;align-items:center;}
 .ra-scope .th-name{font-family:var(--serif);font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;line-height:1.25;}
 .ra-scope .th-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;line-height:1.3;color:var(--text-3);font-style:italic;font-family:var(--serif);}
 .ra-scope .th-actions{display:flex;align-items:center;gap:4px;}
@@ -1132,20 +1241,26 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tabs .rf-canvas-tab
 /* ── Simulation tab ─────────────────────────────────────────────────── */
 .ra-scope .sim-panel{display:flex;flex-direction:column;height:100%;min-height:0;}
 .ra-scope .sim-setup{flex:0 0 auto;display:flex;flex-direction:column;gap:10px;padding:16px;border-bottom:1px solid var(--line-soft);}
-.ra-scope .sim-label{font-size:12px;font-weight:600;color:var(--text-2);}
+/* Match the drawer tab labels (Model Setup / Observability / Simulation): inherit family, 14px, weight 400. */
+.ra-scope .sim-label{font-family:inherit;font-size:14px;font-weight:400;color:var(--text);}
 .ra-scope .sim-textarea{width:100%;resize:vertical;min-height:64px;font-family:var(--serif);font-size:14px;line-height:1.5;
   padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--text);outline:none;}
 .ra-scope .sim-textarea:focus{border-color:var(--text-3);}
 .ra-scope .sim-row{display:flex;align-items:center;gap:10px;}
-.ra-scope .sim-turns{width:64px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-size:14px;outline:none;}
-.ra-scope .sim-btn{padding:8px 16px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.ra-scope .sim-turns{width:64px;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--text);font-family:inherit;font-size:14px;font-weight:400;outline:none;
+  /* Plain text box: drop the number spinner arrows. */
+  -moz-appearance:textfield;appearance:textfield;}
+.ra-scope .sim-turns::-webkit-outer-spin-button,
+.ra-scope .sim-turns::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.ra-scope .sim-btn{padding:8px 16px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--text);font-family:inherit;font-size:14px;font-weight:400;cursor:pointer;white-space:nowrap;}
 .ra-scope .sim-btn:not(.sim-btn-run):hover{background:var(--surface-2);color:var(--text);}
 .ra-scope .sim-btn-lead{margin-left:auto;}
+.ra-scope .sim-running-hint{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
 .ra-scope .sim-btn-run{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .ra-scope .sim-btn-run:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);filter:brightness(1.08);}
-.ra-scope .sim-status{font-size:12px;color:var(--text-3);}
-.ra-scope .sim-error{font-size:13px;color:var(--danger);}
-.ra-scope .sim-note{margin:16px;color:var(--text-3);font-size:13px;line-height:1.6;max-width:520px;}
+.ra-scope .sim-status{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
+.ra-scope .sim-error{font-family:inherit;font-size:14px;font-weight:400;color:var(--danger);}
+.ra-scope .sim-note{margin:16px;color:var(--text-3);font-family:inherit;font-size:14px;font-weight:400;line-height:1.6;max-width:520px;}
 
 /* empty state */
 .ra-scope .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;}

@@ -3841,12 +3841,21 @@ async function saveAssistantReply(
   conversationId: string,
   content: string,
   state: StateSnapshot,
-  stateSchema: RuntimePromptConfig["stateSchema"]
+  stateSchema: RuntimePromptConfig["stateSchema"],
+  // Observability turn metadata persisted alongside the reply so reopening the
+  // conversation can rebuild the trace + animate the policy canvas. Null when the
+  // caller didn't request a trace and there are no node refs/state to keep.
+  traceMeta?: {
+    trace?: unknown[];
+    nodeRefs?: unknown[];
+    state?: Record<string, unknown>;
+  } | null
 ) {
   await supabase.from("messages").insert({
     conversation_id: conversationId,
     role: "assistant",
     content,
+    trace: traceMeta ?? null,
   });
 
   await supabase
@@ -4082,21 +4091,27 @@ export function createChatPostHandler(options: CreateChatRouteOptions) {
                     phaseRef
                   )
               );
+              const streamState = serializeStateSnapshotForStateUpdate(
+                turnResult.nextState,
+                promptConfig.stateSchema
+              );
               await saveAssistantReply(
                 supabase,
                 conversationId,
                 turnResult.assistantReply,
                 turnResult.nextState,
-                promptConfig.stateSchema
+                promptConfig.stateSchema,
+                {
+                  trace: wantsTrace ? traceSink : [],
+                  nodeRefs: turnResult.nodeRefs,
+                  state: streamState,
+                }
               );
               sendEvent("result", {
                 content: turnResult.assistantReply,
                 trace: wantsTrace ? traceSink : [],
                 nodeRefs: turnResult.nodeRefs,
-                state: serializeStateSnapshotForStateUpdate(
-                  turnResult.nextState,
-                  promptConfig.stateSchema
-                ),
+                state: streamState,
               });
             } catch (err) {
               (options.logger ?? console).error("Chat route stream error:", err);
@@ -4126,12 +4141,21 @@ export function createChatPostHandler(options: CreateChatRouteOptions) {
         conversationId,
         phaseRef
       );
+      const jsonState = serializeStateSnapshotForStateUpdate(
+        turnResult.nextState,
+        promptConfig.stateSchema
+      );
       await saveAssistantReply(
         supabase,
         conversationId,
         turnResult.assistantReply,
         turnResult.nextState,
-        promptConfig.stateSchema
+        promptConfig.stateSchema,
+        {
+          trace: wantsTrace ? traceSink : [],
+          nodeRefs: turnResult.nodeRefs,
+          state: jsonState,
+        }
       );
       if (wantsTrace) {
         return Response.json({
@@ -4142,10 +4166,7 @@ export function createChatPostHandler(options: CreateChatRouteOptions) {
           nodeRefs: turnResult.nodeRefs,
           // The patient state extracted this turn, so the studio's State pane can
           // show the current values (age, gender, etc.) the model is tracking.
-          state: serializeStateSnapshotForStateUpdate(
-            turnResult.nextState,
-            promptConfig.stateSchema
-          ),
+          state: jsonState,
         });
       }
       return buildTextResponse(turnResult.assistantReply);

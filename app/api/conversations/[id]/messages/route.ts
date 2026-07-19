@@ -30,7 +30,10 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("messages")
-    .select("id, role, content")
+    // `trace` carries per-turn observability metadata on assistant messages
+    // ({ trace, nodeRefs, state }) so a reopened conversation can replay its
+    // trace and animate the policy canvas.
+    .select("id, role, content, trace, created_at")
     .eq("conversation_id", id)
     .order("created_at", { ascending: true });
 

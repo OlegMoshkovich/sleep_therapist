@@ -36,6 +36,7 @@ import {
   type EdgeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import "./canvas-selection.css";
 
 import type {
   CanvasDoc,
@@ -220,11 +221,14 @@ interface EditorInnerProps<TOutput> {
    */
   fireSignal?: CanvasFireSignal | null;
   /**
-   * Content rendered at the trailing (right) edge of the canvas tab bar. When
-   * provided it replaces the default "N canvases" count — hosts use it to dock
-   * chrome (e.g. a Pop out control) into the tab row.
+   * Content docked in the bottom-right canvas chrome (e.g. Save).
    */
   tabBarTrailing?: ReactNode;
+  /**
+   * Content to the right of the info (i) button in the canvas tab nav
+   * (e.g. workflow drawer ×).
+   */
+  tabBarEnd?: ReactNode;
 }
 
 function isControlStructureKind(kind: Pick<NodeKindDef, "kind">): boolean {
@@ -1514,8 +1518,8 @@ function PromptGroupOverlays({
                 width={bound.width}
                 height={bound.height}
                 rx={8}
-                fill={selected ? "rgba(194, 97, 31, 0.08)" : "rgba(255, 255, 255, 0.02)"}
-                stroke={selected ? "#c2611f" : "#9a8f78"}
+                fill={selected ? "rgba(0, 126, 39, 0.08)" : "rgba(255, 255, 255, 0.02)"}
+                stroke={selected ? "#007E27" : "#9a8f78"}
                 strokeWidth={selected ? 2.2 : 1.5}
                 strokeDasharray="8 6"
                 style={{ pointerEvents: "all", cursor: "pointer" }}
@@ -1532,7 +1536,7 @@ function PromptGroupOverlays({
               <text
                 x={bound.x + 12}
                 y={bound.y + 16}
-                fill={selected ? "#9a4c18" : "#6f6859"}
+                fill={selected ? "#007E27" : "#6f6859"}
                 fontSize={10}
                 fontFamily="monospace"
                 letterSpacing={1.2}
@@ -1992,6 +1996,7 @@ export function EditorInner<TOutput>({
   graphTag,
   fireSignal,
   tabBarTrailing,
+  tabBarEnd,
 }: EditorInnerProps<TOutput>) {
   // Bottom drawer: side-by-side. Side drawer / Model Setup: stacked column.
   const splitPanels = Boolean(fillHeight && panelLayout === "split");
@@ -2106,67 +2111,75 @@ export function EditorInner<TOutput>({
   }, [canvasShare, canvasShareKey]);
 
   // In fillHeight mode, give the canvas + inspector row a CONSTANT height that
-  // spans from its top (just below the toolbars) to the bottom of the viewport,
-  // minus the overlay's bottom gap. This is measured rather than derived from a
-  // flex chain so the height never depends on the inspector tab's content — the
-  // canvas stays the same size whether the inspector shows one line or a long
-  // schema. Recomputed on viewport resize (the only thing that moves the row's
-  // top, e.g. when the toolbar wraps).
+  // spans from its top (just below the toolbars) to the bottom of the host.
+  // Cap against the host's client box so the row can never grow the drawer and
+  // drag Inspector/Compiler off-screen. Do NOT observe the row itself — that
+  // feedback loop was expanding fill height while dragging the split.
   useEffect(() => {
     if (!fillHeight) {
       setFillRowHeight(null);
       return;
     }
-    const el = canvasBodyRef.current;
-    if (!el || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
     let raf = 0;
-    // Tight bottom gap when the canvas already sits at the viewport edge
-    // (docked drawer sets --rf-fill-reserve-bottom: 0); keep a larger gap for
-    // floating/modal hosts that have their own bottom padding.
+    let ro: ResizeObserver | null = null;
     const recompute = () => {
-      const top = el.getBoundingClientRect().top;
-      // Prefer the docked pane / drawer bottom over the raw viewport so the
-      // inspector reaches the panel edge on Policy (and other panes without a
-      // State-variables header eating space above). Fall back to viewport with
-      // the host's --rf-fill-reserve-bottom when no docked host is found.
+      const el = canvasBodyRef.current;
+      if (!el) return;
       const host =
         el.closest(".obs-docked-body") ||
         el.closest(".bottom-drawer-body") ||
         el.closest(".sc-canvas-host");
       const reserve =
         parseFloat(getComputedStyle(el).getPropertyValue("--rf-fill-reserve-bottom")) || 0;
-      let bottom: number;
-      let bottomGap: number;
+      const elTop = el.getBoundingClientRect().top;
+      let next: number;
       if (host) {
         const hostRect = host.getBoundingClientRect();
         const padBottom =
           parseFloat(getComputedStyle(host).paddingBottom) || 0;
-        // Content-box bottom — stay inside the pinned Policy/State body so the
-        // outer pane does not grow and scroll the title nav away.
-        bottom = hostRect.bottom - padBottom;
-        bottomGap = 0;
+        const fromViewport = hostRect.bottom - padBottom - elTop;
+        // Prefer the host's laid-out client height so a previous oversized
+        // fillRowHeight can't ratchet the drawer taller on each drag.
+        const relativeTop = Math.max(0, elTop - hostRect.top);
+        const fromClient = host.clientHeight - relativeTop - padBottom;
+        next = Math.min(fromViewport, fromClient);
       } else {
-        bottom = window.innerHeight - reserve;
-        bottomGap = reserve > 0 ? 36 : 8;
+        next = window.innerHeight - reserve - elTop - (reserve > 0 ? 36 : 8);
       }
-      setFillRowHeight(Math.max(160, Math.round(bottom - top - bottomGap)));
+      setFillRowHeight(Math.max(160, Math.round(next)));
     };
-    // Measure after layout settles so the toolbars have their final height.
-    raf = requestAnimationFrame(recompute);
     const onResize = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(recompute);
     };
+    let tries = 0;
+    const kick = () => {
+      if (!canvasBodyRef.current && tries < 20) {
+        tries += 1;
+        raf = requestAnimationFrame(kick);
+        return;
+      }
+      raf = requestAnimationFrame(recompute);
+      const el = canvasBodyRef.current;
+      if (el && ro) {
+        const host =
+          el.closest(".obs-docked-body") ||
+          el.closest(".bottom-drawer-body") ||
+          el.closest(".sc-canvas-host");
+        // Observe the host + window only — never the row being sized.
+        if (host) ro.observe(host);
+      }
+    };
     window.addEventListener("resize", onResize);
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onResize) : null;
+    ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(onResize) : null;
     ro?.observe(document.body);
+    raf = requestAnimationFrame(kick);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", onResize);
       ro?.disconnect();
     };
-    // Remeasure when Tools opens/closes so Policy can still scroll the docked
-    // body instead of clipping under a stale fill height.
   }, [fillHeight, toolbarOpen]);
 
   // Let Escape exit the fullscreen canvas overlay (and inspector-max mode).
@@ -3189,7 +3202,12 @@ export function EditorInner<TOutput>({
     return describeNodeLabelById(endpoint.id);
   };
 
-  const renderCanvasSurface = (fullscreen: boolean) => (
+  const renderCanvasSurface = (fullscreen: boolean) => {
+    // Docked Policy/State: wait for a measured body height before mounting
+    // React Flow — otherwise it inits at 0×0 (#004) and stays blank even after
+    // the flex chain later gets a real size. Fullscreen always has a box.
+    const boardReady = !fillHeight || fullscreen || fillRowHeight != null;
+    return (
     <div
       ref={canvasSurfaceRef}
       className={
@@ -3204,6 +3222,7 @@ export function EditorInner<TOutput>({
       // Collapsed: hide the surface entirely so the inspector fills the row.
       style={canvasIsCollapsed ? { display: "none" } : undefined}
     >
+      {boardReady ? (
       <ReactFlow
         key={`${active.id}-${fullscreen ? "full" : "inline"}`}
         nodes={fireNodes}
@@ -3261,8 +3280,7 @@ export function EditorInner<TOutput>({
           }}
         />
         <Background />
-        {/* Default zoom-in / zoom-out / fit-view controls only. The custom
-            Fullscreen control button was removed per request. */}
+        {/* Zoom top-right; Info / Fullscreen / Tools / Save sit bottom-right. */}
         <Controls showInteractive={false} position="top-right" orientation="vertical" />
         {graphTag && graphFrame && (
           <ViewportPortal>
@@ -3285,18 +3303,191 @@ export function EditorInner<TOutput>({
           </ViewportPortal>
         )}
       </ReactFlow>
+      ) : null}
+      {/* Tools — top-left. Fullscreen — bottom-left. Save — bottom-right. */}
+      {!canvasIsCollapsed && (
+        <>
+          {toolbarOpen && (
+            <div className="rf-canvas-tools absolute top-14 left-3 z-20 flex max-w-[calc(100%-4.5rem)] flex-col overflow-y-auto overflow-x-hidden rounded-none border border-[#c8c4b4] bg-white p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {startToolbarKinds.map((k) => {
+                  const alreadyPresent = (active?.nodes ?? []).some(
+                    (n) => n.type === k.kind
+                  );
+                  const tip = alreadyPresent
+                    ? "This canvas already has a Start node."
+                    : k.toolbarDescription ?? "Add the Start node.";
+                  return (
+                    <ToolTipWrap key={k.kind} tip={tip}>
+                      <button
+                        type="button"
+                        onClick={() => addNode(k)}
+                        disabled={alreadyPresent}
+                        className={`rf-tool-btn ${k.toolbarClassName} disabled:cursor-not-allowed disabled:bg-[#d5dcd0] disabled:text-[#1c1b16] disabled:border-[#b8c2ad]`}
+                      >
+                        {k.toolbarLabel}
+                      </button>
+                    </ToolTipWrap>
+                  );
+                })}
+                {controlStructureKinds.length > 0 && (
+                  <ToolTipWrap
+                    tip={
+                      isControlStructureMenuOpen
+                        ? ""
+                        : "Add a branch or loop (condition, while, for)."
+                    }
+                  >
+                    <div className="relative" ref={controlStructureMenuRef}>
+                      <button
+                        type="button"
+                        onClick={() => setIsControlStructureMenuOpen((open) => !open)}
+                        className="rf-tool-btn border border-[#FFD100] text-[#3d3838] bg-[#FFD100] hover:bg-[#f0c400]"
+                        aria-haspopup="menu"
+                        aria-expanded={isControlStructureMenuOpen}
+                      >
+                        + Control structure
+                      </button>
+                      {isControlStructureMenuOpen && (
+                        <div
+                          className="absolute left-0 top-full z-30 mt-2 min-w-[14rem] rounded-lg border border-[#c8c4b4] bg-[#f7f4e8] p-2 shadow-xl"
+                          role="menu"
+                        >
+                          <div className="mb-2 px-2 text-[14px] font-sans text-gray-500">
+                            Choose node type
+                          </div>
+                          <div className="space-y-1">
+                            {controlStructureKinds.map((k) => (
+                              <button
+                                key={k.kind}
+                                type="button"
+                                onClick={() => addNode(k)}
+                                title={k.toolbarDescription}
+                                className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-[14px] font-sans text-gray-700 hover:bg-[#ece7d6]"
+                                role="menuitem"
+                              >
+                                <span>{k.toolbarLabel.replace(/^\+\s*/, "")}</span>
+                                <span className="font-mono text-[12px] lowercase text-gray-500">
+                                  {k.kind}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </ToolTipWrap>
+                )}
+                {directToolbarKinds.map((k) => (
+                  <ToolTipWrap
+                    key={k.kind}
+                    tip={k.toolbarDescription ?? `Add a ${k.kind} node.`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => addNode(k)}
+                      className={`rf-tool-btn ${k.toolbarClassName}`}
+                    >
+                      {k.toolbarLabel}
+                    </button>
+                  </ToolTipWrap>
+                ))}
+                <div className="w-px h-5 bg-[#c8c4b4] mx-1" />
+                <ToolTipWrap tip="Remove the selected node or edge.">
+                  <button
+                    type="button"
+                    disabled={
+                      (!selectedId && !selectedCollapsedEdgeId) ||
+                      (Boolean(selectedNode) && selectedNodeNonEditable)
+                    }
+                    onClick={deleteSelected}
+                    className="rf-tool-btn border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 disabled:opacity-40"
+                  >
+                    Delete selected
+                  </button>
+                </ToolTipWrap>
+              </div>
+            </div>
+          )}
+          <div className="rf-canvas-chrome rf-canvas-chrome--tools absolute top-3 left-3 z-20 flex items-center rounded-none border border-[#c8c4b4] bg-white p-0">
+            <button
+              type="button"
+              onClick={() => setToolbarOpen((o) => !o)}
+              aria-expanded={toolbarOpen}
+              className="rf-canvas-tab-btn"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform ${toolbarOpen ? "rotate-90" : ""}`}
+              >
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+              Tools
+            </button>
+          </div>
+          <div className="rf-canvas-chrome rf-canvas-chrome--fs absolute bottom-3 left-3 z-20 flex items-center rounded-none border border-[#c8c4b4] bg-white p-0">
+            {!fullscreen ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setInspectorMaximized(false);
+                  setCanvasFullscreen(true);
+                }}
+                aria-label="Fullscreen"
+                title="Fullscreen"
+                className="rf-canvas-tab-btn"
+              >
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
+                </svg>
+                Fullscreen
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setCanvasFullscreen(false);
+                  setInspectorMaximized(false);
+                }}
+                aria-label="Exit fullscreen"
+                title="Exit fullscreen (Esc)"
+                className="rf-canvas-tab-btn"
+              >
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+                Close
+              </button>
+            )}
+          </div>
+          {tabBarTrailing ? (
+            <div className="rf-canvas-chrome rf-canvas-chrome--save absolute bottom-3 right-3 z-20 flex max-w-[calc(100%-6rem)] flex-wrap items-center justify-end rounded-none border border-[#c8c4b4] bg-white p-0">
+              <div className="rf-canvas-tab-trailing flex items-center">{tabBarTrailing}</div>
+            </div>
+          ) : null}
+        </>
+      )}
     </div>
-  );
+    );
+  };
 
   const renderEditorWorkspace = (fullscreen: boolean) => (
     <div
       className={
         fullscreen || fillHeight
-          ? // No gap when Tools is collapsed — an empty toolbar wrapper used to
-            // still sit in the flex column and gap-4 left a blank band under
-            // the canvas tabs. Only space the rows when Tools is open.
-            `flex h-full min-h-0 flex-1 flex-col overflow-hidden ${toolbarOpen ? "gap-2" : "gap-0"}`
-          : "flex flex-col gap-4"
+          ?             // `rf-canvas-workspace` is the flex-chain hook for docked Policy/State.
+            // Prefer flex-1 over h-full — percentage height collapses when the
+            // drawer ancestor height is indefinite (blank board + inspector).
+            // Tools chrome overlays the board (bottom-right); no flex gap needed.
+            "rf-canvas-workspace flex min-h-0 flex-1 flex-col overflow-hidden gap-0"
+          : "rf-canvas-workspace flex flex-col gap-4"
       }
     >
       {/* Canvas tabs */}
@@ -3304,14 +3495,14 @@ export function EditorInner<TOutput>({
           those rows so "Main" lines up with Knowledge / Model Setup when the
           docked body side padding is zeroed. Tab label padding 0 2px hugs the
           underline like the rows above. */}
-      <div className={`rf-canvas-tabs ${fullscreen ? "flex" : "hidden lg:flex"} h-[46px] items-stretch gap-[22px] border-b border-[#c8c4b4] px-4`}>
+      <div className={`rf-canvas-tabs ${fullscreen ? "flex" : "hidden lg:flex"} min-h-[46px] flex-wrap items-center gap-x-[22px] gap-y-1 border-b border-[#c8c4b4] py-0 pl-4 pr-2`}>
         {canvases.map((c) => {
           const isActive = c.id === activeId;
           const isRenaming = renamingId === c.id;
           return (
             <div
               key={c.id}
-              className={`group flex items-center self-stretch gap-1 px-0.5 border-b-2 -mb-px cursor-pointer text-[14px] font-sans text-[#1c1b16] ${
+              className={`group flex h-[46px] items-center gap-1 px-0.5 border-b-2 -mb-px cursor-pointer text-[14px] font-sans text-[#1c1b16] ${
                 isActive ? "border-[#1c1b16]" : "border-transparent"
               }`}
               onClick={() => selectCanvas(c.id)}
@@ -3354,21 +3545,18 @@ export function EditorInner<TOutput>({
         <button
           type="button"
           onClick={addCanvas}
-          className="px-0.5 text-[14px] font-sans text-[#1c1b16] hover:text-black self-center"
+          className="flex h-[46px] shrink-0 items-center whitespace-nowrap px-0.5 text-[14px] font-sans text-[#1c1b16] hover:text-black"
           title="Add canvas"
         >
           + Canvas
         </button>
-        {/* Trailing controls: the Tools toggle sits just left of the host-provided
-            slot (e.g. Pop out), replacing the default "N canvases" count. */}
-        <div className="rf-canvas-tab-actions ml-auto flex items-center gap-1">
-          {/* Info: overlays how-to-use-the-canvas instructions. Sits before Tools. */}
+        <div className="rf-canvas-tab-end ml-auto flex h-[46px] shrink-0 items-center gap-0.5">
           <button
             type="button"
             onClick={() => setHelpOpen(true)}
             aria-label="How to use the canvas"
             title="How to use the canvas"
-            className="rf-canvas-tab-btn rf-canvas-tab-btn--icon"
+            className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <circle cx="12" cy="12" r="9" />
@@ -3376,175 +3564,9 @@ export function EditorInner<TOutput>({
               <circle cx="12" cy="7.75" r="1" fill="currentColor" stroke="none" />
             </svg>
           </button>
-          {/* Fullscreen entry — docked chrome only; Close exits when already expanded. */}
-          {!fullscreen && (
-            <button
-              type="button"
-              onClick={() => {
-                setInspectorMaximized(false);
-                setCanvasFullscreen(true);
-              }}
-              aria-label="Fullscreen"
-              title="Fullscreen"
-              className="rf-canvas-tab-btn"
-            >
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
-              </svg>
-              Fullscreen
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setToolbarOpen((o) => !o)}
-            aria-expanded={toolbarOpen}
-            className="rf-canvas-tab-btn"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="12"
-              height="12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`transition-transform ${toolbarOpen ? "rotate-90" : ""}`}
-            >
-              <path d="M9 6l6 6-6 6" />
-            </svg>
-            Tools
-          </button>
-          {/* Collapse control removed per request. */}
-          {tabBarTrailing ? (
-            <div className="rf-canvas-tab-trailing flex items-center">{tabBarTrailing}</div>
-          ) : null}
-          {/* Fullscreen: Close last (after Save / trailing slot). */}
-          {fullscreen && (
-            <button
-              type="button"
-              onClick={() => {
-                setCanvasFullscreen(false);
-                setInspectorMaximized(false);
-              }}
-              aria-label="Exit fullscreen"
-              title="Exit fullscreen (Esc)"
-              className="rf-canvas-tab-btn"
-            >
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
-              Close
-            </button>
-          )}
+          {tabBarEnd}
         </div>
       </div>
-
-      {/* Toolbar — only mount when open so it can't leave a flex gap under the tabs. */}
-      {toolbarOpen && (
-        <div
-          className={`rf-canvas-tools ${fullscreen ? "flex" : "hidden lg:flex"} flex-col border-b border-[#c8c4b4] px-4 py-2`}
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            {startToolbarKinds.map((k) => {
-              const alreadyPresent = (active?.nodes ?? []).some(
-                (n) => n.type === k.kind
-              );
-              const tip = alreadyPresent
-                ? "This canvas already has a Start node."
-                : k.toolbarDescription ?? "Add the Start node.";
-              return (
-                <ToolTipWrap key={k.kind} tip={tip}>
-                  <button
-                    type="button"
-                    onClick={() => addNode(k)}
-                    disabled={alreadyPresent}
-                    className={`rf-tool-btn ${k.toolbarClassName} disabled:cursor-not-allowed disabled:bg-[#d5dcd0] disabled:text-[#1c1b16] disabled:border-[#b8c2ad]`}
-                  >
-                    {k.toolbarLabel}
-                  </button>
-                </ToolTipWrap>
-              );
-            })}
-            {controlStructureKinds.length > 0 && (
-              <ToolTipWrap
-                tip={
-                  isControlStructureMenuOpen
-                    ? ""
-                    : "Add a branch or loop (condition, while, for)."
-                }
-              >
-                <div className="relative" ref={controlStructureMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setIsControlStructureMenuOpen((open) => !open)}
-                    className="rf-tool-btn border border-[#FFD100] text-[#3d3838] bg-[#FFD100] hover:bg-[#f0c400]"
-                    aria-haspopup="menu"
-                    aria-expanded={isControlStructureMenuOpen}
-                  >
-                    + Control structure
-                  </button>
-                  {isControlStructureMenuOpen && (
-                    <div
-                      className="absolute left-0 top-full z-30 mt-2 min-w-[14rem] rounded-lg border border-[#c8c4b4] bg-[#f7f4e8] p-2 shadow-xl"
-                      role="menu"
-                    >
-                      <div className="mb-2 px-2 text-[14px] font-sans text-gray-500">
-                        Choose node type
-                      </div>
-                      <div className="space-y-1">
-                        {controlStructureKinds.map((k) => (
-                          <button
-                            key={k.kind}
-                            type="button"
-                            onClick={() => addNode(k)}
-                            title={k.toolbarDescription}
-                            className="flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-[14px] font-sans text-gray-700 hover:bg-[#ece7d6]"
-                            role="menuitem"
-                          >
-                            <span>{k.toolbarLabel.replace(/^\+\s*/, "")}</span>
-                            <span className="font-mono text-[12px] lowercase text-gray-500">
-                              {k.kind}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </ToolTipWrap>
-            )}
-            {directToolbarKinds.map((k) => (
-              <ToolTipWrap
-                key={k.kind}
-                tip={k.toolbarDescription ?? `Add a ${k.kind} node.`}
-              >
-                <button
-                  type="button"
-                  onClick={() => addNode(k)}
-                  className={`rf-tool-btn ${k.toolbarClassName}`}
-                >
-                  {k.toolbarLabel}
-                </button>
-              </ToolTipWrap>
-            ))}
-            <div className="w-px h-5 bg-[#c8c4b4] mx-1" />
-            <ToolTipWrap tip="Remove the selected node or edge.">
-              <button
-                type="button"
-                disabled={
-                  (!selectedId && !selectedCollapsedEdgeId) ||
-                  (Boolean(selectedNode) && selectedNodeNonEditable)
-                }
-                onClick={deleteSelected}
-                className="rf-tool-btn border border-gray-400 text-gray-700 bg-transparent hover:bg-gray-100 disabled:opacity-40"
-              >
-                Delete selected
-              </button>
-            </ToolTipWrap>
-          </div>
-        </div>
-      )}
 
       {/* Canvas + inspector */}
       <div
@@ -3559,8 +3581,10 @@ export function EditorInner<TOutput>({
         style={
           fullscreen
             ? { minHeight: 0, height: "100%", maxHeight: "100%" }
-            : fillHeight && fillRowHeight
-              ? { height: fillRowHeight, maxHeight: "100%" }
+            : // Docked stacked: flex-fill the workspace (no pixel height — that
+              // left a gap under Compiler and let the drawer scroll away).
+              fillHeight
+              ? { flex: "1 1 0", minHeight: 0, maxHeight: "100%", overflow: "hidden" }
               : undefined
         }
       >
@@ -3570,11 +3594,19 @@ export function EditorInner<TOutput>({
             style={
               canvasIsCollapsed
                 ? { display: "none" }
-                : {
-                    flex: `0 0 ${Math.round(canvasShare * 1000) / 10}%`,
-                    minHeight: 0,
-                    minWidth: 0,
-                  }
+                : fillHeight && !splitPanels && !fullscreen
+                  ? {
+                      // Flex grow share — inspector keeps minHeight 46px so it
+                      // cannot be dragged off-screen.
+                      flex: `${Math.max(0.15, canvasShare)} 1 0`,
+                      minHeight: 0,
+                      minWidth: 0,
+                    }
+                  : {
+                      flex: `0 0 ${Math.round(canvasShare * 1000) / 10}%`,
+                      minHeight: 0,
+                      minWidth: 0,
+                    }
             }
           >
             {renderCanvasSurface(fullscreen)}
@@ -3612,6 +3644,17 @@ export function EditorInner<TOutput>({
               const onMove = (ev: PointerEvent) => {
                 const delta = (horizontal ? ev.clientX : ev.clientY) - startPos;
                 const next = startShare + delta / axisSize;
+                // Stacked: keep ≥46px for Inspector/Compiler tabs.
+                if (!horizontal && axisSize > 0) {
+                  const minInspector = 46 + 7;
+                  const maxShare = Math.max(
+                    0.15,
+                    Math.min(0.85, 1 - minInspector / axisSize)
+                  );
+                  const minShare = Math.min(0.2, maxShare);
+                  setCanvasShare(Math.max(minShare, Math.min(maxShare, next)));
+                  return;
+                }
                 setCanvasShare(Math.max(0.2, Math.min(0.8, next)));
               };
               const onUp = () => {
@@ -3633,15 +3676,25 @@ export function EditorInner<TOutput>({
             // body size — child utilities like text-[10px]/text-xs otherwise win.
             fullscreen || fillHeight
               ? // Drawer / fullscreen: no outer border/radius — flush to the drag split.
-                "rf-inspector flex w-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#dddacb] text-[14px] [&_*]:!text-[14px]"
-              : "rf-inspector flex w-full min-h-0 flex-col lg:w-72 lg:h-[360px] shrink-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#dddacb] text-[14px] [&_*]:!text-[14px]"
+                "rf-inspector flex w-full min-h-0 min-w-0 flex-col overflow-hidden bg-[#dddacb] text-[14px] text-[#1c1b16]"
+              : "rf-inspector flex w-full min-h-0 flex-col lg:w-72 lg:h-[360px] shrink-0 overflow-hidden rounded border border-[#c8c4b4] bg-[#dddacb] text-[14px] text-[#1c1b16]"
           }
-          // Grow into the remaining share (beside canvas when split / fullscreen,
-          // below canvas when stacked) so the panel always fills the free space.
           style={
-            fullscreen || fillHeight
-              ? { maxHeight: "none", flex: "1 1 0", minHeight: 0, minWidth: 0 }
-              : undefined
+            fillHeight && !splitPanels && !fullscreen
+              ? {
+                  flex: `${Math.max(0.15, 1 - canvasShare)} 1 0`,
+                  minHeight: 46,
+                  minWidth: 0,
+                  overflow: "hidden",
+                }
+              : fullscreen || fillHeight
+                ? {
+                    maxHeight: "none",
+                    flex: "1 1 0",
+                    minHeight: 0,
+                    minWidth: 0,
+                  }
+                : undefined
           }
         >
           {/* Same underline nav as Main / Sleep Intake / Knowledge (46px · 22px gap · 16px inset). */}
@@ -3674,9 +3727,9 @@ export function EditorInner<TOutput>({
             </div>
           </div>
 
-          <div className="rf-inspector-body min-h-0 flex-1 overflow-auto">
+          <div className="rf-inspector-body min-h-0 flex-1 overflow-auto text-[#1c1b16]">
           {inspectorTab === "inspector" && (
-          <div className="space-y-3 px-4 py-3">
+          <div className="space-y-3 px-4 py-3 text-[#1c1b16]">
           {selectedPromptGroup ? (
             <>
               <div className="space-y-2">
@@ -3776,8 +3829,12 @@ export function EditorInner<TOutput>({
                     {labelTitle}
                   </label>
                   <InspectorAutoTextarea
-                    autoHeight
-                    value={selectedNode.data.label}
+                    autoHeight={fullscreen || inspectorMaximized}
+                    value={
+                      typeof selectedNode.data.label === "string"
+                        ? selectedNode.data.label
+                        : ""
+                    }
                     onChange={(e) => updateSelectedNodeLabel(e.target.value)}
                     rows={textareaRows}
                     readOnly={selectedNodeNonEditable}
@@ -3878,9 +3935,9 @@ export function EditorInner<TOutput>({
                   </p>
                 </div>
               )}
-              <p className="text-xs text-gray-500 font-serif leading-relaxed">
+              <p className="text-[14px] font-sans leading-relaxed text-[#56534b]">
                 Click a node or edge to edit. Drag from a handle to connect nodes. Use the{" "}
-                <span className="font-medium">+ Canvas</span> tab above to add another flow.
+                <span className="font-medium text-[#1c1b16]">+ Canvas</span> tab above to add another flow.
               </p>
               {nodeWarnings.length > 0 && (
                 <div className="rounded border border-rose-300 bg-rose-50 px-3 py-3">
@@ -3929,7 +3986,7 @@ export function EditorInner<TOutput>({
     <div
       className={
         fillHeight
-          ? "rf-canvas flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+          ? "rf-canvas flex min-h-0 flex-1 flex-col overflow-hidden"
           : "rf-canvas flex flex-col gap-4"
       }
     >

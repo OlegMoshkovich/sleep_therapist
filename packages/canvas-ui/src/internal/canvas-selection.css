@@ -1,0 +1,9 @@
+/* Unified selection styling for canvas nodes.
+ * Every node kind otherwise draws its own ring in its accent color; this
+ * overrides all of them so a selected component gets a single 3px #007E27 stroke.
+ * Targets the immediate child of the React Flow node wrapper (the node card),
+ * so it works regardless of the node kind's element/border color. */
+.react-flow__node.selected > * {
+  border-color: #007e27 !important;
+  box-shadow: 0 0 0 3px #007e27 !important;
+}

@@ -64,9 +64,10 @@ export interface UnifiedCanvasProps {
   graphTag?: string;
   /** Animate a walk through the flow each time this changes (per chat turn). */
   fireSignal?: CanvasFireSignal | null;
-  /** Content docked at the trailing edge of the canvas tab bar, replacing the
-   *  default "N canvases" count (e.g. a Pop out control). */
+  /** Content docked in the bottom-right canvas chrome (e.g. Save). */
   tabBarTrailing?: ReactNode;
+  /** Content to the right of the info (i) button in the canvas tab nav. */
+  tabBarEnd?: ReactNode;
 }
 
 export default function Canvas({
@@ -86,6 +87,7 @@ export default function Canvas({
   graphTag,
   fireSignal,
   tabBarTrailing,
+  tabBarEnd,
 }: UnifiedCanvasProps) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   const hasHeader = !!header;
@@ -128,6 +130,7 @@ export default function Canvas({
             graphTag={graphTag}
             fireSignal={fireSignal}
             tabBarTrailing={tabBarTrailing}
+            tabBarEnd={tabBarEnd}
             onChange={({ doc: nextDoc, result }) => {
               onChange({ doc: nextDoc, text: result.output });
             }}

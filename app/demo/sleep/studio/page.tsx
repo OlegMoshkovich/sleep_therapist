@@ -12,7 +12,7 @@ import {
 } from "./sleep-data";
 import { RightDrawer, DRAWER_LABEL, type DrawerId } from "./RightDrawer";
 import { SetupBar } from "./config/page";
-import { SimulationPanel } from "./SimulationPanel";
+import { SimulationPanel, type SimRunControls } from "./SimulationPanel";
 import { FeedbackControls, type FeedbackEntry, type FeedbackSignal } from "./FeedbackControls";
 import type { Turn, TimedTraceEvent } from "../../../components/trace/TraceView";
 import { AuthProvider, useAuth } from "../../../context/AuthContext";
@@ -66,7 +66,7 @@ const ADMIN_ONLY_DRAWERS: DrawerId[] = ["modelsetup", "observability", "simulati
 
 const ADMIN_ITEMS = [
   // { icon: "Grid", label: "Admin dashboard", href: "/demo/sleep/expert-dashboard" },
-  { icon: "Sliders", label: "Model setup", href: "/demo/sleep/studio/config" },
+  // Model setup / Observability live in the right drawer — not duplicated here.
   { icon: "Shield", label: "User roles", href: "/admin/users" },
 ] as const;
 
@@ -172,8 +172,8 @@ function ResizeHandle({
 /**
  * The conversation list (kebab menu → Rename / Delete), shared by the desktop
  * sidebar and the mobile chats drawer so both behave identically. Owns the
- * kebab-open and inline-rename state locally; a fixed overlay closes the menu
- * on any outside click (same pattern as the topbar demo menu).
+ * kebab-open, inline-rename, and multi-select state locally; a fixed overlay
+ * closes the menu on any outside click (same pattern as the topbar demo menu).
  */
 function ConvList({
   convos,
@@ -181,6 +181,7 @@ function ConvList({
   query,
   onSelect,
   onDelete,
+  onDeleteMany,
   onRename,
 }: {
   convos: Conversation[];
@@ -188,11 +189,14 @@ function ConvList({
   query: string;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
+  onDeleteMany: (ids: string[]) => void;
   onRename: (id: string, title: string) => void;
 }) {
   const [kebabId, setKebabId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [selecting, setSelecting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const filtered = convos.filter((c) =>
     c.title.toLowerCase().includes(query.toLowerCase())
   );
@@ -208,76 +212,188 @@ function ConvList({
     setRenamingId(null);
   };
 
-  if (convos.length === 0) {
-    return (
-      <div className="conv-empty">
-        <div className="ce-orb"><Ic.Chat size={18} /></div>
-        <p>No conversations yet.<br />Start one below.</p>
-      </div>
-    );
-  }
+  const exitSelecting = () => {
+    setSelecting(false);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const deleteSelected = () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const label =
+      ids.length === 1
+        ? "Delete this conversation?"
+        : `Delete ${ids.length} conversations?`;
+    if (!window.confirm(label)) return;
+    onDeleteMany(ids);
+    exitSelecting();
+  };
+
+  const selectedCount = selectedIds.size;
 
   return (
-    <div className="conv-list">
-      {kebabId && (
-        <div
-          onClick={() => setKebabId(null)}
-          style={{ position: "fixed", inset: 0, zIndex: 20 }}
-          aria-hidden="true"
-        />
-      )}
-      {filtered.map((c) => (
-        <div
-          key={c.id}
-          className={"conv-item" + (c.id === activeId ? " active" : "")}
-          onClick={() => renamingId !== c.id && onSelect(c.id)}
-        >
-          {renamingId === c.id ? (
-            <input
-              className="conv-rename"
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitRename(c.id);
-                if (e.key === "Escape") setRenamingId(null);
-              }}
-              onBlur={() => commitRename(c.id)}
-            />
-          ) : (
-            <>
-              <span className="conv-title">{c.title}</span>
+    <>
+      <div className="recent-head">
+        <span className="recent-label">
+          <Ic.Clock size={13} /> Recent
+          <span className="chev"><Ic.Chevron size={13} /></span>
+        </span>
+        {convos.length > 0 && (
+          <div className="conv-select-bar">
+            {selecting ? (
+              <>
+                <button
+                  type="button"
+                  className="conv-select-action danger"
+                  onClick={deleteSelected}
+                  disabled={selectedCount === 0}
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="conv-select-action"
+                  onClick={exitSelecting}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
               <button
-                className={"conv-kebab" + (kebabId === c.id ? " open" : "")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setKebabId((prev) => (prev === c.id ? null : c.id));
+                type="button"
+                className="conv-select-action"
+                onClick={() => {
+                  setKebabId(null);
+                  setSelecting(true);
                 }}
               >
-                <Ic.Dots size={16} />
+                Select
               </button>
-              {kebabId === c.id && (
-                <div className="conv-menu" role="menu" onClick={(e) => e.stopPropagation()}>
-                  <button className="pop-row" onClick={() => startRename(c)}>
-                    <span className="ic"><Ic.Edit size={16} /></span>Rename
-                  </button>
-                  <button
-                    className="pop-row danger"
-                    onClick={() => { setKebabId(null); onDelete(c.id); }}
-                  >
-                    <span className="ic"><Ic.Trash size={16} /></span>Delete
-                  </button>
-                </div>
-              )}
-            </>
-          )}
+            )}
+          </div>
+        )}
+      </div>
+      {convos.length === 0 ? (
+        <div className="conv-empty">
+          <div className="ce-orb"><Ic.Chat size={18} /></div>
+          <p>No conversations yet.<br />Start one below.</p>
         </div>
-      ))}
-      {filtered.length === 0 && (
-        <div className="conv-empty"><p>No matches.</p></div>
+      ) : (
+      <div className="conv-list">
+        {kebabId && (
+          <div
+            onClick={() => setKebabId(null)}
+            style={{ position: "fixed", inset: 0, zIndex: 20 }}
+            aria-hidden="true"
+          />
+        )}
+        {filtered.map((c) => {
+          const isChecked = selectedIds.has(c.id);
+          return (
+            <div
+              key={c.id}
+              className={
+                "conv-item" +
+                (c.id === activeId && !selecting ? " active" : "") +
+                (isChecked ? " selected" : "")
+              }
+              onClick={() => {
+                if (renamingId === c.id) return;
+                if (selecting) {
+                  toggleSelected(c.id);
+                  return;
+                }
+                onSelect(c.id);
+              }}
+            >
+              {renamingId === c.id ? (
+                <input
+                  className="conv-rename"
+                  autoFocus
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitRename(c.id);
+                    if (e.key === "Escape") setRenamingId(null);
+                  }}
+                  onBlur={() => commitRename(c.id)}
+                />
+              ) : (
+                <>
+                  {selecting && (
+                    <button
+                      type="button"
+                      className={"conv-check" + (isChecked ? " on" : "")}
+                      aria-label={isChecked ? "Deselect conversation" : "Select conversation"}
+                      aria-pressed={isChecked}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelected(c.id);
+                      }}
+                    >
+                      {isChecked ? (
+                        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                          <path
+                            d="M3.5 8.2l2.8 2.8 6.2-6.4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      ) : null}
+                    </button>
+                  )}
+                  <span className="conv-title">{c.title}</span>
+                  {!selecting && (
+                    <button
+                      className={"conv-kebab" + (kebabId === c.id ? " open" : "")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setKebabId((prev) => (prev === c.id ? null : c.id));
+                      }}
+                    >
+                      <Ic.Dots size={16} />
+                    </button>
+                  )}
+                  {!selecting && kebabId === c.id && (
+                    <div className="conv-menu" role="menu" onClick={(e) => e.stopPropagation()}>
+                      <button className="pop-row" onClick={() => startRename(c)}>
+                        <span className="ic"><Ic.Edit size={16} /></span>Rename
+                      </button>
+                      <button
+                        className="pop-row danger"
+                        onClick={() => {
+                          setKebabId(null);
+                          onDelete(c.id);
+                        }}
+                      >
+                        <span className="ic"><Ic.Trash size={16} /></span>Delete
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div className="conv-empty"><p>No matches.</p></div>
+        )}
+      </div>
       )}
-    </div>
+    </>
   );
 }
 
@@ -287,6 +403,7 @@ function Sidebar({
   onSelect,
   onNew,
   onDelete,
+  onDeleteMany,
   onRename,
   query,
   setQuery,
@@ -295,7 +412,6 @@ function Sidebar({
   infoOpen,
   setInfoOpen,
   onClose,
-  onOpenObservability,
   onToggleFeedbackMode,
   feedbackMode,
   monoTheme,
@@ -311,6 +427,7 @@ function Sidebar({
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onDeleteMany: (ids: string[]) => void;
   onRename: (id: string, title: string) => void;
   query: string;
   setQuery: (v: string) => void;
@@ -319,7 +436,6 @@ function Sidebar({
   infoOpen: boolean;
   setInfoOpen: (fn: (o: boolean) => boolean) => void;
   onClose: () => void;
-  onOpenObservability: () => void;
   onToggleFeedbackMode: () => void;
   feedbackMode: boolean;
   monoTheme: boolean;
@@ -360,17 +476,13 @@ function Sidebar({
         />
       </div>
 
-      <div className="recent-head">
-        <Ic.Clock size={13} /> Recent
-        <span className="chev"><Ic.Chevron size={13} /></span>
-      </div>
-
       <ConvList
         convos={convos}
         activeId={activeId}
         query={query}
         onSelect={onSelect}
         onDelete={onDelete}
+        onDeleteMany={onDeleteMany}
         onRename={onRename}
       />
 
@@ -430,12 +542,6 @@ function Sidebar({
                       </button>
                     );
                   })}
-                  <button
-                    className="pop-row"
-                    onClick={() => { setMenuOpen(() => false); onOpenObservability(); }}
-                  >
-                    <span className="ic"><Ic.Grid size={17} /></span>Observability
-                  </button>
                   <button
                     className="pop-row"
                     onClick={() => { setMenuOpen(() => false); onToggleFeedbackMode(); }}
@@ -504,6 +610,7 @@ function ChatsPane({
   onSelect,
   onNew,
   onDelete,
+  onDeleteMany,
   onRename,
   query,
   setQuery,
@@ -513,6 +620,7 @@ function ChatsPane({
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onDeleteMany: (ids: string[]) => void;
   onRename: (id: string, title: string) => void;
   query: string;
   setQuery: (v: string) => void;
@@ -531,15 +639,13 @@ function ChatsPane({
           onChange={(e) => setQuery(e.target.value)}
         />
       </div>
-      <div className="recent-head">
-        <Ic.Clock size={13} /> Recent
-      </div>
       <ConvList
         convos={convos}
         activeId={activeId}
         query={query}
         onSelect={onSelect}
         onDelete={onDelete}
+        onDeleteMany={onDeleteMany}
         onRename={onRename}
       />
     </div>
@@ -553,7 +659,6 @@ function AccountPane({
   feedbackMode,
   monoTheme,
   onToggleMono,
-  onOpenObservability,
   onToggleFeedbackMode,
   onSignOut,
 }: {
@@ -563,7 +668,6 @@ function AccountPane({
   feedbackMode: boolean;
   monoTheme: boolean;
   onToggleMono: () => void;
-  onOpenObservability: () => void;
   onToggleFeedbackMode: () => void;
   onSignOut: () => void;
 }) {
@@ -593,9 +697,6 @@ function AccountPane({
                 </button>
               );
             })}
-            <button className="pop-row" onClick={onOpenObservability}>
-              <span className="ic"><Ic.Grid size={17} /></span>Observability
-            </button>
             <button className="pop-row" onClick={onToggleFeedbackMode}>
               <span className="ic"><Ic.Edit size={17} /></span>
               Feedback{feedbackMode ? " ✓" : ""}
@@ -729,7 +830,6 @@ function ThreadHeader() {
       <Avatar kind="assistant" size={18} ring mono="SA" />
       <div className="th-meta">
         <div className="th-name">Sleep Assistant</div>
-        <div className="th-sub">Here to help you rest</div>
       </div>
     </div>
   );
@@ -1321,29 +1421,28 @@ function BottomCanvasDrawer({
           // (Side drawer Model Setup keeps the stacked column layout.)
           panelLayout="split"
           onChange={({ doc }) => onDocChange(doc)}
-          // Dock the Save + close controls into the canvas's own tab bar so the
-          // drawer header and the Overall Workflow · Tools row share one line.
+          // Save stays in the bottom-right chrome; × sits top-right next to (i).
           tabBarTrailing={
-            <div className="obs-setup-actions">
-              <button
-                type="button"
-                className="obs-setup-action"
-                onClick={onSave}
-                disabled={saving}
-                title="Save workflow"
-              >
-                {saving ? "Saving…" : saved ? "Saved ✓" : "Save"}
-              </button>
-              <button
-                type="button"
-                className="bottom-drawer-close"
-                aria-label="Close workflow"
-                title="Close workflow"
-                onClick={onClose}
-              >
-                <Ic.Close size={16} />
-              </button>
-            </div>
+            <button
+              type="button"
+              className="obs-setup-action"
+              onClick={onSave}
+              disabled={saving}
+              title="Save workflow"
+            >
+              {saving ? "Saving…" : saved ? "Saved ✓" : "Save"}
+            </button>
+          }
+          tabBarEnd={
+            <button
+              type="button"
+              className="rf-canvas-tab-btn rf-canvas-tab-btn--icon bottom-drawer-close h-[46px]"
+              aria-label="Close workflow"
+              title="Close workflow"
+              onClick={onClose}
+            >
+              <Ic.Close size={16} />
+            </button>
           }
         />
       </div>
@@ -1485,6 +1584,9 @@ function SleepStudioChat() {
   // Secondary right-side panels share ONE drawer; multiple open ones become tabs.
   const [openDrawers, setOpenDrawers] = useState<DrawerId[]>([]);
   const [activeDrawer, setActiveDrawer] = useState<DrawerId | null>(null);
+  // Live simulation controls, lifted from SimulationPanel so Pause/Stop can dock
+  // in the drawer tab bar (next to ×) while a run is in progress.
+  const [simRunControls, setSimRunControls] = useState<SimRunControls | null>(null);
   // The Model Setup pane's container inside the drawer. The page-level SetupBar
   // portals its docked view here; keeping SetupBar mounted at the page level (not
   // inside the drawer) lets its popped-out floating window survive drawer close.
@@ -1664,18 +1766,58 @@ function SleepStudioChat() {
   const loadMessages = useCallback(async (id: string) => {
     try {
       const res = await fetch(`/api/conversations/${id}/messages`);
-      if (!res.ok) { setMessages([]); return; }
+      if (!res.ok) { setMessages([]); setTurns([]); return; }
       const { messages: rows } = (await res.json()) as {
-        messages: Array<{ id: string; role: string; content: string }>;
+        messages: Array<{
+          id: string;
+          role: string;
+          content: string;
+          created_at?: string;
+          // Persisted per-turn observability metadata on assistant messages.
+          trace?: {
+            trace?: TimedTraceEvent[];
+            nodeRefs?: { nodeId: string; canvasId?: string }[];
+            state?: Record<string, unknown>;
+          } | null;
+        }>;
       };
-      setMessages(
-        (rows ?? []).map((m) => ({
-          role: m.role === "user" ? "user" : "ai",
-          text: m.content,
-        }))
-      );
+      // Rebuild both the visible thread and the Observability `turns` so a
+      // reopened conversation replays its trace and re-animates the policy canvas
+      // (nodeRefs), instead of only working for messages sent this session.
+      const rebuiltMessages: Message[] = [];
+      const rebuiltTurns: Turn[] = [];
+      let lastUserText = "";
+      for (const m of rows ?? []) {
+        if (m.role === "user") {
+          lastUserText = m.content;
+          rebuiltMessages.push({ role: "user", text: m.content });
+          continue;
+        }
+        const meta = m.trace && typeof m.trace === "object" ? m.trace : null;
+        let turnId: string | undefined;
+        if (meta) {
+          const startedAt = m.created_at ? Date.parse(m.created_at) : 0;
+          turnId = m.id;
+          rebuiltTurns.push({
+            id: turnId,
+            userMessage: lastUserText,
+            startedAt,
+            finalAnswer: m.content,
+            state: meta.state,
+            nodeRefs: meta.nodeRefs,
+            trace: (meta.trace ?? []).map((e) => ({
+              ...e,
+              tMs: (e as { ts?: number }).ts ?? startedAt,
+            })),
+          });
+        }
+        rebuiltMessages.push({ role: "ai", text: m.content, turnId });
+      }
+      setMessages(rebuiltMessages);
+      setTurns(rebuiltTurns);
     } catch {
       setMessages([]);
+      setTurns([]);
     }
   }, []);
 
@@ -1937,6 +2079,29 @@ function SleepStudioChat() {
     }
   };
 
+  const onDeleteMany = async (ids: string[]) => {
+    const unique = [...new Set(ids)].filter(Boolean);
+    if (unique.length === 0) return;
+    await Promise.all(
+      unique.map(async (id) => {
+        try {
+          await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+        } catch {
+          // network error — still drop locally
+        }
+      })
+    );
+    const removed = new Set(unique);
+    setConvos((prev) => prev.filter((c) => !removed.has(c.id)));
+    if (activeId && removed.has(activeId)) {
+      setActiveId(null);
+      setMessages([]);
+      setStreaming("");
+      setFeedbackByIdx({});
+      setEditingIdx(null);
+    }
+  };
+
   // ── Per-bubble feedback ────────────────────────────────────────────────
   const onToggleFeedback = (index: number) =>
     setEditingIdx((prev) => (prev === index ? null : index));
@@ -2018,6 +2183,7 @@ function SleepStudioChat() {
                 onSelect={onSelect}
                 onNew={onNew}
                 onDelete={onDelete}
+                onDeleteMany={onDeleteMany}
                 onRename={onRename}
                 query={query}
                 setQuery={setQuery}
@@ -2026,7 +2192,6 @@ function SleepStudioChat() {
                 infoOpen={infoOpen}
                 setInfoOpen={setInfoOpen}
                 onClose={() => setSidebarOpen(false)}
-                onOpenObservability={() => openDrawer("observability")}
                 onToggleFeedbackMode={() => setFeedbackMode((m) => !m)}
                 feedbackMode={feedbackMode}
                 monoTheme={monoTheme}
@@ -2146,6 +2311,7 @@ function SleepStudioChat() {
                 onSelect={(id) => { onSelect(id); closeDrawer("chats"); }}
                 onNew={() => { onNew(); closeDrawer("chats"); }}
                 onDelete={onDelete}
+                onDeleteMany={onDeleteMany}
                 onRename={onRename}
                 query={query}
                 setQuery={setQuery}
@@ -2159,14 +2325,28 @@ function SleepStudioChat() {
                 feedbackMode={feedbackMode}
                 monoTheme={monoTheme}
                 onToggleMono={() => setMonoTheme((v) => !v)}
-                onOpenObservability={() => openDrawer("observability")}
                 onToggleFeedbackMode={() => { setFeedbackMode((m) => !m); closeDrawer("account"); }}
                 onSignOut={signOut}
               />
             }
             modelSetupContent={<div className="drawer-pane" ref={setModelSetupSlot} />}
             simulationContent={
-              <SimulationPanel controller={{ begin: beginSimulation, send }} />
+              <SimulationPanel
+                controller={{ begin: beginSimulation, send }}
+                onRunControls={setSimRunControls}
+              />
+            }
+            tabBarControls={
+              simRunControls ? (
+                <div className="sim-run-controls">
+                  {simRunControls.paused ? (
+                    <button type="button" className="sim-btn sim-btn-run" onClick={simRunControls.resume}>Resume</button>
+                  ) : (
+                    <button type="button" className="sim-btn" onClick={simRunControls.pause}>Pause</button>
+                  )}
+                  <button type="button" className="sim-btn" onClick={simRunControls.stop}>Stop</button>
+                </div>
+              ) : null
             }
             activeConversationId={activeId}
           />

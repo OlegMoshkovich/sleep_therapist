@@ -78,6 +78,7 @@ export function RightDrawer({
   accountContent,
   modelSetupContent,
   simulationContent,
+  tabBarControls,
   activeConversationId,
   onDismiss,
   isAdmin = false,
@@ -102,6 +103,8 @@ export function RightDrawer({
   modelSetupContent?: React.ReactNode;
   /** Simulation pane: run an automated therapist↔simulated-user conversation. */
   simulationContent?: React.ReactNode;
+  /** Controls docked into the tab bar, left of the ×, e.g. Pause/Stop while a simulation runs. */
+  tabBarControls?: React.ReactNode;
   /** Active conversation id — the Upload pane attaches files to it. */
   activeConversationId?: string | null;
   /** Close the whole drawer (mobile: flick the sheet down past the threshold). */
@@ -214,6 +217,7 @@ export function RightDrawer({
           </div>
         ))}
       </div>
+      {tabBarControls && <div className="drawer-tabbar-controls">{tabBarControls}</div>}
       <button
         type="button"
         className="drawer-close-btn"

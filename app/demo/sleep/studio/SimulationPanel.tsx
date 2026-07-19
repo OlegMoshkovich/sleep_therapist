@@ -1,8 +1,19 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 type SimMsg = { role: "user" | "ai"; text: string };
+
+/**
+ * The live run controls, lifted out of the panel body so the drawer tab bar can
+ * render Pause/Stop next to its × while a run is in progress. `null` when idle.
+ */
+export type SimRunControls = {
+  paused: boolean;
+  pause: () => void;
+  resume: () => void;
+  stop: () => void;
+};
 
 export type SimulationController = {
   /** Clear the thread and arm the next send() to open a titled simulation conversation. */
@@ -25,9 +36,18 @@ export type SimulationController = {
  * regular chat window, is saved as a "Simulation · …" conversation, and its
  * traces show up in Observability while the policy canvas animates each turn.
  */
-export function SimulationPanel({ controller }: { controller: SimulationController }) {
+export function SimulationPanel({
+  controller,
+  onRunControls,
+}: {
+  controller: SimulationController;
+  /** Reports the live run controls while running (Pause/Stop live in the drawer tab bar); null when idle. */
+  onRunControls?: (controls: SimRunControls | null) => void;
+}) {
   const [scenario, setScenario] = useState("");
-  const [turns, setTurns] = useState(4);
+  // Kept as a string so the field can be cleared while editing (e.g. wiping "110"
+  // to type a new value). Normalized to a valid count on blur and when a run starts.
+  const [turns, setTurns] = useState("4");
   const [running, setRunning] = useState(false);
   const [paused, setPaused] = useState(false);
   const [status, setStatus] = useState("");
@@ -45,6 +65,9 @@ export function SimulationPanel({ controller }: { controller: SimulationControll
 
   const run = async () => {
     if (running) return;
+    // Normalize the (possibly empty or in-progress) field to at least one turn.
+    const turnCount = Math.max(1, Math.floor(Number(turns)) || 1);
+    setTurns(String(turnCount));
     setRunning(true);
     setPaused(false);
     pausedRef.current = false;
@@ -58,14 +81,14 @@ export function SimulationPanel({ controller }: { controller: SimulationControll
 
       // Local mirror of the exchange, used only to prompt the simulated patient.
       const history: SimMsg[] = [];
-      for (let t = 0; t < turns; t++) {
+      for (let t = 0; t < turnCount; t++) {
         if (abortRef.current) break;
         // Pause checkpoint between turns — the trace for the previous turn is
         // fully written by now, so this is the moment to freeze and look.
         await waitWhilePaused();
         if (abortRef.current) break;
 
-        setStatus(`Turn ${t + 1}/${turns} · simulating the patient…`);
+        setStatus(`Turn ${t + 1}/${turnCount} · simulating the patient…`);
         const uRes = await fetch("/api/chat/sleep/simulate-user", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -79,7 +102,7 @@ export function SimulationPanel({ controller }: { controller: SimulationControll
         if (abortRef.current) break;
         history.push({ role: "user", text: userMessage });
 
-        setStatus(`Turn ${t + 1}/${turns} · sleep therapist replying…`);
+        setStatus(`Turn ${t + 1}/${turnCount} · sleep therapist replying…`);
         const reply = await controller.send(userMessage);
         history.push({ role: "ai", text: reply ?? "" });
       }
@@ -115,6 +138,14 @@ export function SimulationPanel({ controller }: { controller: SimulationControll
     setPaused(false);
   };
 
+  // Lift the live controls to the drawer tab bar while running, so Pause/Stop sit
+  // next to the × up top. Report null when idle, and on unmount, so the tab bar
+  // never keeps stale controls.
+  useEffect(() => {
+    onRunControls?.(running ? { paused, pause, resume, stop } : null);
+  }, [running, paused, onRunControls]);
+  useEffect(() => () => onRunControls?.(null), [onRunControls]);
+
   return (
     <div className="sim-panel">
       <div className="sim-setup">
@@ -133,21 +164,20 @@ export function SimulationPanel({ controller }: { controller: SimulationControll
           <input
             id="sim-turns"
             className="sim-turns"
-            type="number"
-            min={1}
+            type="text"
+            inputMode="numeric"
             value={turns}
-            onChange={(e) => setTurns(Math.max(1, Number(e.target.value) || 1))}
+            // Accept only digits, and allow empty so the field can be cleared to retype.
+            onChange={(e) => setTurns(e.target.value.replace(/[^0-9]/g, ""))}
+            // Normalize to at least one turn once you leave the field.
+            onBlur={() => setTurns((v) => String(Math.max(1, Math.floor(Number(v)) || 1)))}
             disabled={running}
           />
           {running ? (
-            <>
-              {paused ? (
-                <button type="button" className="sim-btn sim-btn-run sim-btn-lead" onClick={resume}>Resume</button>
-              ) : (
-                <button type="button" className="sim-btn sim-btn-lead" onClick={pause}>Pause</button>
-              )}
-              <button type="button" className="sim-btn" onClick={stop}>Stop</button>
-            </>
+            // Pause/Stop live in the drawer tab bar (next to ×) while running.
+            <span className="sim-btn-lead sim-running-hint">
+              {paused ? "Paused" : "Running…"}
+            </span>
           ) : (
             <button type="button" className="sim-btn sim-btn-run sim-btn-lead" onClick={run}>Run simulation</button>
           )}
