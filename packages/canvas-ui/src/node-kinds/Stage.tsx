@@ -120,6 +120,6 @@ export const STAGE: NodeKindDef = {
   defaultLabel: "Stage: new workflow stage",
   inspector: {
     labelTitle: "Stage description",
-    textareaRows: 10,
+    textareaRows: 4,
   },
 };

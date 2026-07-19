@@ -21,7 +21,7 @@ import { AuthProvider, useAuth } from "../../../context/AuthContext";
 import AuthModal from "../../../components/AuthModal";
 import SiteLogo from "../../../components/SiteLogo";
 import { useVoiceRecorder, useTTS } from "./useVoice";
-import Canvas, { type CanvasDoc } from "../../../components/canvas/Canvas";
+import Canvas, { type CanvasDoc, type CanvasFireSignal } from "../../../components/canvas/Canvas";
 import { WORKFLOW_CANVAS_NODE_KINDS } from "../../../components/canvas/node-kinds";
 import {
   WORKFLOW_OVERVIEW_CANVAS_MARKER,
@@ -1381,7 +1381,9 @@ function Thread({
   onOpenState,
   stateTurnIds,
   allowFeedback,
-  activeId,
+  collapsedByIdx,
+  setCollapsedByIdx,
+  hideBubbleControls,
 }: {
   messages: Message[];
   typing: boolean;
@@ -1400,38 +1402,11 @@ function Thread({
   stateTurnIds?: Set<string>;
   /** Gates the per-reply Feedback button (admin-only, like the other panels). */
   allowFeedback?: boolean;
-  /** Current conversation id — changing it re-hides the bubble controls by default. */
-  activeId?: string | null;
+  collapsedByIdx: Record<number, boolean>;
+  setCollapsedByIdx: React.Dispatch<React.SetStateAction<Record<number, boolean>>>;
+  hideBubbleControls: boolean;
 }) {
   const endRef = useRef<HTMLDivElement>(null);
-  // Per-bubble collapse; driven by each row's Collapse button or the top toggle.
-  const [collapsedByIdx, setCollapsedByIdx] = useState<Record<number, boolean>>({});
-  // Hide per-bubble nav/footer chrome for a cleaner reading view. Hidden by
-  // default (on every conversation start); "Show controls" reveals them.
-  const [hideBubbleControls, setHideBubbleControls] = useState(true);
-  // Re-hide the controls whenever the conversation changes / a new one starts.
-  useEffect(() => {
-    setHideBubbleControls(true);
-  }, [activeId]);
-  // Narrow viewports only ever force-hide (never force-show) so the toggle sticks.
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(max-width: 900px)");
-    const sync = () => { if (mq.matches) setHideBubbleControls(true); };
-    mq.addEventListener("change", sync);
-    return () => mq.removeEventListener("change", sync);
-  }, []);
-  const allCollapsed =
-    messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i]);
-  const toggleCollapseAll = () => {
-    if (allCollapsed) {
-      setCollapsedByIdx({});
-      return;
-    }
-    const next: Record<number, boolean> = {};
-    for (let i = 0; i < messages.length; i++) next[i] = true;
-    setCollapsedByIdx(next);
-  };
   // Auto-scroll to the latest message as the conversation grows — but NOT when
   // a feedback editor opens (editingIdx), or it would jump away from the bubble
   // you just clicked. The editor renders inline under that bubble, already in view.
@@ -1452,37 +1427,7 @@ function Thread({
   return (
     <div className="thread">
       <div className="thread-inner">
-        <div className="thread-top">
-          {messages.length > 0 && (
-            <button
-              type="button"
-              className="thread-collapse-all"
-              onClick={toggleCollapseAll}
-              title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
-            >
-              <Ic.Chevron
-                size={13}
-                style={allCollapsed ? undefined : { transform: "rotate(180deg)" }}
-              />
-              {allCollapsed ? "Expand all" : "Collapse all"}
-            </button>
-          )}
-          <div className="day-divider">TODAY</div>
-          {messages.length > 0 && (
-            <button
-              type="button"
-              className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
-              onClick={() => setHideBubbleControls((v) => !v)}
-              title={
-                hideBubbleControls
-                  ? "Show bubble nav and footer"
-                  : "Hide bubble nav and footer"
-              }
-            >
-              {hideBubbleControls ? "Show controls" : "Hide controls"}
-            </button>
-          )}
-        </div>
+        <div className="day-divider">TODAY</div>
         {messages.map((m, i) => (
           <MessageRow
             key={i}
@@ -1563,6 +1508,11 @@ function Composer({
   onToggleAutoSpeak,
   isSpeaking,
   onStopSpeaking,
+  showThreadControls = false,
+  allCollapsed = false,
+  onToggleCollapseAll,
+  hideBubbleControls = true,
+  onToggleHideBubbleControls,
 }: {
   value: string;
   setValue: (v: string) => void;
@@ -1577,6 +1527,12 @@ function Composer({
   onToggleAutoSpeak: () => void;
   isSpeaking: boolean;
   onStopSpeaking: () => void;
+  /** Collapse all / Hide controls — docked above the input. */
+  showThreadControls?: boolean;
+  allCollapsed?: boolean;
+  onToggleCollapseAll?: () => void;
+  hideBubbleControls?: boolean;
+  onToggleHideBubbleControls?: () => void;
 }) {
   const submit = () => {
     const v = value.trim();
@@ -1616,6 +1572,30 @@ function Composer({
             );
           })}
         </div>
+        {showThreadControls && (
+          <div className="composer-thread-controls">
+            <button
+              type="button"
+              className="thread-collapse-all"
+              onClick={onToggleCollapseAll}
+              title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
+            >
+              {allCollapsed ? "Expand all" : "Collapse all"}
+            </button>
+            <button
+              type="button"
+              className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
+              onClick={onToggleHideBubbleControls}
+              title={
+                hideBubbleControls
+                  ? "Show bubble nav and footer"
+                  : "Hide bubble nav and footer"
+              }
+            >
+              {hideBubbleControls ? "Show controls" : "Hide controls"}
+            </button>
+          </div>
+        )}
         <div className="composer-row">
           <div className="composer">
             <input
@@ -1836,6 +1816,45 @@ const BOTTOM_WORKFLOW_SEED: CanvasDoc = {
   ],
 };
 
+// ── Workflow stage tracking ────────────────────────────────────────────────
+// The Overall Workflow canvas (bottom drawer) mirrors the high-level sleep-care
+// stages. As the conversation runs, we derive which stage the turn belongs to
+// from its policy trace + state, and highlight that stage node in the workflow.
+const WORKFLOW_STAGE_NODE: Record<string, string> = {
+  intake: "wf-stage-intake",
+  assess: "wf-stage-assess",
+  guide: "wf-stage-guide",
+  followup: "wf-stage-followup",
+};
+// Which policy canvas each workflow stage opens (Model Setup → Policy). Each
+// stage now has its own canvas; clicking a workflow stage selects it.
+const WORKFLOW_STAGE_POLICY_CANVAS: Record<string, string> = {
+  intake: "intake", // "Sleep Intake"
+  assess: "assess",
+  guide: "guide",
+  followup: "followup",
+};
+
+/** Derive the active workflow stage for a completed turn from its trace + state. */
+function deriveWorkflowStage(turn: Turn | null | undefined): string | null {
+  if (!turn) return null;
+  const refs = turn.nodeRefs ?? [];
+  // The Sleep Intake subtree ran this turn → still gathering history.
+  if (refs.some((r) => r.canvasId === "intake")) return "intake";
+  const state = (turn.state ?? {}) as Record<string, unknown>;
+  const isEmpty = (v: unknown) =>
+    v === null || v === undefined || (Array.isArray(v) ? v.length === 0 : String(v).trim() === "" || String(v) === "null");
+  // Emergency short-circuits into guidance (urgent advice).
+  if (!isEmpty(state.emergency) && String(state.emergency).toLowerCase() !== "false") return "guide";
+  // Once the core intake fields are captured, the assistant moves to guidance.
+  const intakeCoreFilled =
+    !isEmpty(state.sleep_concern) &&
+    !isEmpty(state.bedtime_weeknight) &&
+    !isEmpty(state.wake_time);
+  if (intakeCoreFilled) return "guide";
+  return "intake";
+}
+
 /**
  * A full-width drawer docked to the bottom of the window. It behaves like the
  * right side drawer but slides up from the bottom (the horizontal analogue): it
@@ -1853,6 +1872,8 @@ function BottomCanvasDrawer({
   onSave,
   saving,
   saved,
+  fireSignal,
+  onStageClick,
 }: {
   open: boolean;
   onClose: () => void;
@@ -1863,6 +1884,10 @@ function BottomCanvasDrawer({
   onSave: () => void;
   saving: boolean;
   saved: boolean;
+  /** Highlights the active workflow stage as the conversation progresses. */
+  fireSignal?: CanvasFireSignal | null;
+  /** Clicking a workflow stage node opens its policy canvas + trace. */
+  onStageClick?: (stageId: string) => void;
 }) {
   // VS Code-style splitter: the drawer's top edge is a full-width drag handle
   // that highlights while hovered/dragged. Drag up = taller (up to near the top
@@ -1919,6 +1944,13 @@ function BottomCanvasDrawer({
           nodeKinds={WORKFLOW_CANVAS_NODE_KINDS}
           // Drives the workflow-specific "How it works" info in the canvas (i).
           inspectorContext={{ executionPhase: "workflow" }}
+          // Highlights the active stage node as the conversation progresses.
+          fireSignal={fireSignal}
+          // Clicking a stage node opens its policy canvas + trace.
+          onNodeActivate={(node) => {
+            const stageId = (node.data as Record<string, unknown>)?.workflowStageId;
+            if (typeof stageId === "string") onStageClick?.(stageId);
+          }}
           fillHeight
           // Wide bottom drawer: canvas | Inspector/Compiler side by side.
           // (Side drawer Model Setup keeps the stacked column layout.)
@@ -2015,6 +2047,21 @@ function SleepStudioChat() {
   // "How to use the studio" help panel, anchored bottom-left of the sidebar.
   const [infoOpen, setInfoOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Thread chrome (Collapse all / Hide controls) — lifted so it can dock above
+  // the composer input; TODAY stays at the top of the message list.
+  const [collapsedByIdx, setCollapsedByIdx] = useState<Record<number, boolean>>({});
+  const [hideBubbleControls, setHideBubbleControls] = useState(true);
+  useEffect(() => {
+    setHideBubbleControls(true);
+    setCollapsedByIdx({});
+  }, [activeId]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const sync = () => { if (mq.matches) setHideBubbleControls(true); };
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   // Bottom canvas drawer: a full-width sheet that slides up from the bottom and
   // hosts a Canvas editor. Its doc and height are kept here so they survive
   // open/close.
@@ -2143,6 +2190,14 @@ function SleepStudioChat() {
     () => new Set(turnExtractedStateKeys(turns).keys()),
     [turns]
   );
+  // The latest completed turn (drives the live workflow-stage highlight).
+  const lastCompletedTurn = useMemo<Turn | null>(() => {
+    for (let i = turns.length - 1; i >= 0; i--) {
+      const t = turns[i];
+      if (t.finalAnswer != null || t.error != null) return t;
+    }
+    return null;
+  }, [turns]);
   // Clicking an assistant bubble opens Observability and expands that turn's
   // trace. `n` bumps on every click so re-clicking the same bubble re-focuses.
   const [traceFocus, setTraceFocus] = useState<{ id: string; n: number }>({
@@ -2168,10 +2223,42 @@ function SleepStudioChat() {
     (turnId: string) => {
       if (!isAdmin) return; // Model Setup / Policy is admin-only.
       openDrawer("modelsetup");
+      // Also open the workflow so its stage highlight (following this turn) is visible.
+      setCanvasOpen(true);
       setPolicyFocus((prev) => ({ id: turnId, n: prev.n + 1 }));
     },
     [isAdmin, openDrawer]
   );
+  // Workflow-stage highlight: normally the latest completed turn, but when a
+  // reply's Policy trace is opened, it follows THAT turn — so the Overall Workflow
+  // canvas highlights the stage the traced node belongs to.
+  const workflowTurn = useMemo<Turn | null>(() => {
+    if (policyFocus.id) {
+      const t = turns.find((x) => x.id === policyFocus.id);
+      if (t) return t;
+    }
+    return lastCompletedTurn;
+  }, [policyFocus.id, turns, lastCompletedTurn]);
+  const workflowFireSignal = useMemo<CanvasFireSignal | null>(() => {
+    const stage = deriveWorkflowStage(workflowTurn);
+    if (!stage || !workflowTurn) return null;
+    // Find the stage node by workflowStageId in the live doc (seed or saved).
+    const wfDoc = canvasDoc ?? BOTTOM_WORKFLOW_SEED;
+    for (const canvas of wfDoc.canvases) {
+      const node = canvas.graph.nodes.find(
+        (n) => (n.data as Record<string, unknown>)?.workflowStageId === stage
+      );
+      if (node) {
+        return {
+          // Include the focus nonce so re-clicking a bubble's Policy trace re-fires.
+          id: `${workflowTurn.id}#wf-${stage}#${policyFocus.n}`,
+          tools: [],
+          exactNodeRefs: [{ nodeId: node.id, canvasId: canvas.id }],
+        };
+      }
+    }
+    return null;
+  }, [workflowTurn, canvasDoc, policyFocus.n]);
   // State-panel focus: clicking a reply's "State" button opens Model Setup on the
   // State section and highlights the fields that reply extracted.
   const [stateFocus, setStateFocus] = useState<{ id: string; n: number }>({
@@ -2183,6 +2270,21 @@ function SleepStudioChat() {
       if (!isAdmin) return; // Model Setup / State is admin-only.
       openDrawer("modelsetup");
       setStateFocus((prev) => ({ id: turnId, n: prev.n + 1 }));
+    },
+    [isAdmin, openDrawer]
+  );
+  // Clicking a workflow stage opens Model Setup → Policy and selects that stage's
+  // dedicated policy canvas (Intake → Sleep Intake, Assess → Assess, …).
+  const [policyCanvasSelect, setPolicyCanvasSelect] = useState<{ canvasId: string; n: number }>({
+    canvasId: "",
+    n: 0,
+  });
+  const onWorkflowStageClick = useCallback(
+    (stageId: string) => {
+      if (!isAdmin) return;
+      const canvasId = WORKFLOW_STAGE_POLICY_CANVAS[stageId] ?? "main";
+      openDrawer("modelsetup");
+      setPolicyCanvasSelect((prev) => ({ canvasId, n: prev.n + 1 }));
     },
     [isAdmin, openDrawer]
   );
@@ -2872,7 +2974,9 @@ function SleepStudioChat() {
                 onOpenState={isAdmin ? focusState : undefined}
                 stateTurnIds={stateTurnIds}
                 allowFeedback={isAdmin}
-                activeId={activeId}
+                collapsedByIdx={collapsedByIdx}
+                setCollapsedByIdx={setCollapsedByIdx}
+                hideBubbleControls={hideBubbleControls}
               />
             ) : (
               <EmptyState onSuggest={send} compact={canvasOpen} />
@@ -2903,6 +3007,21 @@ function SleepStudioChat() {
               onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
               isSpeaking={isSpeaking}
               onStopSpeaking={stopSpeaking}
+              showThreadControls={messages.length > 0}
+              allCollapsed={
+                messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])
+              }
+              onToggleCollapseAll={() => {
+                if (messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])) {
+                  setCollapsedByIdx({});
+                  return;
+                }
+                const next: Record<number, boolean> = {};
+                for (let i = 0; i < messages.length; i++) next[i] = true;
+                setCollapsedByIdx(next);
+              }}
+              hideBubbleControls={hideBubbleControls}
+              onToggleHideBubbleControls={() => setHideBubbleControls((v) => !v)}
             />
           </main>
 
@@ -3006,7 +3125,7 @@ function SleepStudioChat() {
           {/* SetupBar is mounted here (page level), not inside the drawer, so its
               popped-out floating window survives the drawer closing. It portals
               its docked view into the drawer's Model Setup slot when open. */}
-          {isAdmin && <SetupBar turns={turns} slot={modelSetupSlot} onTopDockChange={setTopDockH} policyFocus={policyFocus} stateFocus={stateFocus} />}
+          {isAdmin && <SetupBar turns={turns} slot={modelSetupSlot} onTopDockChange={setTopDockH} policyFocus={policyFocus} stateFocus={stateFocus} policyCanvasSelect={policyCanvasSelect} />}
           {/* SimulationPanel is mounted here (page level) for the same reason:
               closing the drawer must not tear down a live run or clear Pause/Stop. */}
           {isAdmin && (
@@ -3040,6 +3159,8 @@ function SleepStudioChat() {
             onSave={saveWorkflow}
             saving={workflowSaving}
             saved={workflowSaved}
+            fireSignal={workflowFireSignal}
+            onStageClick={onWorkflowStageClick}
           />
         </div>
       </div>

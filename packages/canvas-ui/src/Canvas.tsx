@@ -14,6 +14,7 @@ import {
   type CanvasFireSignal,
   type CanvasHeader,
   type CanvasInspectorContext,
+  type CanvasNodeData,
   type CompilerFn,
   type NodeKindDef,
 } from "./types";
@@ -68,6 +69,10 @@ export interface UnifiedCanvasProps {
   tabBarTrailing?: ReactNode;
   /** Content to the right of the info (i) button in the canvas tab nav. */
   tabBarEnd?: ReactNode;
+  /** Fired when a node is clicked (host reacts, e.g. workflow stage → policy canvas). */
+  onNodeActivate?: (node: { id: string; type?: string; data: CanvasNodeData }) => void;
+  /** When the nonce changes, switch the active canvas tab to `canvasId`. */
+  selectCanvasSignal?: { canvasId: string; n: number } | null;
 }
 
 export default function Canvas({
@@ -88,6 +93,8 @@ export default function Canvas({
   fireSignal,
   tabBarTrailing,
   tabBarEnd,
+  onNodeActivate,
+  selectCanvasSignal,
 }: UnifiedCanvasProps) {
   const [open, setOpen] = useState(defaultOpen ?? true);
   const hasHeader = !!header;
@@ -131,6 +138,8 @@ export default function Canvas({
             fireSignal={fireSignal}
             tabBarTrailing={tabBarTrailing}
             tabBarEnd={tabBarEnd}
+            onNodeActivate={onNodeActivate}
+            selectCanvasSignal={selectCanvasSignal}
             onChange={({ doc: nextDoc, result }) => {
               onChange({ doc: nextDoc, text: result.output });
             }}

@@ -1303,18 +1303,18 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .thread-inner{width:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
 .ra-scope .day-divider{display:flex;align-items:center;gap:14px;color:var(--text-4);font-size:11px;letter-spacing:1.6px;}
 .ra-scope .day-divider::before,.ra-scope .day-divider::after{content:"";flex:1;height:1px;background:var(--line-soft);}
-/* TODAY + Collapse all / Expand all on one row. */
-.ra-scope .thread-top{display:flex;align-items:center;gap:12px;}
-.ra-scope .thread-top .day-divider{flex:1;min-width:0;}
+/* Collapse all / Show·Hide controls — docked above the composer input (no TODAY). */
+.ra-scope .composer-thread-controls{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  border:none;}
 .ra-scope .thread-collapse-all{flex:0 0 auto;display:inline-flex;align-items:center;gap:5px;
-  font-family:inherit;font-size:12px;font-weight:400;color:var(--text-3);
-  background:transparent;border:1px solid var(--line);border-radius:0;padding:3px 9px;
+  font-family:inherit;font-size:12px;font-weight:400;color:var(--text-2);
+  background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;
   cursor:pointer;white-space:nowrap;}
 .ra-scope .thread-collapse-all:hover{color:var(--text);background:var(--surface-2);border-color:var(--text-4);}
-.ra-scope .thread-collapse-all.on{color:var(--text);border-color:var(--text);}
-/* Narrow thread: drop Collapse all / Show·Hide controls so they don't crush TODAY. */
+.ra-scope .thread-collapse-all.on{color:var(--text);border-color:var(--text);background:var(--surface-2);}
+/* Narrow: drop Collapse all / Show·Hide controls. */
 @media (max-width:900px){
-  .ra-scope .thread-collapse-all{display:none;}
+  .ra-scope .composer-thread-controls{display:none;}
 }
 
 .ra-scope .msg-ai{display:flex;gap:13px;align-self:stretch;animation:ra-fadeUp .35s ease both;}
@@ -1462,10 +1462,8 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .sim-btn-run:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);filter:brightness(1.08);}
 .ra-scope .sim-status{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
 .ra-scope .sim-error{font-family:inherit;font-size:14px;font-weight:400;color:var(--danger);}
-.ra-scope .sim-note{margin:16px;color:var(--text-3);font-family:inherit;font-size:14px;font-weight:400;line-height:1.6;max-width:520px;}
-/* Past simulation runs, relocated here from the sidebar. Fills the panel below
-   the note and scrolls independently. */
-.ra-scope .sim-runs{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;border-top:1px solid var(--line-soft);}
+/* Past simulation runs. Fills the panel below the setup form and scrolls independently. */
+.ra-scope .sim-runs{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;}
 .ra-scope .sim-runs-head{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:12px 16px 8px;
   font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3);}
 .ra-scope .sim-runs-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;

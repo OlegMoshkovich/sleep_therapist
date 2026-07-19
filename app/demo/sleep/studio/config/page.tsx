@@ -1032,6 +1032,7 @@ function PolicyPane({
   fillHeight,
   movedToWeights,
   fireSignal,
+  selectCanvasSignal,
   loaded = true,
   tabBarTrailing,
   onCanvasCycle,
@@ -1041,6 +1042,7 @@ function PolicyPane({
   fillHeight?: boolean;
   movedToWeights?: boolean;
   fireSignal?: CanvasFireSignal | null;
+  selectCanvasSignal?: { canvasId: string; n: number } | null;
   loaded?: boolean;
   tabBarTrailing?: React.ReactNode;
   onCanvasCycle?: (phase: "mount" | "unmount") => void;
@@ -1066,6 +1068,7 @@ function PolicyPane({
             fillHeight={fillHeight}
             graphTag={movedToWeights ? "Moved into the weights" : undefined}
             fireSignal={fireSignal}
+            selectCanvasSignal={selectCanvasSignal}
             tabBarTrailing={tabBarTrailing}
             onChange={({ doc }) => onPolicyChange(doc)}
           />
@@ -1806,6 +1809,8 @@ export function useSleepSetup() {
       stateOverride?: Record<string, unknown> | null;
       /** Fields to highlight in the State panel (the ones that turn extracted). */
       stateHighlight?: Set<string> | null;
+      /** When bumped, selects a specific policy canvas (e.g. a workflow stage's canvas). */
+      policyCanvasSelect?: { canvasId: string; n: number } | null;
       /** Optional content docked at the trailing edge of the Policy canvas tab bar. */
       tabBarTrailing?: React.ReactNode;
     }
@@ -1865,6 +1870,7 @@ export function useSleepSetup() {
           onCanvasCycle={onPolicyCanvasCycle}
           fillHeight={opts?.fillHeight}
           fireSignal={opts?.fireSignal}
+          selectCanvasSignal={opts?.policyCanvasSelect}
           loaded={loaded}
           tabBarTrailing={opts?.tabBarTrailing}
         />
@@ -1933,6 +1939,7 @@ export function SetupBar({
   onTopDockChange,
   policyFocus,
   stateFocus,
+  policyCanvasSelect,
 }: {
   /** Notifies the host (Observability pane) when a section is docked inline so it
    *  can yield space (e.g. hide the trace) to the embedded component. */
@@ -1949,6 +1956,11 @@ export function SetupBar({
    * and highlights the fields that turn extracted (showing that turn's snapshot).
    */
   stateFocus?: { id: string; n: number };
+  /**
+   * Bumped when a workflow stage is clicked: switches to Policy and selects that
+   * stage's policy canvas.
+   */
+  policyCanvasSelect?: { canvasId: string; n: number };
   /**
    * DOM node inside the drawer's Model Setup pane to portal the docked (inline)
    * view into. SetupBar itself is mounted at the page level so the popped-out
@@ -1984,6 +1996,11 @@ export function SetupBar({
     // Only react to a new click (n change), not to identity changes of the object.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [policyFocus?.n]);
+  // A workflow stage click switches to Policy so its canvas becomes visible.
+  React.useEffect(() => {
+    if (policyCanvasSelect && policyCanvasSelect.n > 0) setActive("policy");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [policyCanvasSelect?.n]);
 
   // Build a fire signal so the Policy canvas animates the path the model took.
   // A focused turn (from a bubble's Policy button) wins; otherwise the latest
@@ -2147,6 +2164,7 @@ export function SetupBar({
               currentState,
               stateOverride,
               stateHighlight,
+              policyCanvasSelect,
               tabBarTrailing: canvasSection ? navActions : undefined,
             })}
           </div>

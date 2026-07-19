@@ -46,6 +46,7 @@ import type {
   CanvasGraph,
   CanvasInspectorContext,
   CanvasNode,
+  CanvasNodeData,
   CanvasOnChange,
   CompilerFn,
   NodeKindDef,
@@ -232,6 +233,18 @@ interface EditorInnerProps<TOutput> {
    * (e.g. workflow drawer ×).
    */
   tabBarEnd?: ReactNode;
+  /**
+   * Fired when a node is clicked, in addition to the built-in selection. Lets a
+   * host react to node clicks (e.g. a workflow stage node opening its policy
+   * canvas) without owning the canvas internals.
+   */
+  onNodeActivate?: (node: { id: string; type?: string; data: CanvasNodeData }) => void;
+  /**
+   * When the nonce (`n`) changes, switch the active canvas tab to `canvasId` (if
+   * it exists). Lets a host select a specific canvas — e.g. a workflow stage
+   * opening its policy canvas.
+   */
+  selectCanvasSignal?: { canvasId: string; n: number } | null;
 }
 
 function isControlStructureKind(kind: Pick<NodeKindDef, "kind">): boolean {
@@ -2000,6 +2013,8 @@ export function EditorInner<TOutput>({
   fireSignal,
   tabBarTrailing,
   tabBarEnd,
+  onNodeActivate,
+  selectCanvasSignal,
 }: EditorInnerProps<TOutput>) {
   // Bottom drawer: side-by-side. Side drawer / Model Setup: stacked column.
   const splitPanels = Boolean(fillHeight && panelLayout === "split");
@@ -2715,6 +2730,17 @@ export function EditorInner<TOutput>({
     setSelectedCollapsedEdgeId(null);
   }, [activeId, canvases, fireSignal?.exactNodeRefs, fireSignal?.id]);
 
+  // Host-driven canvas selection (e.g. a workflow stage opening its policy canvas).
+  useEffect(() => {
+    const target = selectCanvasSignal?.canvasId;
+    if (!target || !canvases.some((c) => c.id === target)) return;
+    setActiveId(target);
+    setSelectedId(null);
+    setSelectedPromptGroupKey(null);
+    setSelectedCollapsedEdgeId(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectCanvasSignal?.n]);
+
   useEffect(() => {
     if (!fireSignal?.id) {
       setFirePath([]);
@@ -2788,24 +2814,33 @@ export function EditorInner<TOutput>({
 
   const fireNodes = useMemo(() => {
     if (!active) return [];
-    if (fireNodeClass.size === 0) return active.nodes;
+    // Selection is driven by `selectedId` (set on node click, cleared on pane
+    // click). We feed it into React Flow's `selected` here — `handleNodesChange`
+    // drops `select` changes to keep selection out of the saved doc, so this is
+    // the single source of truth for what looks selected.
     return active.nodes.map((node) => {
       const extra = fireNodeClass.get(node.id);
-      return extra
-        ? {
-            ...node,
-            className: [node.className, extra].filter(Boolean).join(" "),
-            style: {
-              ...(node.style ?? {}),
-              boxShadow: extra.includes("rf-fire-active")
-                ? "0 0 0 4px #0f766e, 0 0 22px rgba(15, 118, 110, 0.6)"
-                : "0 0 0 3px rgba(194, 97, 31, 0.75)",
-              borderRadius: 0,
-            },
-          }
-        : node;
+      const selected = node.id === selectedId;
+      const needsSelectFlag = selected !== !!node.selected;
+      if (!extra && !needsSelectFlag) return node;
+      return {
+        ...node,
+        ...(needsSelectFlag ? { selected } : {}),
+        ...(extra
+          ? {
+              className: [node.className, extra].filter(Boolean).join(" "),
+              style: {
+                ...(node.style ?? {}),
+                boxShadow: extra.includes("rf-fire-active")
+                  ? "0 0 0 4px #0f766e, 0 0 22px rgba(15, 118, 110, 0.6)"
+                  : "0 0 0 3px rgba(194, 97, 31, 0.75)",
+                borderRadius: 0,
+              },
+            }
+          : {}),
+      };
     });
-  }, [active, fireNodeClass]);
+  }, [active, fireNodeClass, selectedId]);
 
   const fireEdges = useMemo<Edge[]>(() => {
     // Shortest-side curved edges: side-by-side nodes attach left↔right instead of
@@ -3262,6 +3297,7 @@ export function EditorInner<TOutput>({
           setSelectedCollapsedEdgeId(null);
           setSelectedPromptGroupKey(null);
           setSelectedId(n.id);
+          onNodeActivate?.({ id: n.id, type: n.type, data: n.data as CanvasNodeData });
         }}
         onEdgeClick={(_, e) => {
           setSelectedCollapsedEdgeId(null);
@@ -3879,7 +3915,7 @@ export function EditorInner<TOutput>({
                     {labelTitle}
                   </label>
                   <InspectorAutoTextarea
-                    autoHeight={fullscreen || inspectorMaximized}
+                    autoHeight
                     value={
                       typeof selectedNode.data.label === "string"
                         ? selectedNode.data.label

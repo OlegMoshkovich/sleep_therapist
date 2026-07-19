@@ -114,15 +114,21 @@ export function SimulationPanel({
   const [error, setError] = useState("");
   // The run whose scenario is shown in the info modal (null = closed).
   const [infoRun, setInfoRun] = useState<SimRun | null>(null);
+  // How-to-use modal for the Simulation tab (same pattern as Observability).
+  const [helpOpen, setHelpOpen] = useState(false);
   const abortRef = useRef(false);
   const pausedRef = useRef(false);
 
   useEffect(() => {
-    if (!infoRun) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setInfoRun(null); };
+    if (!infoRun && !helpOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (infoRun) setInfoRun(null);
+      else setHelpOpen(false);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [infoRun]);
+  }, [infoRun, helpOpen]);
 
   // Resolves once the run is un-paused (or aborted). Called between turns so the
   // trace for the turn that just finished stays put while you inspect it.
@@ -253,6 +259,21 @@ export function SimulationPanel({
 
   return createPortal(
     <div className="sim-panel">
+      <div className="drawer-subhead">
+        <span className="obs-sub">Run a simulated patient against your setup</span>
+        <div className="drawer-subhead-actions">
+          <button
+            type="button"
+            className="obs-info-btn"
+            aria-label="How to use simulation"
+            title="How to use simulation"
+            onClick={() => setHelpOpen(true)}
+          >
+            <Ic.Info size={16} />
+          </button>
+        </div>
+      </div>
+
       <div className="sim-setup">
         <label className="sim-label" htmlFor="sim-scenario">Patient scenario</label>
         <textarea
@@ -289,13 +310,6 @@ export function SimulationPanel({
         </div>
         {status && <div className="sim-status">{status}</div>}
         {error && <div className="sim-error">{error}</div>}
-      </div>
-
-      <div className="sim-note">
-        The run drives the real pipeline: the conversation appears in the main chat
-        window and is saved as a run below, the step-by-step traces fill the
-        Observability tab, and the policy canvas animates each turn. Switch to
-        Observability or Model Setup while it runs to watch.
       </div>
 
       <div className="sim-runs">
@@ -371,6 +385,8 @@ export function SimulationPanel({
         )}
       </div>
 
+      {helpOpen && <SimulationInfoModal onClose={() => setHelpOpen(false)} />}
+
       {infoRun && (
         <div className="sim-info-overlay" role="dialog" aria-modal="true" onClick={() => setInfoRun(null)}>
           <div className="sim-info" onClick={(e) => e.stopPropagation()}>
@@ -407,5 +423,89 @@ export function SimulationPanel({
       )}
     </div>,
     slot
+  );
+}
+
+/** How-to-use modal for the Simulation tab — same chrome as Observability’s info panel. */
+function SimulationInfoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div
+      className="obs-info-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="How to use simulation"
+      onClick={onClose}
+    >
+      <div className="obs-info-card" onClick={(e) => e.stopPropagation()}>
+        <div className="obs-info-head">
+          <span className="obs-info-title">How to use simulation</span>
+          <button
+            type="button"
+            className="obs-info-close"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            <Ic.Close size={16} />
+          </button>
+        </div>
+
+        <div className="obs-info-body">
+          <p>
+            Simulation runs a fake patient against your <b>real</b> sleep-therapist
+            pipeline — the same path a hand-typed chat takes — so you can stress-test
+            State, Policy, and prompts without typing every turn yourself.
+          </p>
+
+          <div className="obs-info-step">
+            <div className="obs-info-step-n">1</div>
+            <div>
+              <div className="obs-info-step-t">Set the patient scenario</div>
+              <p>
+                Describe who the patient is and what they&apos;re dealing with
+                (age, symptoms, recent events). Leave it blank to let the patient
+                improvise from a generic sleeper profile.
+              </p>
+            </div>
+          </div>
+
+          <div className="obs-info-step">
+            <div className="obs-info-step-n">2</div>
+            <div>
+              <div className="obs-info-step-t">Choose how many turns</div>
+              <p>
+                Each turn is one patient message plus one assistant reply. Start
+                with a few turns to sanity-check the flow; raise the count when you
+                want a longer conversation.
+              </p>
+            </div>
+          </div>
+
+          <div className="obs-info-step">
+            <div className="obs-info-step-n">3</div>
+            <div>
+              <div className="obs-info-step-t">Run, pause, or stop</div>
+              <p>
+                Press <b>Run simulation</b>. While it&apos;s going, use{" "}
+                <b>Pause</b> / <b>Stop</b> in the drawer tab bar (or the floating
+                controls if the drawer is closed) to inspect a turn mid-run.
+              </p>
+            </div>
+          </div>
+
+          <div className="obs-info-h">What the run drives</div>
+          <p>
+            The run drives the real pipeline: the conversation appears in the main
+            chat window and is saved as a run below, the step-by-step traces fill
+            the <b>Observability</b> tab, and the policy canvas animates each turn.
+            Switch to Observability or Model Setup while it runs to watch.
+          </p>
+
+          <p className="obs-info-note">
+            Past runs stay in the <b>Runs</b> list. Click one to reopen it in chat;
+            use its info icon to read the scenario that drove it.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
