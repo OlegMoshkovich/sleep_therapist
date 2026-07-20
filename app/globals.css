@@ -257,3 +257,21 @@ html {
     min-height: -webkit-fill-available;
   }
 }
+
+/* Clerk: uniform 1px grey borders on form controls */
+.cl-socialButtonsBlockButton,
+.cl-formFieldInput,
+.cl-formButtonPrimary,
+.cl-otpCodeFieldInput,
+.cl-lastAuthenticationStrategyBadge {
+  border: 1px solid #d1d5db !important;
+  box-shadow: none !important;
+}
+.cl-socialButtonsBlockButton:hover,
+.cl-socialButtonsBlockButton:hover .cl-socialButtonsBlockButtonText,
+.cl-socialButtonsBlockButton:hover span {
+  color: #ffffff !important;
+}
+.cl-formButtonPrimary:hover {
+  color: #ffffff !important;
+}

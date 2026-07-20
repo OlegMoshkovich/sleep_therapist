@@ -20,13 +20,11 @@ const homeAppearance = {
   ...clerkAppearance,
   variables: {
     ...clerkAppearance.variables,
-    // Match the rest of the landing page instead of Clerk's serif default.
     fontFamily: "var(--font-sans)",
   },
   elements: {
     ...clerkAppearance.elements,
-    // Fill the available width and cap at CONTENT_WIDTH, so the card shrinks to
-    // fit (and stays centered) on mobile instead of overflowing at a fixed size.
+    // Pin width only — leave Clerk’s default form layout untouched.
     rootBox: { width: "100%", maxWidth: CONTENT_WIDTH },
     card: {
       ...clerkAppearance.elements.card,
@@ -35,8 +33,6 @@ const homeAppearance = {
       border: "none",
       boxShadow: "none",
     },
-    // Smaller input + placeholder text than Clerk's default sizing.
-    formFieldInput: `${clerkAppearance.elements.formFieldInput} text-sm placeholder:text-sm`,
   },
 };
 
@@ -87,10 +83,11 @@ function HomeContent() {
     >
       <Splash />
       <p
-        className="text-sm font-normal text-black/50"
+        className="font-bold text-black"
         style={{
           fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
           letterSpacing: "normal",
+          fontSize: "16px",
         }}
       >
         The AI Research lab
