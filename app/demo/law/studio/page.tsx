@@ -1844,14 +1844,6 @@ function Composer({
               <button
                 type="button"
                 className="thread-collapse-all"
-                onClick={onOpenThreadFullscreen}
-                title="View conversation full screen from the first message"
-              >
-                Fullscreen
-              </button>
-              <button
-                type="button"
-                className="thread-collapse-all"
                 onClick={onToggleCollapseAll}
                 title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
               >
@@ -1863,6 +1855,14 @@ function Composer({
                     Collapse all
                   </span>
                 </span>
+              </button>
+              <button
+                type="button"
+                className="thread-collapse-all"
+                onClick={onOpenThreadFullscreen}
+                title="View conversation full screen from the first message"
+              >
+                Fullscreen
               </button>
             </div>
             <div className="composer-thread-controls-right" ref={modelMenuRef}>
@@ -1993,38 +1993,41 @@ function Composer({
       </div>
       {v2ModalOpen && (
         <div
-          className="thread-model-v2-overlay"
+          className="obs-info-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="thread-model-v2-title"
           onClick={() => setV2ModalOpen(false)}
         >
-          <div className="thread-model-v2-card" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="thread-model-v2-close"
-              aria-label="Close"
-              onClick={() => setV2ModalOpen(false)}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M18 6L6 18M6 6l12 12" />
-              </svg>
-            </button>
-            <p className="thread-model-v2-eyebrow">Custom model</p>
-            <h2 id="thread-model-v2-title" className="thread-model-v2-title">
-              Move to V2
-            </h2>
-            <p className="thread-model-v2-body">
-              All the information defined in the policy and state, and all the
-              feedback you have provided, will be used to train the V2 custom model.
-            </p>
-            <button
-              type="button"
-              className="thread-model-v2-ok"
-              onClick={() => setV2ModalOpen(false)}
-            >
-              Got it
-            </button>
+          <div className="obs-info-card" onClick={(e) => e.stopPropagation()}>
+            <div className="obs-info-head">
+              <span id="thread-model-v2-title" className="obs-info-title">
+                Move to V2
+              </span>
+              <button
+                type="button"
+                className="obs-info-close"
+                aria-label="Close"
+                onClick={() => setV2ModalOpen(false)}
+              >
+                <Ic.Close size={16} />
+              </button>
+            </div>
+            <div className="obs-info-body">
+              <p>
+                All the information defined in the <b>policy</b> and <b>state</b>, and all
+                the feedback you have provided, will be used to train the V2 custom model.
+              </p>
+              <div className="obs-info-actions">
+                <button
+                  type="button"
+                  className="obs-info-btn primary"
+                  onClick={() => setV2ModalOpen(false)}
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

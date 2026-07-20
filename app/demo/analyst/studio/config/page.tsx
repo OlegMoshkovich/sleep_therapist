@@ -351,6 +351,7 @@ function KnowledgePane({
   const [drag, setDrag] = useState(false);
   // Accordion: which guideline rows are expanded (collapsed by default).
   const [openRows, setOpenRows] = useState<Set<number>>(() => new Set());
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
   const fileRef = React.useRef<HTMLInputElement>(null);
   const add = (l: FileList) => setFiles((f) => [...f, ...Array.from(l).map((x) => x.name)]);
 
@@ -483,18 +484,19 @@ function KnowledgePane({
                 ) : (
                   <span style={{ flex: 1 }} />
                 )}
-                <span className="meta">{GUIDELINE_ITEMS_COLUMN_NAME}</span>
-                <button
-                  className="sc-row-x"
-                  title="Remove"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeRow(i);
-                  }}
-                  style={{ marginLeft: 8 }}
-                >
-                  ×
-                </button>
+                {open && (
+                  <button
+                    type="button"
+                    className="sc-guide-delete"
+                    title="Delete guideline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPendingDelete(i);
+                    }}
+                  >
+                    delete
+                  </button>
+                )}
               </div>
               {open && (
                 <div className="sc-block-b sc-guide-body">
@@ -511,6 +513,56 @@ function KnowledgePane({
           );
         })}
       </div>
+
+      {pendingDelete !== null && (
+        <div
+          className="obs-info-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sc-guide-delete-title"
+          onClick={() => setPendingDelete(null)}
+        >
+          <div className="obs-info-card" onClick={(e) => e.stopPropagation()}>
+            <div className="obs-info-head">
+              <span id="sc-guide-delete-title" className="obs-info-title">
+                Delete guideline?
+              </span>
+              <button
+                type="button"
+                className="obs-info-close"
+                aria-label="Close"
+                onClick={() => setPendingDelete(null)}
+              >
+                <Ic.Close size={16} />
+              </button>
+            </div>
+            <div className="obs-info-body">
+              <p>
+                This removes the guideline row. You can&apos;t undo this.
+              </p>
+              <div className="obs-info-actions">
+                <button
+                  type="button"
+                  className="obs-info-btn"
+                  onClick={() => setPendingDelete(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="obs-info-btn primary"
+                  onClick={() => {
+                    removeRow(pendingDelete);
+                    setPendingDelete(null);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2085,32 +2137,37 @@ export function SetupBar({
 
   // Save lives on the section nav bar itself (no separate title row). The
   // pop-out-to-floating-window control was removed per request.
-  const navActions = active ? (
-    <div className="obs-setup-actions">
-      {setup.canEdit ? (
+  const navActions = (() => {
+    if (!active) return null;
+    if (!setup.canEdit) {
+      return (
+        <div className="obs-setup-actions">
+          <span className="obs-setup-action" style={{ opacity: 0.6 }}>Read-only</span>
+        </div>
+      );
+    }
+    if (!(setup.dirty || setup.saving)) return null;
+    return (
+      <div className="obs-setup-actions">
         <button
           type="button"
-          className={"obs-setup-action" + (setup.dirty && !setup.saving ? " dirty" : "")}
+          className="obs-setup-action"
           onClick={() => void setup.save()}
-          disabled={setup.saving || !setup.dirty}
-          title={setup.dirty ? "You have unsaved changes" : "No changes to save"}
+          disabled={setup.saving}
+          title="You have unsaved changes"
         >
           {setup.saving ? (
             "Saving…"
-          ) : setup.dirty ? (
+          ) : (
             <>
               <span className="unsaved-dot" aria-hidden />
               Save
             </>
-          ) : (
-            "Save"
           )}
         </button>
-      ) : (
-        <span className="obs-setup-action" style={{ opacity: 0.6 }}>Read-only</span>
-      )}
-    </div>
-  ) : null;
+      </div>
+    );
+  })();
 
   // The docked chrome (section nav + inline pane) lives inside the drawer via
   // the `slot` portal target. The floating window is portaled to <body> and is
@@ -2139,16 +2196,18 @@ export function SetupBar({
             </button>
           );
         })}
-        {!canvasSection ? navActions : null}
-        <button
-          type="button"
-          className="obs-setup-info"
-          aria-label="How each turn reaches the model"
-          title="How each turn reaches the model — full prompts & order"
-          onClick={() => setCompileInfoOpen(true)}
-        >
-          <Ic.Info size={16} />
-        </button>
+        <div className="obs-setup-trailing">
+          {!canvasSection ? navActions : null}
+          <button
+            type="button"
+            className="obs-setup-info"
+            aria-label="How each turn reaches the model"
+            title="How each turn reaches the model — full prompts & order"
+            onClick={() => setCompileInfoOpen(true)}
+          >
+            <Ic.Info size={16} />
+          </button>
+        </div>
       </div>
       {compileInfoOpen && <CompilationInfoModal onClose={() => setCompileInfoOpen(false)} />}
 
