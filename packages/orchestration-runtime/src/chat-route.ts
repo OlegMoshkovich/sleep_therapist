@@ -154,8 +154,11 @@ interface ChatRouteSupabaseClient {
 }
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.4";
-/** Models the studio Model menu may request; anything else falls back to default. */
-const ALLOWED_CHAT_MODELS = new Set(["gpt-5.4", "gpt-5.4-mini"]);
+/** Studio Model menu ids → real OpenAI model. Custom V1 is a placeholder for now. */
+const CHAT_MODEL_RESOLVE: Record<string, string> = {
+  "gpt-5.4": "gpt-5.4",
+  "custom-v1": "gpt-5.4",
+};
 const chatModelStore = new AsyncLocalStorage<string>();
 function resolveOpenAIModel(): string {
   return chatModelStore.getStore() ?? DEFAULT_OPENAI_MODEL;
@@ -163,7 +166,7 @@ function resolveOpenAIModel(): string {
 function resolveRequestChatModel(raw: unknown): string {
   if (typeof raw === "string") {
     const id = raw.trim();
-    if (ALLOWED_CHAT_MODELS.has(id)) return id;
+    if (id in CHAT_MODEL_RESOLVE) return CHAT_MODEL_RESOLVE[id]!;
   }
   return DEFAULT_OPENAI_MODEL;
 }

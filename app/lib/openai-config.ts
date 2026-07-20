@@ -1,14 +1,27 @@
 export const OPENAI_MODEL = "gpt-5.4" as const;
 
-/** Studio composer model picker — must stay in sync with chat-route allowlist. */
+/** Studio composer model picker — must stay in sync with chat-route allowlist.
+ * Custom V1 is a placeholder id (server maps it to gpt-5.4 for now).
+ * "move to V2" is an action, not a selectable chat model. */
 export const CHAT_MODEL_OPTIONS = [
-  { id: "gpt-5.4", label: "GPT-5.4" },
-  { id: "gpt-5.4-mini", label: "GPT-5.4 Mini" },
+  { id: "gpt-5.4", label: "GPT-5.4", kind: "model" },
+  { id: "custom-v1", label: "Custom V1", kind: "model" },
+  { id: "move-to-v2", label: "move to V2", kind: "action" },
 ] as const;
 
-export type ChatModelId = (typeof CHAT_MODEL_OPTIONS)[number]["id"];
+export type ChatModelOptionId = (typeof CHAT_MODEL_OPTIONS)[number]["id"];
+export type ChatModelId = Extract<
+  (typeof CHAT_MODEL_OPTIONS)[number],
+  { kind: "model" }
+>["id"];
 
 export const CHAT_MODEL_PREF_KEY = "studio-chat-model";
+
+export function isChatModelId(value: string): value is ChatModelId {
+  return CHAT_MODEL_OPTIONS.some(
+    (opt) => opt.kind === "model" && opt.id === value
+  );
+}
 
 export function resolveOptionalOpenAiApiKey(): string | null {
   return (

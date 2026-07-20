@@ -1365,6 +1365,26 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   padding:8px 10px;cursor:pointer;}
 .ra-scope .thread-model-option:hover{color:var(--text);background:var(--surface-2);}
 .ra-scope .thread-model-option.selected{color:var(--text);font-weight:500;}
+.ra-scope .thread-model-v2-overlay,.thread-model-v2-overlay{position:fixed;inset:0;z-index:1000;display:flex;
+  align-items:center;justify-content:center;background:rgba(0,0,0,0.5);padding:32px;
+  animation:ra-fadeUp .16s ease both;}
+.ra-scope .thread-model-v2-card,.thread-model-v2-card{position:relative;width:min(480px,100%);
+  background:var(--surface,#fff);border:1px solid var(--line,#e5e5e5);border-radius:16px;
+  padding:26px 28px 22px;box-shadow:0 24px 60px rgba(0,0,0,0.25);box-sizing:border-box;}
+.ra-scope .thread-model-v2-close,.thread-model-v2-close{position:absolute;top:12px;right:12px;display:flex;
+  align-items:center;justify-content:center;width:32px;height:32px;border:none;background:transparent;
+  color:var(--text-3,#888);border-radius:8px;cursor:pointer;}
+.ra-scope .thread-model-v2-close:hover,.thread-model-v2-close:hover{background:var(--surface-2,#f3f3f3);color:var(--text,#111);}
+.ra-scope .thread-model-v2-eyebrow,.thread-model-v2-eyebrow{margin:0;font-family:inherit;font-size:11px;
+  font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text-4,#999);}
+.ra-scope .thread-model-v2-title,.thread-model-v2-title{margin:6px 0 12px;font-family:inherit;font-size:18px;
+  font-weight:600;line-height:1.35;color:var(--text,#111);padding-right:32px;}
+.ra-scope .thread-model-v2-body,.thread-model-v2-body{margin:0 0 18px;font-family:inherit;font-size:14.5px;
+  line-height:1.55;color:var(--text-2,#444);}
+.ra-scope .thread-model-v2-ok,.thread-model-v2-ok{display:inline-flex;align-items:center;justify-content:center;
+  font-family:inherit;font-size:13px;font-weight:500;color:var(--text,#111);background:var(--surface-2,#f3f3f3);
+  border:1px solid var(--line,#e5e5e5);border-radius:999px;padding:8px 16px;cursor:pointer;}
+.ra-scope .thread-model-v2-ok:hover,.thread-model-v2-ok:hover{border-color:var(--text-4,#999);}
 .ra-scope .thread-collapse-all{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:5px;
   font-family:inherit;font-size:12px;font-weight:400;line-height:1;color:var(--text-2);
   background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;

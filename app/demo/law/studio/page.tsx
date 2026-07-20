@@ -32,16 +32,13 @@ import {
   CHAT_MODEL_OPTIONS,
   CHAT_MODEL_PREF_KEY,
   OPENAI_MODEL,
+  isChatModelId,
   type ChatModelId,
 } from "../../../lib/openai-config";
 
 // Simulation conversations are titled "Simulation · …"; this prefix separates
 // them from hand-typed chats (they show in the Simulation panel, not the sidebar).
 const SIM_TITLE_PREFIX = "Simulation · ";
-
-function isChatModelId(value: string): value is ChatModelId {
-  return CHAT_MODEL_OPTIONS.some((opt) => opt.id === value);
-}
 
 const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
 /* v2: black & white is the default; old key auto-wrote "0" for greige. */
@@ -1767,6 +1764,7 @@ function Composer({
   onSelectModel?: (model: ChatModelId) => void;
 }) {
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
+  const [v2ModalOpen, setV2ModalOpen] = useState(false);
   const modelMenuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!modelMenuOpen) return;
@@ -1884,14 +1882,19 @@ function Composer({
                     <button
                       key={opt.id}
                       type="button"
-                      role="menuitemradio"
-                      aria-checked={selectedModel === opt.id}
+                      role={opt.kind === "action" ? "menuitem" : "menuitemradio"}
+                      aria-checked={opt.kind === "model" ? selectedModel === opt.id : undefined}
                       className={
-                        "thread-model-option" + (selectedModel === opt.id ? " selected" : "")
+                        "thread-model-option" +
+                        (opt.kind === "model" && selectedModel === opt.id ? " selected" : "")
                       }
                       onClick={() => {
-                        onSelectModel?.(opt.id);
                         setModelMenuOpen(false);
+                        if (opt.kind === "action") {
+                          setV2ModalOpen(true);
+                          return;
+                        }
+                        onSelectModel?.(opt.id);
                       }}
                     >
                       {opt.label}
@@ -1988,6 +1991,43 @@ function Composer({
         </div>
         </div>
       </div>
+      {v2ModalOpen && (
+        <div
+          className="thread-model-v2-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="thread-model-v2-title"
+          onClick={() => setV2ModalOpen(false)}
+        >
+          <div className="thread-model-v2-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="thread-model-v2-close"
+              aria-label="Close"
+              onClick={() => setV2ModalOpen(false)}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+            <p className="thread-model-v2-eyebrow">Custom model</p>
+            <h2 id="thread-model-v2-title" className="thread-model-v2-title">
+              Move to V2
+            </h2>
+            <p className="thread-model-v2-body">
+              All the information defined in the policy and state, and all the
+              feedback you have provided, will be used to train the V2 custom model.
+            </p>
+            <button
+              type="button"
+              className="thread-model-v2-ok"
+              onClick={() => setV2ModalOpen(false)}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
       <style jsx>{`
         @keyframes voice-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(240, 80, 37, 0.55); }
