@@ -361,7 +361,7 @@ export function SimulationPanel({
           {running ? (
             // Pause/Stop live in the drawer tab bar (next to ×) while running.
             <span className="sim-btn-lead sim-running-hint">
-              {paused ? "Paused" : "Running…"}
+              {paused ? "Simulation paused" : "Simulation running…"}
             </span>
           ) : (
             <button type="button" className="sim-btn sim-btn-run sim-btn-lead" onClick={run}>Run simulation</button>

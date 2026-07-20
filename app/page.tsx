@@ -83,25 +83,18 @@ function HomeContent() {
   return (
     <main
       className="flex min-h-[100dvh] flex-col items-center justify-start gap-10 px-6 pb-12 pt-24"
-      style={{ backgroundColor: "#E1DECF" }}
+      style={{ backgroundColor: "#ffffff" }}
     >
       <Splash />
-      <div className="text-center">
-        <p className="text-xs uppercase tracking-[0.28em] text-black/50">The AI Research Lab</p>
-        <h1
-          className="mt-3 text-3xl font-normal text-black sm:text-4xl"
-          style={{ fontFamily: "var(--font-sans)" }}
-        >
-          Sleep Assistant
-        </h1>
-        <p
-          className="mx-auto mt-4 text-sm leading-relaxed text-black/60"
-          style={{ maxWidth: CONTENT_WIDTH }}
-        >
-          An AI sleep expert that reviews sleep logs, screens for red flags, and helps build a
-          routine that sticks. Educational coaching only, not a diagnosis or medical treatment.
-        </p>
-      </div>
+      <p
+        className="text-sm font-normal text-black/50"
+        style={{
+          fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
+          letterSpacing: "normal",
+        }}
+      >
+        The AI Research lab
+      </p>
 
       {/* Fixed-height slot so the form → loading → button swap on login never
           changes the layout height (which otherwise makes the page jump). */}

@@ -995,21 +995,29 @@ function BubbleMarkdown({ children }: { children: string }) {
  * signal, which tints the bubble and shows in the message's feedback component.
  */
 function BubbleFullscreen({
-  text,
+  messages,
+  startIndex,
   feedbackMode,
-  initialEntries,
-  onSubmitFeedback,
+  feedbackByIdx,
+  onSubmitFeedbackAt,
   onClose,
 }: {
-  text: string;
+  messages: Message[];
+  startIndex: number;
   feedbackMode?: boolean;
-  initialEntries?: FeedbackEntry[];
-  onSubmitFeedback?: (entries: FeedbackEntry[]) => void;
+  feedbackByIdx?: Record<number, FeedbackEntry[]>;
+  onSubmitFeedbackAt?: (index: number, entries: FeedbackEntry[]) => void;
   onClose: () => void;
 }) {
-  const canFeedback = !!onSubmitFeedback;
-  const existingIdeal = initialEntries?.find((e) => e.signal === "correct_output")?.comment ?? "";
-  const existingRating = initialEntries?.find((e) => e.signal === "score")?.rating ?? null;
+  const [index, setIndex] = useState(() =>
+    Math.min(Math.max(0, startIndex), Math.max(0, messages.length - 1))
+  );
+  const m = messages[index] ?? messages[0];
+  const text = m?.text ?? "";
+  const initialEntries = feedbackByIdx?.[index] ?? [];
+  const canFeedback = !!onSubmitFeedbackAt;
+  const existingIdeal = initialEntries.find((e) => e.signal === "correct_output")?.comment ?? "";
+  const existingRating = initialEntries.find((e) => e.signal === "score")?.rating ?? null;
   // Feedback edit mode: opened by the Feedback button (or straight away when the
   // studio's global feedback mode is on). Prefill with a prior correction if any.
   const [editing, setEditing] = useState(!!feedbackMode && canFeedback);
@@ -1017,16 +1025,47 @@ function BubbleFullscreen({
   const [rating, setRating] = useState<1 | -1 | null>(existingRating);
   const [saved, setSaved] = useState(false);
 
+  const canPrev = index > 0;
+  const canNext = index < messages.length - 1;
+  const goPrev = () => setIndex((i) => Math.max(0, i - 1));
+  const goNext = () => setIndex((i) => Math.min(messages.length - 1, i + 1));
+
+  // Reset editor state when cycling to another message.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    const entries = feedbackByIdx?.[index] ?? [];
+    const ideal = entries.find((e) => e.signal === "correct_output")?.comment ?? "";
+    const score = entries.find((e) => e.signal === "score")?.rating ?? null;
+    const body = messages[index]?.text ?? "";
+    setEditing(!!feedbackMode && canFeedback);
+    setDraft(ideal || body);
+    setRating(score);
+    setSaved(false);
+  }, [index, feedbackMode, canFeedback, feedbackByIdx, messages]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "TEXTAREA" || tag === "INPUT") return;
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        goPrev();
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        goNext();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, messages.length]);
 
   const submit = () => {
-    if (!onSubmitFeedback) return;
+    if (!onSubmitFeedbackAt) return;
     // Preserve any other signals already on this message; replace score + ideal.
-    const kept = (initialEntries ?? []).filter(
+    const kept = (feedbackByIdx?.[index] ?? []).filter(
       (e) => e.signal !== "score" && e.signal !== "correct_output"
     );
     const entries: FeedbackEntry[] = [...kept];
@@ -1035,10 +1074,12 @@ function BubbleFullscreen({
     if (corrected && corrected !== text.trim()) {
       entries.push({ rating: null, signal: "correct_output", comment: corrected });
     }
-    onSubmitFeedback(entries);
+    onSubmitFeedbackAt(index, entries);
     setSaved(true);
     setTimeout(() => setSaved(false), 1600);
   };
+
+  const roleTitle = m?.role === "user" ? "You" : "Sleep Assistant";
 
   // Mount inside `.ra-scope` so theme tokens (mono accent, surfaces) apply —
   // portaling to <body> left the modal on the fallback orange accent.
@@ -1047,55 +1088,44 @@ function BubbleFullscreen({
       (document.querySelector(".ra-scope") as HTMLElement | null)) ||
     document.body;
 
+  const nav = (
+    <div className="bubble-fs-nav">
+      <button
+        type="button"
+        className="bubble-fs-nav-btn"
+        aria-label="Previous message"
+        title="Previous message"
+        disabled={!canPrev}
+        onClick={goPrev}
+      >
+        <Ic.Chevron size={18} style={{ transform: "rotate(90deg)" }} />
+      </button>
+      <span className="bubble-fs-nav-count" aria-live="polite">
+        {messages.length === 0 ? "0 / 0" : `${index + 1} / ${messages.length}`}
+      </span>
+      <button
+        type="button"
+        className="bubble-fs-nav-btn"
+        aria-label="Next message"
+        title="Next message"
+        disabled={!canNext}
+        onClick={goNext}
+      >
+        <Ic.Chevron size={18} style={{ transform: "rotate(-90deg)" }} />
+      </button>
+    </div>
+  );
+
   return createPortal(
     <div className="bubble-fs-overlay" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="bubble-fs" onClick={(e) => e.stopPropagation()}>
         <div className="bubble-fs-head">
           <div className="bubble-fs-head-left">
-            {canFeedback && !editing && (
-              <button type="button" className="bubble-fs-fb" onClick={() => setEditing(true)}>
-                <Ic.Edit size={15} /> Feedback
-              </button>
-            )}
-            {editing && (
-              <>
-                <div className="bubble-fs-thumbs">
-                  <button
-                    type="button"
-                    className={"bubble-fs-thumb" + (rating === 1 ? " active" : "")}
-                    title="Thumbs up"
-                    onClick={() => setRating((r) => (r === 1 ? null : 1))}
-                  >
-                    👍
-                  </button>
-                  <button
-                    type="button"
-                    className={"bubble-fs-thumb" + (rating === -1 ? " active" : "")}
-                    title="Thumbs down"
-                    onClick={() => setRating((r) => (r === -1 ? null : -1))}
-                  >
-                    👎
-                  </button>
-                </div>
-                <span className="bubble-fs-hint">Edit the answer, then submit it as the ideal response.</span>
-              </>
-            )}
+            <div className="bubble-fs-title-block">
+              <div className="bubble-fs-title">{roleTitle}</div>
+            </div>
           </div>
           <div className="bubble-fs-head-right">
-            {editing && (
-              <>
-                <button
-                  type="button"
-                  className="bubble-fs-cancel"
-                  onClick={() => { setEditing(false); setDraft(existingIdeal || text); }}
-                >
-                  Cancel
-                </button>
-                <button type="button" className="bubble-fs-submit" onClick={submit}>
-                  {saved ? "Saved" : "Submit feedback"}
-                </button>
-              </>
-            )}
             <button
               className="bubble-fs-close"
               type="button"
@@ -1116,8 +1146,67 @@ function BubbleFullscreen({
               spellCheck
               autoFocus
             />
+          ) : m?.role === "user" ? (
+            text
           ) : (
             <BubbleMarkdown>{text}</BubbleMarkdown>
+          )}
+        </div>
+        <div className="bubble-fs-foot">
+          {editing ? (
+            <>
+              <div className="bubble-fs-foot-left">
+                <div className="bubble-fs-thumbs">
+                  <button
+                    type="button"
+                    className={"bubble-fs-thumb" + (rating === 1 ? " active" : "")}
+                    title="Thumbs up"
+                    onClick={() => setRating((r) => (r === 1 ? null : 1))}
+                  >
+                    👍
+                  </button>
+                  <button
+                    type="button"
+                    className={"bubble-fs-thumb" + (rating === -1 ? " active" : "")}
+                    title="Thumbs down"
+                    onClick={() => setRating((r) => (r === -1 ? null : -1))}
+                  >
+                    👎
+                  </button>
+                </div>
+                <span className="bubble-fs-hint">Edit the answer, then submit it as the ideal response.</span>
+              </div>
+              <div className="bubble-fs-foot-right">
+                <button
+                  type="button"
+                  className="bubble-fs-cancel"
+                  onClick={() => {
+                    setEditing(false);
+                    setDraft(existingIdeal || text);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="button" className="bubble-fs-submit" onClick={submit}>
+                  {saved ? "Saved" : "Submit feedback"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bubble-fs-foot-left">{nav}</div>
+              {canFeedback ? (
+                <div className="bubble-fs-foot-right">
+                  <VoiceFeedbackButton
+                    existing={initialEntries}
+                    onSubmit={(entries) => onSubmitFeedbackAt?.(index, entries)}
+                  />
+                  <button type="button" className="bubble-fs-fb" onClick={() => setEditing(true)}>
+                    <Ic.Edit size={15} /> Feedback
+                  </button>
+                </div>
+              ) : null}
+            </>
           )}
         </div>
       </div>
@@ -1128,6 +1217,9 @@ function BubbleFullscreen({
 
 function Bubble({
   m,
+  messageIndex = 0,
+  messages: messagesProp,
+  feedbackByIdx,
   onOpenTrace,
   onOpenPolicy,
   onOpenState,
@@ -1136,12 +1228,16 @@ function Bubble({
   feedbackMode = false,
   feedbackEntries,
   onSubmitFeedback,
+  onSubmitFeedbackAt,
   collapsed = false,
   onToggleCollapse,
   hideControls = false,
   turnNumber,
 }: {
   m: Message;
+  messageIndex?: number;
+  messages?: Message[];
+  feedbackByIdx?: Record<number, FeedbackEntry[]>;
   onOpenTrace?: (turnId: string) => void;
   onOpenPolicy?: (turnId: string) => void;
   onOpenState?: (turnId: string) => void;
@@ -1152,6 +1248,7 @@ function Bubble({
   feedbackMode?: boolean;
   feedbackEntries?: FeedbackEntry[];
   onSubmitFeedback?: (entries: FeedbackEntry[]) => void;
+  onSubmitFeedbackAt?: (index: number, entries: FeedbackEntry[]) => void;
   /** When true the bubble is tucked to a single line. */
   collapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -1160,6 +1257,7 @@ function Bubble({
   /** 1-based turn index shown in the bubble top nav. */
   turnNumber?: number;
 }) {
+  const messages = messagesProp ?? [m];
   const [fullscreen, setFullscreen] = useState(false);
   // When global chrome is hidden, a click can reveal nav/footer for THIS bubble only.
   const [revealControls, setRevealControls] = useState(false);
@@ -1262,32 +1360,35 @@ function Bubble({
 
   const overlay = fullscreen ? (
     <BubbleFullscreen
-      text={m.text}
+      messages={messages}
+      startIndex={messageIndex}
       feedbackMode={feedbackMode}
-      initialEntries={feedbackEntries}
-      onSubmitFeedback={onSubmitFeedback}
+      feedbackByIdx={feedbackByIdx}
+      onSubmitFeedbackAt={onSubmitFeedbackAt ?? (onSubmitFeedback ? (_i, e) => onSubmitFeedback(e) : undefined)}
       onClose={() => setFullscreen(false)}
     />
   ) : null;
 
-  // Body click: reveal per-bubble controls when chrome is hidden; otherwise collapse.
+  // Body click: when chrome is hidden, toggle this bubble's controls;
+  // otherwise collapse/expand the message.
   const bodyToggleProps =
     onToggleCollapse || hideControls
       ? {
           role: "button" as const,
           tabIndex: 0,
-          title:
-            hideControls && !revealControls
-              ? "Click to show controls"
-              : collapsed
-                ? "Click to expand"
-                : "Click to collapse",
+          title: hideControls
+            ? revealControls
+              ? "Click to hide controls"
+              : "Click to show controls"
+            : collapsed
+              ? "Click to expand"
+              : "Click to collapse",
           // Ignore clicks that finish a text selection so highlight-drag doesn't toggle.
           onClick: () => {
             const sel = typeof window !== "undefined" ? window.getSelection() : null;
             if (sel && !sel.isCollapsed && (sel.toString() || "").length > 0) return;
-            if (hideControls && !revealControls) {
-              setRevealControls(true);
+            if (hideControls) {
+              setRevealControls((v) => !v);
               return;
             }
             onToggleCollapse?.();
@@ -1295,8 +1396,8 @@ function Bubble({
           onKeyDown: (e: React.KeyboardEvent) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
-              if (hideControls && !revealControls) {
-                setRevealControls(true);
+              if (hideControls) {
+                setRevealControls((v) => !v);
                 return;
               }
               onToggleCollapse?.();
@@ -1357,8 +1458,10 @@ function Bubble({
 function MessageRow({
   m,
   index,
+  messages,
   feedbackMode,
   entries,
+  feedbackByIdx,
   editing,
   onToggle,
   onSave,
@@ -1375,8 +1478,10 @@ function MessageRow({
 }: {
   m: Message;
   index: number;
+  messages: Message[];
   feedbackMode: boolean;
   entries: FeedbackEntry[];
+  feedbackByIdx: Record<number, FeedbackEntry[]>;
   editing: boolean;
   onToggle: (index: number) => void;
   onSave: (index: number, entries: FeedbackEntry[]) => void;
@@ -1395,6 +1500,9 @@ function MessageRow({
     <div className="msg-block">
       <Bubble
         m={m}
+        messageIndex={index}
+        messages={messages}
+        feedbackByIdx={feedbackByIdx}
         onOpenTrace={onOpenTrace}
         onOpenPolicy={onOpenPolicy}
         onOpenState={onOpenState}
@@ -1405,6 +1513,7 @@ function MessageRow({
         feedbackMode={feedbackMode}
         feedbackEntries={entries}
         onSubmitFeedback={allowFeedback ? (e) => onSave(index, e) : undefined}
+        onSubmitFeedbackAt={allowFeedback ? onSave : undefined}
         collapsed={collapsed}
         onToggleCollapse={onToggleCollapse}
         hideControls={hideControls}
@@ -1491,8 +1600,10 @@ function Thread({
             key={i}
             m={m}
             index={i}
+            messages={messages}
             feedbackMode={feedbackMode}
             entries={feedbackByIdx[i] ?? []}
+            feedbackByIdx={feedbackByIdx}
             editing={editingIdx === i}
             onToggle={onToggleFeedback}
             onSave={onSaveFeedback}
@@ -1571,6 +1682,7 @@ function Composer({
   onToggleCollapseAll,
   hideBubbleControls = true,
   onToggleHideBubbleControls,
+  onOpenThreadFullscreen,
 }: {
   value: string;
   setValue: (v: string) => void;
@@ -1591,6 +1703,7 @@ function Composer({
   onToggleCollapseAll?: () => void;
   hideBubbleControls?: boolean;
   onToggleHideBubbleControls?: () => void;
+  onOpenThreadFullscreen?: () => void;
 }) {
   const submit = () => {
     const v = value.trim();
@@ -1635,18 +1748,28 @@ function Composer({
         <div className="composer-stack">
         {showThreadControls && (
           <div className="composer-thread-controls">
-            <button
-              type="button"
-              className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
-              onClick={onToggleHideBubbleControls}
-              title={
-                hideBubbleControls
-                  ? "Show bubble nav and footer"
-                  : "Hide bubble nav and footer"
-              }
-            >
-              {hideBubbleControls ? "Show controls" : "Hide controls"}
-            </button>
+            <div className="composer-thread-controls-left">
+              <button
+                type="button"
+                className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
+                onClick={onToggleHideBubbleControls}
+                title={
+                  hideBubbleControls
+                    ? "Show bubble nav and footer"
+                    : "Hide bubble nav and footer"
+                }
+              >
+                {hideBubbleControls ? "Show controls" : "Hide controls"}
+              </button>
+              <button
+                type="button"
+                className="thread-collapse-all"
+                onClick={onOpenThreadFullscreen}
+                title="View conversation full screen from the first message"
+              >
+                Fullscreen
+              </button>
+            </div>
             <button
               type="button"
               className="thread-collapse-all"
@@ -2113,9 +2236,11 @@ function SleepStudioChat() {
   // the composer input; TODAY stays at the top of the message list.
   const [collapsedByIdx, setCollapsedByIdx] = useState<Record<number, boolean>>({});
   const [hideBubbleControls, setHideBubbleControls] = useState(true);
+  const [threadFullscreen, setThreadFullscreen] = useState(false);
   useEffect(() => {
     setHideBubbleControls(true);
     setCollapsedByIdx({});
+    setThreadFullscreen(false);
   }, [activeId]);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -3084,7 +3209,18 @@ function SleepStudioChat() {
               }}
               hideBubbleControls={hideBubbleControls}
               onToggleHideBubbleControls={() => setHideBubbleControls((v) => !v)}
+              onOpenThreadFullscreen={() => setThreadFullscreen(true)}
             />
+            {threadFullscreen && messages.length > 0 ? (
+              <BubbleFullscreen
+                messages={messages}
+                startIndex={0}
+                feedbackMode={feedbackMode}
+                feedbackByIdx={feedbackByIdx}
+                onSubmitFeedbackAt={isAdmin ? onSaveFeedback : undefined}
+                onClose={() => setThreadFullscreen(false)}
+              />
+            ) : null}
           </main>
 
           {/* Right rail: Workflow launcher; admins also get Model Setup.
@@ -3174,7 +3310,7 @@ function SleepStudioChat() {
           {simRunControls && openDrawers.length === 0 && (
             <div className="sim-run-controls-float" role="toolbar" aria-label="Simulation controls">
               <span className="sim-run-controls-float-label">
-                {simRunControls.paused ? "Paused" : "Running"}
+                {simRunControls.paused ? "Simulation paused" : "Simulation running"}
               </span>
               {simRunControls.paused ? (
                 <button type="button" className="sim-btn sim-btn-run" onClick={simRunControls.resume}>Resume</button>

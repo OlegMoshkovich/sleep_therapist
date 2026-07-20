@@ -21,10 +21,10 @@ export type SimRun = {
 function parseRunTitle(title: string): { turns: string | null; scenario: string } {
   const parts = title.split(" · ");
   if (parts.length >= 3 && /\bturns?\b/i.test(parts[1])) {
-    return { turns: parts[1], scenario: parts.slice(2).join(" · ").trim() || "Improvised patient" };
+    return { turns: parts[1], scenario: parts.slice(2).join(" · ").trim() || "Improvised user" };
   }
   const rest = parts.slice(1).join(" · ").trim();
-  return { turns: null, scenario: rest && rest !== "run" ? rest : "Improvised patient" };
+  return { turns: null, scenario: rest && rest !== "run" ? rest : "Improvised user" };
 }
 
 /** Short relative time like "2h ago" / "3d ago" from an ISO timestamp. */
@@ -43,6 +43,50 @@ function relativeTime(iso?: string): string {
   return new Date(then).toLocaleDateString();
 }
 
+/** Ready-made market scenarios shown in the Examples modal. */
+const SCENARIO_EXAMPLES: { title: string; text: string }[] = [
+  {
+    title: "NVDA after earnings",
+    text: "A retail investor wants to understand how NVIDIA (NVDA) is trading after its latest earnings — the recent move, valuation, and whether momentum looks stretched — over the next week or two.",
+  },
+  {
+    title: "S&P 500 direction",
+    text: "Someone with a 401(k) is nervous about the S&P 500 near highs and wants a read on the index's trend, breadth, and the main risks (rates, earnings) over the next month.",
+  },
+  {
+    title: "Bond yields and rates",
+    text: "A user asks what the US 10-year Treasury yield is doing and what rising or falling yields would mean for stocks and their bond fund over the next few months.",
+  },
+  {
+    title: "Bitcoin volatility",
+    text: "A curious investor wants to understand bitcoin's recent price action and volatility, and how it compares to equities, to decide whether a small allocation makes sense — general context only.",
+  },
+  {
+    title: "Tech sector rotation",
+    text: "A user has heard money is rotating out of big tech and wants to know whether the Nasdaq is underperforming the broader market and what could be driving it.",
+  },
+  {
+    title: "Oil / energy outlook",
+    text: "Someone asks about crude oil prices and energy stocks — the recent trend, what's moving them (supply, demand, geopolitics), and the near-term outlook.",
+  },
+  {
+    title: "Dividend stock check",
+    text: "A retiree wants a read on a large dividend-paying stock like Coca-Cola (KO): current level, valuation, and whether its recent move signals anything about stability.",
+  },
+  {
+    title: "Comparing two stocks",
+    text: "A user wants to compare Apple (AAPL) and Microsoft (MSFT) — recent performance, valuation, and momentum — to understand which has looked stronger lately.",
+  },
+  {
+    title: "The dollar and FX",
+    text: "Someone traveling abroad asks what the US dollar has been doing and how a stronger or weaker dollar affects markets and multinational earnings.",
+  },
+  {
+    title: "Volatile market day",
+    text: "During a sharp sell-off, an anxious investor asks what's happening in the market today, how bad the move is versus history (VIX), and whether they should be worried.",
+  },
+];
+
 /**
  * The live run controls, lifted out of the panel body so the drawer tab bar can
  * render Pause/Stop next to its × while a run is in progress. `null` when idle.
@@ -58,7 +102,7 @@ export type SimulationController = {
   /** Clear the thread and arm the next send() to open a titled simulation conversation. */
   begin: (scenario: string, turns: number) => void;
   /**
-   * Send one user message through the REAL sleep-therapist pipeline and resolve
+   * Send one user message through the REAL analyst pipeline and resolve
    * with the assistant's reply. Drives the main chat window, the observability
    * trace and the policy-canvas animation — same path a hand-typed message takes.
    */
@@ -68,10 +112,10 @@ export type SimulationController = {
 };
 
 /**
- * Simulation tab: set up an automated run and watch a simulated patient talk to
- * the real sleep-therapist pipeline. Each turn is:
- *   /api/chat/sleep/simulate-user  → the patient's next message
- *   controller.send(message)       → the therapist's reply (your current setup)
+ * Simulation tab: set up an automated run and watch a simulated user talk to
+ * the real analyst pipeline. Each turn is:
+ *   /api/chat/analyst/simulate-user  → the user's next message
+ *   controller.send(message)       → the analyst's reply (your current setup)
  *
  * The conversation is driven through the main chat's send(), so it appears in the
  * regular chat window, is saved as a "Simulation · …" conversation, and its
@@ -116,19 +160,23 @@ export function SimulationPanel({
   const [infoRun, setInfoRun] = useState<SimRun | null>(null);
   // How-to-use modal for the Simulation tab (same pattern as Observability).
   const [helpOpen, setHelpOpen] = useState(false);
+  // Examples modal: pick a ready-made market scenario. `openExample` = expanded row.
+  const [examplesOpen, setExamplesOpen] = useState(false);
+  const [openExample, setOpenExample] = useState<number | null>(null);
   const abortRef = useRef(false);
   const pausedRef = useRef(false);
 
   useEffect(() => {
-    if (!infoRun && !helpOpen) return;
+    if (!infoRun && !helpOpen && !examplesOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (infoRun) setInfoRun(null);
+      else if (examplesOpen) setExamplesOpen(false);
       else setHelpOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [infoRun, helpOpen]);
+  }, [infoRun, helpOpen, examplesOpen]);
 
   // Resolves once the run is un-paused (or aborted). Called between turns so the
   // trace for the turn that just finished stays put while you inspect it.
@@ -154,7 +202,7 @@ export function SimulationPanel({
       // titled as a simulation (scenario + turn count for the run history).
       controller.begin(scenario, turnCount);
 
-      // Local mirror of the exchange, used only to prompt the simulated patient.
+      // Local mirror of the exchange, used only to prompt the simulated user.
       const history: SimMsg[] = [];
       for (let t = 0; t < turnCount; t++) {
         if (abortRef.current) break;
@@ -163,21 +211,21 @@ export function SimulationPanel({
         await waitWhilePaused();
         if (abortRef.current) break;
 
-        setStatus(`Turn ${t + 1}/${turnCount} · simulating the patient…`);
-        const uRes = await fetch("/api/chat/sleep/simulate-user", {
+        setStatus(`Turn ${t + 1}/${turnCount} · simulating the user…`);
+        const uRes = await fetch("/api/chat/analyst/simulate-user", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ scenario, history }),
         });
         if (!uRes.ok) {
           const j = await uRes.json().catch(() => ({}));
-          throw new Error(j.error ?? "The simulated patient step failed.");
+          throw new Error(j.error ?? "The simulated user step failed.");
         }
         const { message: userMessage } = await uRes.json();
         if (abortRef.current) break;
         history.push({ role: "user", text: userMessage });
 
-        setStatus(`Turn ${t + 1}/${turnCount} · sleep therapist replying…`);
+        setStatus(`Turn ${t + 1}/${turnCount} · analyst replying…`);
         const reply = await controller.send(userMessage);
         history.push({ role: "ai", text: reply ?? "" });
       }
@@ -187,11 +235,11 @@ export function SimulationPanel({
           : "Simulation complete — see the conversation in the chat window and the traces in Observability."
       );
 
-      // Give the run a descriptive title summarizing the patient scenario, so the
-      // run list shows e.g. "45yo woman, 3am waking" instead of "Improvised patient".
+      // Give the run a descriptive title summarizing the user scenario, so the
+      // run list shows e.g. "45yo woman, 3am waking" instead of "Improvised user".
       if (history.length > 0 && controller.renameCurrent) {
         try {
-          const sRes = await fetch("/api/chat/sleep/summarize-scenario", {
+          const sRes = await fetch("/api/chat/analyst/summarize-scenario", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ scenario, history }),
@@ -260,7 +308,7 @@ export function SimulationPanel({
   return createPortal(
     <div className="sim-panel">
       <div className="drawer-subhead">
-        <span className="obs-sub">Run a simulated patient against your setup</span>
+        <span className="obs-sub">Run a simulated user against your setup</span>
         <div className="drawer-subhead-actions">
           <button
             type="button"
@@ -275,11 +323,22 @@ export function SimulationPanel({
       </div>
 
       <div className="sim-setup">
-        <label className="sim-label" htmlFor="sim-scenario">Patient scenario</label>
+        <div className="sim-scenario-head">
+          <label className="sim-label" htmlFor="sim-scenario">Market scenario</label>
+          <button
+            type="button"
+            className="sim-examples-btn"
+            onClick={() => setExamplesOpen(true)}
+            disabled={running}
+            title="Pick from example market scenarios"
+          >
+            <Ic.Book size={13} /> Examples
+          </button>
+        </div>
         <textarea
           id="sim-scenario"
           className="sim-textarea"
-          placeholder="e.g. A 45-year-old woman with insomnia who wakes at 3am and can't fall back asleep; it started after a stressful job change. Leave blank to let the patient improvise."
+          placeholder="e.g. A retail investor asking how NVDA is trading after earnings and whether momentum looks stretched over the next week. Leave blank to let the user improvise."
           value={scenario}
           onChange={(e) => setScenario(e.target.value)}
           disabled={running}
@@ -415,8 +474,62 @@ export function SimulationPanel({
             <div className="sim-info-scenario">
               {typeof infoRun.scenario === "string"
                 ? infoRun.scenario.trim() ||
-                  "Improvised patient — no scenario was provided; the patient improvised."
+                  "Improvised user — no scenario was provided; the user improvised."
                 : "No scenario was saved for this run."}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {examplesOpen && (
+        <div className="sim-examples-overlay" role="dialog" aria-modal="true" onClick={() => setExamplesOpen(false)}>
+          <div className="sim-examples" onClick={(e) => e.stopPropagation()}>
+            <div className="sim-examples-head">
+              <h3 className="sim-examples-title">Example market scenarios</h3>
+              <button
+                type="button"
+                className="sim-info-close"
+                aria-label="Close"
+                title="Close"
+                onClick={() => setExamplesOpen(false)}
+              >
+                <Ic.Close size={18} />
+              </button>
+            </div>
+            <p className="sim-examples-sub">Pick a scenario, then use it to fill the Market scenario field.</p>
+            <div className="sim-examples-list">
+              {SCENARIO_EXAMPLES.map((ex, i) => {
+                const open = openExample === i;
+                return (
+                  <div key={i} className={"sim-acc" + (open ? " open" : "")}>
+                    <button
+                      type="button"
+                      className="sim-acc-head"
+                      aria-expanded={open}
+                      onClick={() => setOpenExample((o) => (o === i ? null : i))}
+                    >
+                      <span className="sim-acc-num">{i + 1}</span>
+                      <span className="sim-acc-title">{ex.title}</span>
+                      <Ic.Chevron size={16} />
+                    </button>
+                    {open && (
+                      <div className="sim-acc-body">
+                        <p className="sim-acc-text">{ex.text}</p>
+                        <button
+                          type="button"
+                          className="sim-btn sim-btn-run"
+                          onClick={() => {
+                            setScenario(ex.text);
+                            setExamplesOpen(false);
+                          }}
+                        >
+                          Use this scenario
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -451,7 +564,7 @@ function SimulationInfoModal({ onClose }: { onClose: () => void }) {
 
         <div className="obs-info-body">
           <p>
-            Simulation runs a fake patient against your <b>real</b> sleep-therapist
+            Simulation runs a fake user against your <b>real</b> analyst
             pipeline — the same path a hand-typed chat takes — so you can stress-test
             State, Policy, and prompts without typing every turn yourself.
           </p>
@@ -459,11 +572,11 @@ function SimulationInfoModal({ onClose }: { onClose: () => void }) {
           <div className="obs-info-step">
             <div className="obs-info-step-n">1</div>
             <div>
-              <div className="obs-info-step-t">Set the patient scenario</div>
+              <div className="obs-info-step-t">Set the user scenario</div>
               <p>
-                Describe who the patient is and what they&apos;re dealing with
-                (age, symptoms, recent events). Leave it blank to let the patient
-                improvise from a generic sleeper profile.
+                Describe who the user is and what they&apos;re dealing with
+                (age, symptoms, recent events). Leave it blank to let the user
+                improvise from a generic client profile.
               </p>
             </div>
           </div>

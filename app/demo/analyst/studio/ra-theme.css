@@ -268,7 +268,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   font-size:11px;letter-spacing:.4px;}
 
 /* compact rail (collapsed sidebar) — first icon centered on the 60px header
-   band with the Council title (same math as .right-rail.floating). */
+   band with the Financial Analyst title (same math as .right-rail.floating). */
 .ra-scope .sidebar.rail{width:64px;flex:0 0 64px;align-items:center;
   padding:calc((var(--studio-head-h,60px) - 44px) / 2) 0 14px;gap:8px;}
 /* collapsed right drawer rail — mirror of .sidebar.rail, docked on the right */
@@ -1677,7 +1677,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .sim-info-label{font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--text-4);margin-bottom:6px;}
 .ra-scope .sim-info-scenario{font-family:var(--serif);font-size:15px;line-height:1.6;color:var(--text);white-space:pre-wrap;}
 
-/* Client scenario label row + Examples button — match .sim-btn typography. */
+/* Market scenario label row + Examples button — match .sim-btn typography. */
 .ra-scope .sim-scenario-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .ra-scope .sim-examples-btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:14px;font-weight:400;
   color:var(--text-2);background:transparent;border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;white-space:nowrap;}
@@ -1770,7 +1770,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 
   /* mobile-only launcher: a horizontal bar across the top whose icons each open
      the bottom drawer (there's no docked rail/sidebar on mobile). */
-  /* float only the icons in the top-right so the Council header sits
+  /* float only the icons in the top-right so the Financial Analyst header sits
      inline with them (no full-width bar, no background). */
   .ra-scope .mobile-railnav{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:2px;
     position:fixed;top:0;right:0;z-index:60;

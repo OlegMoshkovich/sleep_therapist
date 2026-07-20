@@ -27,6 +27,11 @@ export const DEMO_SETUP: Record<DemoKey, DemoSetupConfig> = {
     filesBucket: "law-input-files",
     endpoint: "/demo/law/input",
   },
+  analyst: {
+    setupTable: "analyst_inputs",
+    filesBucket: "analyst-input-files",
+    endpoint: "/demo/analyst/input",
+  },
   dnd: {
     setupTable: "dnd_inputs",
     filesBucket: "dnd-input-files",

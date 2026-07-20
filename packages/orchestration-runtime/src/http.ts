@@ -30,6 +30,41 @@ export function interpolateUrl(template: string, args: Record<string, unknown>):
   });
 }
 
+/**
+ * Resolves the base origin for tool URLs that are written as a relative path
+ * (e.g. "/api/tools/market"). Node's fetch requires an absolute URL, so a
+ * relative path can't be used directly — but hardcoding "http://localhost:3000"
+ * in a canvas breaks the moment the app is deployed. Preferring an explicit
+ * override, then Vercel's deployment host, then a localhost fallback keeps the
+ * same canvas working in dev and in production.
+ */
+function resolveAppBaseUrl(): string {
+  const explicit =
+    process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_BASE_URL;
+  if (explicit) return explicit.replace(/\/+$/, "");
+
+  const vercelHost =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  if (vercelHost) {
+    return `https://${vercelHost.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
+  }
+
+  const port = process.env.PORT || "3000";
+  return `http://localhost:${port}`;
+}
+
+/**
+ * Turns a possibly-relative tool URL into an absolute one. Absolute URLs
+ * (http/https) are returned unchanged; a leading-slash path is resolved against
+ * {@link resolveAppBaseUrl}.
+ */
+export function toAbsoluteToolUrl(url: string): string {
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.startsWith("/")) return `${resolveAppBaseUrl()}${trimmed}`;
+  return trimmed;
+}
+
 export function resolveInterpolatedUrl(
   template: string,
   args: Record<string, unknown>
@@ -73,7 +108,7 @@ export async function fetchHttp(
     };
   }
 
-  const finalUrl = resolvedUrl.url;
+  const finalUrl = toAbsoluteToolUrl(resolvedUrl.url);
   try {
     const response = await fetch(finalUrl, {
       headers: { Accept: "application/json" },

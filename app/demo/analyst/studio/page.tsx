@@ -65,7 +65,7 @@ interface Conversation {
   updatedAt?: string;
   /** Actual number of turns (assistant replies) — shown in the simulation run list. */
   turnCount?: number;
-  /** For simulation runs: the patient scenario that drove the run. */
+  /** For simulation runs: the user scenario that drove the run. */
   scenario?: string | null;
 }
 
@@ -468,7 +468,7 @@ function Sidebar({
     >
       <div className="side-head">
         <div>
-          <div className="side-title">Legal Assistant</div>
+          <div className="side-title">Financial Analyst</div>
         </div>
         <button className="icon-btn side-close" title="Close sidebar" aria-label="Close sidebar" onClick={onClose}>
           <Ic.Close size={17} />
@@ -842,7 +842,7 @@ function ThreadHeader() {
     <div className="thread-head">
       <Avatar kind="assistant" size={18} ring mono="SA" />
       <div className="th-meta">
-        <div className="th-name">Legal Assistant</div>
+        <div className="th-name">Financial Analyst</div>
       </div>
     </div>
   );
@@ -993,6 +993,7 @@ function BubbleMarkdown({ children }: { children: string }) {
  * Feedback button: pressing it turns the reply into an editable input with a
  * Submit button; submitting saves the edited text as the "ideal output" feedback
  * signal, which tints the bubble and shows in the message's feedback component.
+ * Left/right controls cycle through the conversation messages.
  */
 function BubbleFullscreen({
   messages,
@@ -1079,7 +1080,7 @@ function BubbleFullscreen({
     setTimeout(() => setSaved(false), 1600);
   };
 
-  const roleTitle = m?.role === "user" ? "You" : "Legal Assistant";
+  const roleTitle = m?.role === "user" ? "You" : "Financial Analyst";
 
   // Mount inside `.ra-scope` so theme tokens (mono accent, surfaces) apply —
   // portaling to <body> left the modal on the fallback orange accent.
@@ -1270,11 +1271,11 @@ function Bubble({
   // Tint the bubble once feedback has been left on this message.
   const hasFeedback = (feedbackEntries?.length ?? 0) > 0;
   // Observability/Policy are assistant-only (they inspect the model's work). State
-  // + Feedback apply to both the patient and assistant bubble. Fullscreen is for
+  // + Feedback apply to both the user and assistant bubble. Fullscreen is for
   // assistant replies (the long ones). All trace views need the turn (turnId).
   const showTrace = !isUser && !!turnId && !!onOpenTrace;
   const showPolicy = !isUser && !!turnId && !!onOpenPolicy;
-  // State opens the fields extracted this turn (from the patient message).
+  // State opens the fields extracted this turn (from the user message).
   // Shown on both bubbles; on the assistant nav it sits after Policy trace.
   const showStateBtn = !!turnId && !!onOpenState && hasState;
   const showFeedback = !!onOpenFeedback;
@@ -1580,7 +1581,7 @@ function Thread({
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [messages, typing, streaming]);
-  // 1-based turn numbers for assistant replies (shared with the patient turn id).
+  // 1-based turn numbers for assistant replies (shared with the user turn id).
   const turnNumberById = useMemo(() => {
     const map = new Map<string, number>();
     let n = 0;
@@ -1644,9 +1645,9 @@ function EmptyState({ onSuggest, compact = false }: { onSuggest: (t: string) => 
         <>
           <div className="empty-title">Start a conversation</div>
           <div className="empty-sub">
-            Council can take down the facts of your matter, explain your options in
-            plain language, and help you get ready for a consultation. General information,
-            not legal advice.
+            Financial Analyst pulls a live market snapshot and gives a clear, balanced read
+            of stocks, indices, rates, and more. General market information, not investment
+            advice.
           </div>
           <div className="suggests">
             {SUGGESTIONS.map((s) => {
@@ -1891,7 +1892,7 @@ const BOTTOM_WORKFLOW_SEED: CanvasDoc = {
       name: WORKFLOW_OVERVIEW_CANVAS_NAME,
       freeText: [
         WORKFLOW_OVERVIEW_CANVAS_MARKER,
-        "Primary agent: Council",
+        "Primary agent: Financial Analyst",
         "Editable overview of the main sleep-care stages. Edit stages, add loops, or partition a stage into a child workflow.",
       ].join("\n"),
       graph: {
@@ -2025,20 +2026,17 @@ const WORKFLOW_STAGE_POLICY_CANVAS: Record<string, string> = {
 function deriveWorkflowStage(turn: Turn | null | undefined): string | null {
   if (!turn) return null;
   const refs = turn.nodeRefs ?? [];
-  // The Legal Intake subtree ran this turn → still gathering the facts.
-  if (refs.some((r) => r.canvasId === "intake")) return "intake";
+  // A turn that called the market-data tool is in the Analyze stage.
+  if (refs.some((r) => r.nodeId === "tool-market" || r.nodeId === "analyze")) return "assess";
   const state = (turn.state ?? {}) as Record<string, unknown>;
   const isEmpty = (v: unknown) =>
     v === null || v === undefined || (Array.isArray(v) ? v.length === 0 : String(v).trim() === "" || String(v) === "null");
-  // Emergency (imminent deadline) short-circuits into guidance/advice.
+  // Urgent market event → jump to the report/read.
   if (!isEmpty(state.emergency) && String(state.emergency).toLowerCase() !== "false") return "guide";
-  // Once the core intake fields are captured, the assistant moves to advice.
-  const intakeCoreFilled =
-    !isEmpty(state.summary) &&
-    !isEmpty(state.matter_type) &&
-    !isEmpty(state.jurisdiction);
-  if (intakeCoreFilled) return "guide";
-  return "intake";
+  // Until the request is clear (query empty) we're still in Intake; once the
+  // query is set the analyst pulls data and analyzes → the "Analyze" stage.
+  if (isEmpty(state.query)) return "intake";
+  return "assess";
 }
 
 /**
@@ -2264,7 +2262,7 @@ function SleepStudioChat() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/admin/setup/law");
+        const res = await fetch("/api/admin/setup/analyst");
         if (!res.ok) return;
         const { workflowCanvases } = (await res.json()) as {
           workflowCanvases?: Array<{ canvas_id?: string; name?: string; sort_order?: number; canvas: CanvasDoc["canvases"][number] }>;
@@ -2285,7 +2283,7 @@ function SleepStudioChat() {
     setWorkflowSaving(true);
     try {
       // The PUT requires `config`; fetch the current one so we don't clobber it.
-      const cur = await fetch("/api/admin/setup/law");
+      const cur = await fetch("/api/admin/setup/analyst");
       const config = (cur.ok ? (await cur.json())?.config : null) ?? {};
       const workflowCanvases = canvasDoc.canvases.map((canvas, index) => ({
         canvas_id: canvas.id,
@@ -2293,7 +2291,7 @@ function SleepStudioChat() {
         sort_order: index,
         canvas,
       }));
-      const res = await fetch("/api/admin/setup/law", {
+      const res = await fetch("/api/admin/setup/analyst", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ config, workflowCanvases }),
@@ -2583,7 +2581,7 @@ function SleepStudioChat() {
 
   const loadConversations = useCallback(async () => {
     try {
-      const res = await fetch("/api/conversations?topic=law");
+      const res = await fetch("/api/conversations?topic=analyst");
       if (!res.ok) { setConvos([]); return; }
       const { conversations } = (await res.json()) as {
         conversations: Array<{ id: string; title: string; updated_at?: string; turn_count?: number; scenario?: string | null }>;
@@ -2716,7 +2714,7 @@ function SleepStudioChat() {
       // a failure before the chat call (e.g. creating the conversation) is
       // visible in the thread and the trace — never a silent "nothing happens".
       // The user message shares the turn's id so its bubble can open the same
-      // turn's State/Feedback (the state is extracted from what the patient said).
+      // turn's State/Feedback (the state is extracted from what the user said).
       setMessages((prev) => [...prev, { role: "user", text: trimmed, turnId }]);
       setTyping(true);
       setStreaming("");
@@ -2743,7 +2741,7 @@ function SleepStudioChat() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               title: simTitle ?? trimmed.slice(0, 60),
-              topic: "law",
+              topic: "analyst",
               // Persist the scenario for simulation runs (null for hand-typed chats).
               ...(simScenario !== null ? { scenario: simScenario } : {}),
             }),
@@ -2762,7 +2760,7 @@ function SleepStudioChat() {
         }
 
         setTypingLabel("Thinking…");
-        const res = await fetch("/api/chat/law/base", {
+        const res = await fetch("/api/chat/analyst/base", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -3378,7 +3376,7 @@ function SleepStudioChat() {
 function StudioLoading() {
   return (
     <div className="flex flex-1 items-center justify-center bg-white">
-      <SiteLogo size={120} href="/demo/law/studio" />
+      <SiteLogo size={120} href="/demo/analyst/studio" />
     </div>
   );
 }
@@ -3427,7 +3425,7 @@ function StudioSplash({ ready }: { ready: boolean }) {
           "transition-opacity duration-700 " + (entered ? "opacity-100" : "opacity-0")
         }
       >
-        <SiteLogo size={120} href="/demo/law/studio" />
+        <SiteLogo size={120} href="/demo/analyst/studio" />
       </div>
     </div>
   );

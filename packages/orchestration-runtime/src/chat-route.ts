@@ -186,6 +186,11 @@ const LAW_SETUP_SOURCE: SetupSource = {
   setupEndpoint: "/demo/law/input",
   setupEndpointAliases: ["/law/input"],
 };
+const ANALYST_SETUP_SOURCE: SetupSource = {
+  sourceTable: "analyst_inputs",
+  setupEndpoint: "/demo/analyst/input",
+  setupEndpointAliases: ["/analyst/input"],
+};
 const DND_SETUP_SOURCE: SetupSource = {
   sourceTable: "dnd_inputs",
   setupEndpoint: "/demo/dnd/input",
@@ -950,6 +955,10 @@ function resolveSetupSourceFromRequest(request: Request): SetupSource {
 
   if (referer.includes("/demo/law")) {
     return LAW_SETUP_SOURCE;
+  }
+
+  if (referer.includes("/demo/analyst")) {
+    return ANALYST_SETUP_SOURCE;
   }
 
   const publishedDemoSource = resolvePublishedDaemonSetupSource(referer);
@@ -2483,12 +2492,43 @@ function parseToolInputContribution(value: unknown): Record<string, unknown> | n
     : null;
 }
 
+function isMeaningfulStateValue(value: unknown): boolean {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed !== "" && trimmed.toLowerCase() !== "null";
+  }
+  return true;
+}
+
 function buildDirectToolArgs(
   tool: CompiledToolDef,
-  inputContributions: unknown[] | undefined
+  inputContributions: unknown[] | undefined,
+  stateForArgs?: unknown
 ): Record<string, unknown> {
   const allowedKeys = new Set(Object.keys(tool.function.parameters?.properties ?? {}));
   const merged: Record<string, unknown> = {};
+
+  // Seed declared parameters from the current assistant state as a low-priority
+  // fallback. Tool nodes commonly reference a state field (e.g. a URL template
+  // "{query}") without any explicit input wiring producing that value, so the
+  // input contributions alone come back empty and the placeholder can't be
+  // filled. We only do this for tools that DECLARE parameters (allowedKeys > 0),
+  // so parameterless tools are never flooded with the whole state, and any
+  // explicit wired contribution below still overrides the state fallback.
+  if (
+    allowedKeys.size > 0 &&
+    stateForArgs &&
+    typeof stateForArgs === "object" &&
+    !Array.isArray(stateForArgs)
+  ) {
+    for (const key of allowedKeys) {
+      const value = (stateForArgs as Record<string, unknown>)[key];
+      if (isMeaningfulStateValue(value)) {
+        merged[key] = value;
+      }
+    }
+  }
 
   for (const contribution of inputContributions ?? []) {
     const parsed = parseToolInputContribution(contribution);
@@ -2512,7 +2552,8 @@ async function runDirectCanvasTool(
   toolName: string,
   resultVariable?: string,
   inputContributions?: unknown[],
-  conversationId?: string
+  conversationId?: string,
+  stateForArgs?: unknown
 ): Promise<PromptValueSnapshot> {
   const normalizedToolName = toolName.trim();
   const tool = promptConfig.toolsByName[normalizedToolName];
@@ -2523,7 +2564,7 @@ async function runDirectCanvasTool(
     );
   }
 
-  const toolArgs = buildDirectToolArgs(tool, inputContributions);
+  const toolArgs = buildDirectToolArgs(tool, inputContributions, stateForArgs);
   const result = await dispatchTool(tool.config, toolArgs, {
     toolName: normalizedToolName,
     setupId: promptConfig.setupId,
@@ -2682,7 +2723,8 @@ async function runStateExecutionGraph(
           step.tool_name,
           step.result_variable,
           inputContributions,
-          conversationId
+          conversationId,
+          currentState
         );
         const toolResultKey = getToolResultVariableName(
           step.tool_name,
@@ -3512,7 +3554,8 @@ async function runPolicyExecutionGraph(
           step.tool_name,
           step.result_variable,
           inputContributions,
-          conversationId
+          conversationId,
+          currentState
         );
         const toolResultKey = getToolResultVariableName(step.tool_name, step.result_variable);
         promptValues = mergePromptValueUpdates(promptValues, toolPromptValues);
