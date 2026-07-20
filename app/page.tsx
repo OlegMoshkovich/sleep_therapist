@@ -77,7 +77,7 @@ function HomeContent() {
 
   return (
     <main
-      className="flex min-h-[100dvh] flex-col items-center justify-start gap-10 px-6 pb-12 pt-24"
+      className="flex min-h-[100dvh] flex-col items-center px-6 pb-12 pt-24"
       style={{ backgroundColor: "#ffffff" }}
     >
       <Splash />
@@ -93,9 +93,7 @@ function HomeContent() {
         The AI Research lab
       </p>
 
-      {/* Fixed-height slot so the form → loading → button swap on login never
-          changes the layout height (which otherwise makes the page jump). */}
-      <div className="flex min-h-[460px] w-full flex-col items-center justify-start">
+      <div className="mt-10 flex w-full flex-col items-center justify-start">
       {loading ? (
         <p className="text-sm text-gray-400">Loading…</p>
       ) : user ? (

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
-import SiteLogo from "../components/SiteLogo";
 
 const OPTIONS = [
   { label: "Financial Analyst", href: "/demo/analyst/studio" },
@@ -64,10 +63,6 @@ function ChooseContent() {
             {opt.label}
           </Link>
         ))}
-      </div>
-
-      <div className="flex flex-1 items-center justify-center">
-        <SiteLogo size={100} href="/demo" animateColors />
       </div>
     </main>
   );
