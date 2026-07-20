@@ -1044,13 +1044,87 @@ function RightRail({
 }
 
 /* ---------------- thread pieces ---------------- */
-function ThreadHeader() {
+/* Show/Hide controls + Collapse all — in the ThreadHeader, next to the title. */
+function ThreadControls({
+  allCollapsed = false,
+  onToggleCollapseAll,
+  hideBubbleControls = true,
+  onToggleHideBubbleControls,
+}: {
+  allCollapsed?: boolean;
+  onToggleCollapseAll?: () => void;
+  hideBubbleControls?: boolean;
+  onToggleHideBubbleControls?: () => void;
+}) {
+  return (
+    <div className="thread-head-controls">
+      <div className="composer-thread-controls-left">
+        <button
+          type="button"
+          className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
+          onClick={onToggleHideBubbleControls}
+          title={
+            hideBubbleControls
+              ? "Show bubble nav and footer"
+              : "Hide bubble nav and footer"
+          }
+        >
+          <span className="thread-pill-swap">
+            <span className={hideBubbleControls ? "is-active" : ""} aria-hidden={!hideBubbleControls}>
+              Show controls
+            </span>
+            <span className={!hideBubbleControls ? "is-active" : ""} aria-hidden={hideBubbleControls}>
+              Hide controls
+            </span>
+          </span>
+        </button>
+        <button
+          type="button"
+          className="thread-collapse-all"
+          onClick={onToggleCollapseAll}
+          title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
+        >
+          <span className="thread-pill-swap">
+            <span className={allCollapsed ? "is-active" : ""} aria-hidden={!allCollapsed}>
+              Expand all
+            </span>
+            <span className={!allCollapsed ? "is-active" : ""} aria-hidden={allCollapsed}>
+              Collapse all
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ThreadHeader({
+  showThreadControls = false,
+  allCollapsed = false,
+  onToggleCollapseAll,
+  hideBubbleControls = true,
+  onToggleHideBubbleControls,
+}: {
+  showThreadControls?: boolean;
+  allCollapsed?: boolean;
+  onToggleCollapseAll?: () => void;
+  hideBubbleControls?: boolean;
+  onToggleHideBubbleControls?: () => void;
+}) {
   return (
     <div className="thread-head">
       <div className="th-logo" aria-hidden="true" />
       <div className="th-meta">
         <div className="th-name">Financial Analyst</div>
       </div>
+      {showThreadControls && (
+        <ThreadControls
+          allCollapsed={allCollapsed}
+          onToggleCollapseAll={onToggleCollapseAll}
+          hideBubbleControls={hideBubbleControls}
+          onToggleHideBubbleControls={onToggleHideBubbleControls}
+        />
+      )}
     </div>
   );
 }
@@ -1197,23 +1271,6 @@ function BubbleMarkdown({ children }: { children: string }) {
       {children}
     </ReactMarkdown>
   );
-}
-
-/** One-line plain summary for collapsed bubbles (forms, tables, markdown). */
-function bubbleCollapseSummary(text: string): string {
-  return text
-    .replace(/\r\n/g, "\n")
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/`[^`]*`/g, " ")
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/\[[^\]]*\]\([^)]*\)/g, " ")
-    .replace(/^#{1,6}\s+/gm, "")
-    .replace(/^[-*+]\s+/gm, "")
-    .replace(/^\d+\.\s+/gm, "")
-    .replace(/\|/g, " ")
-    .replace(/[-_]{3,}/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
 }
 
 /**
@@ -1514,6 +1571,7 @@ function Bubble({
 }) {
   const messages = messagesProp ?? [m];
   const [fullscreen, setFullscreen] = useState(false);
+  const [copied, setCopied] = useState(false);
   // When global chrome is hidden, a click can reveal nav/footer for THIS bubble only.
   const [revealControls, setRevealControls] = useState(false);
   useEffect(() => {
@@ -1536,10 +1594,11 @@ function Bubble({
   // Fullscreen is available on both patient and assistant bubbles.
   const showFullscreen = !!turnId;
   const showCollapse = !!onToggleCollapse;
+  const showCopy = m.text.trim().length > 0;
   // Turn number + Policy/Observability/State in the top nav; Feedback stays in the footer.
   const showNavActions = showPolicy || showTrace || showStateBtn;
   const showTurnN = turnNumber != null;
-  const showNav = showNavActions || showCollapse || showFullscreen || showTurnN;
+  const showNav = showNavActions || showCollapse || showFullscreen || showTurnN || showCopy;
   const showFootActions = showFeedback;
 
   const navActions = showNavActions ? (
@@ -1607,6 +1666,27 @@ function Bubble({
     </button>
   ) : null;
 
+  const copyBtn = showCopy ? (
+    <button
+      type="button"
+      className="trace-act"
+      data-tip={copied ? "Copied" : "Copy"}
+      aria-label={copied ? "Copied" : "Copy message"}
+      onClick={(e) => {
+        e.stopPropagation();
+        void navigator.clipboard.writeText(m.text).then(
+          () => {
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1500);
+          },
+          () => {}
+        );
+      }}
+    >
+      <Ic.Copy size={14} />
+    </button>
+  ) : null;
+
   const overlay = fullscreen ? (
     <BubbleFullscreen
       messages={messages}
@@ -1666,6 +1746,7 @@ function Bubble({
           {showTurnN && !collapsed ? <span className="trace-turn-n">{turnNumber}.</span> : null}
           {navActions}
           <div className="bubble-nav-end">
+            {copyBtn}
             {collapseBtn}
             {fullscreenBtn}
           </div>
@@ -1683,7 +1764,7 @@ function Bubble({
             {isUser && showTurnN ? (
               <span className="bubble-collapse-turn">{turnNumber}. </span>
             ) : null}
-            {bubbleCollapseSummary(m.text)}
+            {isUser ? m.text : <BubbleMarkdown>{m.text}</BubbleMarkdown>}
           </>
         ) : isUser ? (
           m.text
@@ -1939,10 +2020,6 @@ function Composer({
   isSpeaking,
   onStopSpeaking,
   showThreadControls = false,
-  allCollapsed = false,
-  onToggleCollapseAll,
-  hideBubbleControls = true,
-  onToggleHideBubbleControls,
   onOpenThreadFullscreen,
   selectedModel = OPENAI_MODEL,
   onSelectModel,
@@ -1960,12 +2037,7 @@ function Composer({
   onToggleAutoSpeak: () => void;
   isSpeaking: boolean;
   onStopSpeaking: () => void;
-  /** Collapse all / Hide controls — docked above the input. */
   showThreadControls?: boolean;
-  allCollapsed?: boolean;
-  onToggleCollapseAll?: () => void;
-  hideBubbleControls?: boolean;
-  onToggleHideBubbleControls?: () => void;
   onOpenThreadFullscreen?: () => void;
   selectedModel?: string;
   onSelectModel?: (model: ChatModelId) => void;
@@ -2030,40 +2102,6 @@ function Composer({
           <div className="composer-thread-controls">
             <div className="composer-thread-controls-desktop">
               <div className="composer-thread-controls-left">
-                <button
-                  type="button"
-                  className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
-                  onClick={onToggleHideBubbleControls}
-                  title={
-                    hideBubbleControls
-                      ? "Show bubble nav and footer"
-                      : "Hide bubble nav and footer"
-                  }
-                >
-                  <span className="thread-pill-swap">
-                    <span className={hideBubbleControls ? "is-active" : ""} aria-hidden={!hideBubbleControls}>
-                      Show controls
-                    </span>
-                    <span className={!hideBubbleControls ? "is-active" : ""} aria-hidden={hideBubbleControls}>
-                      Hide controls
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="thread-collapse-all"
-                  onClick={onToggleCollapseAll}
-                  title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
-                >
-                  <span className="thread-pill-swap">
-                    <span className={allCollapsed ? "is-active" : ""} aria-hidden={!allCollapsed}>
-                      Expand all
-                    </span>
-                    <span className={!allCollapsed ? "is-active" : ""} aria-hidden={allCollapsed}>
-                      Collapse all
-                    </span>
-                  </span>
-                </button>
                 <button
                   type="button"
                   className="thread-collapse-all"
@@ -3565,7 +3603,25 @@ function SleepStudioChat() {
             {/* Show the thread as soon as there's a message, even before a
                 conversation row exists — otherwise a failed conversation
                 create would leave the user staring at the empty state. */}
-            {activeId || messages.length > 0 ? <ThreadHeader /> : null}
+            {activeId || messages.length > 0 ? (
+              <ThreadHeader
+              showThreadControls={messages.length > 0}
+              allCollapsed={
+                messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])
+              }
+              onToggleCollapseAll={() => {
+                if (messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])) {
+                  setCollapsedByIdx({});
+                  return;
+                }
+                const next: Record<number, boolean> = {};
+                for (let i = 0; i < messages.length; i++) next[i] = true;
+                setCollapsedByIdx(next);
+              }}
+              hideBubbleControls={hideBubbleControls}
+              onToggleHideBubbleControls={() => setHideBubbleControls((v) => !v)}
+              />
+            ) : null}
             {activeId || messages.length > 0 ? (
               <Thread
                 messages={messages}
@@ -3617,20 +3673,6 @@ function SleepStudioChat() {
               isSpeaking={isSpeaking}
               onStopSpeaking={stopSpeaking}
               showThreadControls={messages.length > 0}
-              allCollapsed={
-                messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])
-              }
-              onToggleCollapseAll={() => {
-                if (messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])) {
-                  setCollapsedByIdx({});
-                  return;
-                }
-                const next: Record<number, boolean> = {};
-                for (let i = 0; i < messages.length; i++) next[i] = true;
-                setCollapsedByIdx(next);
-              }}
-              hideBubbleControls={hideBubbleControls}
-              onToggleHideBubbleControls={() => setHideBubbleControls((v) => !v)}
               onOpenThreadFullscreen={() => setThreadFullscreen(true)}
               selectedModel={selectedModel}
               onSelectModel={(model) => {

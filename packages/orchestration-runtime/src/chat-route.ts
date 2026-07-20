@@ -28,6 +28,7 @@ import {
 } from "@airlab/canvas-planner/canvas-hybrid-runtime";
 import { buildStructuralExecutionPlan } from "@airlab/canvas-planner/canvas-structural-planner";
 import {
+  AGENT_LATEST_OBSERVATION_PROMPT_VALUE_NAME,
   buildObservationIngressPromptValues,
   CARRIED_OUTPUT_PROMPT_VALUE_NAME,
 } from "@airlab/canvas-core/lib/canvas-flow-values";
@@ -1797,16 +1798,53 @@ ${expandLabel}
 Now execute only this referenced subtree and return only the assistant message body or the exact triage summary format.`;
 }
 
+// Outputs produced by earlier steps in the same policy turn (tool-call results,
+// carried output, etc.) live in `promptValues` under reserved keys. When a
+// subtree prompt says "using the snapshot just returned by get_market_data",
+// those values ARE that snapshot — so they must be surfaced to the model or it
+// has nothing to reason over and (wrongly) asks the user to run the tool. The
+// raw observation ingress (the latest user message) is dropped because it is
+// already present in the conversation history.
+function renderPolicyStepOutputsBlock(
+  promptValues: PromptValueSnapshot | undefined
+): string {
+  if (!promptValues) {
+    return "";
+  }
+
+  const relevant = Object.fromEntries(
+    Object.entries(promptValues).filter(
+      ([key, value]) =>
+        key !== AGENT_LATEST_OBSERVATION_PROMPT_VALUE_NAME &&
+        value !== undefined &&
+        value !== null &&
+        !(typeof value === "string" && value.trim() === "")
+    )
+  );
+
+  if (Object.keys(relevant).length === 0) {
+    return "";
+  }
+
+  return `
+Results from earlier steps in this turn (JSON) — includes tool-call output referenced by the instructions below:
+${JSON.stringify(relevant, null, 2)}
+`;
+}
+
 function buildPolicySubtreeExecutionPrompt(
   history: HistoryMessage[],
   updatedState: StateSnapshot,
-  promptConfig: RuntimePromptConfig
+  promptConfig: RuntimePromptConfig,
+  promptValues?: PromptValueSnapshot
 ): string {
+  const stepOutputs = renderPolicyStepOutputsBlock(promptValues);
+
   if (usesConversationMemoryState(promptConfig.stateSchema)) {
     return `${promptConfig.guidelinesContext}
 Current conversation state (JSON):
 ${renderStateUpdateJson(updatedState, promptConfig.stateSchema)}
-
+${stepOutputs}
 Now execute only the provided policy subtree instructions using only the current state above and return only the assistant message body or the exact triage summary format.`;
   }
 
@@ -1816,7 +1854,7 @@ ${formatHistoryForStatePrompt(history)}
 
 Updated patient state (JSON):
 ${renderStateUpdateJson(updatedState, promptConfig.stateSchema)}
-
+${stepOutputs}
 Now execute only the provided policy subtree instructions and return only the assistant message body or the exact triage summary format.`;
 }
 
@@ -2861,14 +2899,15 @@ async function runPolicySubtreeDecisionPrompt(
   history: HistoryMessage[],
   updatedState: StateSnapshot,
   promptConfig: RuntimePromptConfig,
-  subtreePrompt: string
+  subtreePrompt: string,
+  promptValues: PromptValueSnapshot = {}
 ): Promise<string> {
   return runPrompt(
     openai,
     resolveOpenAIModel(),
     OPENAI_MAX_TOKENS,
     subtreePrompt,
-    buildPolicySubtreeExecutionPrompt(history, updatedState, promptConfig),
+    buildPolicySubtreeExecutionPrompt(history, updatedState, promptConfig, promptValues),
     "3-subtree"
   );
 }
@@ -3623,7 +3662,8 @@ async function runPolicyExecutionGraph(
               history,
               currentState,
               promptConfig,
-              step.subtree_prompt
+              step.subtree_prompt,
+              promptValues
             ),
             promptValues: null,
           };

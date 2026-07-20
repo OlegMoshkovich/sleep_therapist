@@ -1371,6 +1371,12 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .th-name{font-family:var(--serif);font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;line-height:1.25;}
 .ra-scope .th-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;line-height:1.3;color:var(--text-3);font-style:italic;font-family:var(--serif);}
 .ra-scope .th-actions{display:flex;align-items:center;gap:4px;}
+/* Thread controls relocated into the header, right-aligned but stopping short of
+   the ~64px right-rail (workflow icon) so it never covers the pills. */
+.ra-scope .thread-head-controls{flex:0 0 auto;margin-left:auto;margin-right:46px;display:flex;align-items:center;gap:12px;position:relative;}
+@media (max-width:900px){
+  .ra-scope .thread-head-controls{display:none;}
+}
 
 .ra-scope .thread{flex:1;overflow-y:auto;padding:26px 26px 0;display:flex;flex-direction:column;gap:22px;min-height:0;}
 .ra-scope .thread-inner{width:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
@@ -1396,8 +1402,8 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .mobile-railnav .mrail-thread-controls{position:relative;flex:0 0 auto;}
 /* Mobile: anchor the pop-up menu to the viewport's right edge with a little
    padding (not to the sliders button, which sits left of the hamburger), and a
-   small gap below the fixed header (8px pad + 40px btn + 8px = 56px). */
-.ra-scope .mobile-railnav .thread-mobile-menu{position:fixed;top:56px;right:8px;left:auto;bottom:auto;}
+   clear gap below the fixed header (8px pad + 40px btn + 20px = 68px). */
+.ra-scope .mobile-railnav .thread-mobile-menu{position:fixed;top:68px;right:8px;left:auto;bottom:auto;}
 .ra-scope .mrail-btn.on{color:var(--text);background:var(--surface);}
 .ra-scope .thread-mobile-menu-div{height:1px;margin:4px 2px;background:var(--line-soft);}
 .ra-scope .thread-mobile-menu-label{font-family:inherit;font-size:11px;font-weight:500;letter-spacing:.4px;
@@ -1464,12 +1470,21 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   color:var(--text-3); font-family:inherit; font-size:12px; font-weight:400;
   line-height:1; cursor:pointer; white-space:nowrap;}
 .ra-scope .bubble-collapse:hover{color:var(--text); background:transparent;}
-/* Collapsed: always a single ellipsized line — plain text summary, never markdown/forms. */
+/* Collapsed: a single ellipsized line — markdown formatting stays active, but
+   block elements are flattened inline so the preview never breaks onto 2 lines. */
 .ra-scope .msg-user.is-collapsed .bubble-body,
 .ra-scope .msg-ai .bubble.is-collapsed .bubble-body{
   overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
   line-height:1.5; display:block; max-height:none;
   padding-top:10px; padding-bottom:10px;}
+.ra-scope .msg-user.is-collapsed .bubble-body *,
+.ra-scope .msg-ai .bubble.is-collapsed .bubble-body *{
+  display:inline; margin:0; padding:0; list-style:none; border:none;}
+/* Re-add a separating space between flattened blocks so paragraphs / list items
+   don't run together (e.g. "Hello.World.") on the collapsed one-liner. */
+.ra-scope .msg-user.is-collapsed .bubble-body :is(p,li,h1,h2,h3,h4,h5,h6,tr,blockquote)::after,
+.ra-scope .msg-ai .bubble.is-collapsed .bubble-body :is(p,li,h1,h2,h3,h4,h5,h6,tr,blockquote)::after{
+  content:" ";}
 .ra-scope .bubble-collapse-turn{font-weight:600; color:var(--text-2); margin-right:2px;}
 /* A message that has feedback left on it gets tinted. */
 .ra-scope .msg-ai .bubble.has-feedback{background:#D1E7F3;border-color:#b7d4e6;}
