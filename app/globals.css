@@ -268,10 +268,17 @@ html {
   box-shadow: none !important;
 }
 .cl-socialButtonsBlockButton:hover,
-.cl-socialButtonsBlockButton:hover .cl-socialButtonsBlockButtonText,
-.cl-socialButtonsBlockButton:hover span {
+.cl-socialButtonsBlockButton:hover .cl-socialButtonsBlockButtonText {
   color: #ffffff !important;
+}
+.cl-socialButtonsBlockButton:hover .cl-lastAuthenticationStrategyBadge,
+.cl-socialButtonsBlockButton:hover .cl-lastAuthenticationStrategyBadge * {
+  color: #6b7280 !important;
 }
 .cl-formButtonPrimary:hover {
   color: #ffffff !important;
+}
+.cl-formFieldLabel {
+  font-weight: 400 !important;
+  color: #000000 !important;
 }

@@ -83,11 +83,12 @@ function HomeContent() {
     >
       <Splash />
       <p
-        className="font-bold text-black"
+        className="font-normal text-black"
         style={{
           fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
           letterSpacing: "normal",
           fontSize: "16px",
+          fontWeight: 400,
         }}
       >
         The AI Research lab

@@ -47,10 +47,12 @@ export const clerkAppearance = {
     lastAuthenticationStrategyBadge: {
       border: "1px solid #d1d5db !important",
       boxShadow: "none",
+      color: "#6b7280 !important",
+      backgroundColor: "#ffffff !important",
     },
     dividerLine: { backgroundColor: "#d1d5db" },
     dividerText: "text-gray-500",
-    formFieldLabel: "text-gray-800",
+    formFieldLabel: { color: "#000000", fontWeight: "400" },
     formFieldInput: {
       border: "1px solid #d1d5db !important",
       backgroundColor: "#ffffff !important",
