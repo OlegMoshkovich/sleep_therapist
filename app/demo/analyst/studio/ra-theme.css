@@ -1719,6 +1719,12 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .sim-running-hint{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
 .ra-scope .sim-btn-run{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .ra-scope .sim-btn-run:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);filter:brightness(1.08);}
+/* The global `.ra-scope button:not(.rf-canvas *)` reset (specificity 0,2,1)
+   out-specifies the plain .sim-* class rules (0,2,0) and strips their border to
+   plain text. Re-assert a resting border with a `button.`-prefixed selector
+   (0,2,1, wins by order) so Examples and Run simulation read as bordered buttons. */
+.ra-scope button.sim-examples-btn,
+.ra-scope button.sim-btn{border:1px solid var(--line);}
 .ra-scope .sim-status{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
 .ra-scope .sim-error{font-family:inherit;font-size:14px;font-weight:400;color:var(--danger);}
 /* Past simulation runs. Fills the panel below the setup form and scrolls independently. */
@@ -1849,9 +1855,13 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   .ra-scope .main{min-width:0;}
   /* Mobile: hairline under the chat header, matching the composer input's
      top border color (var(--line)). */
-  .ra-scope .thread-head{border-bottom:1px solid var(--line);}
+  /* Match the header to the message column: title left edge lines up with the
+     bubble left edge, both at the thread's 14px inset (+28px avatar +13px gap). */
+  .ra-scope .thread-head{border-bottom:1px solid var(--line);padding:0 14px;}
   /* Tighter tab spacing in the mobile bottom-sheet (all tabs shown at once). */
   .ra-scope .drawer-tabs{gap:14px;padding:0 12px;}
+  /* Drop the redundant × on mobile — the sheet closes by flicking the grabber. */
+  .ra-scope .drawer-tabbar .drawer-close-btn{display:none;}
 
   /* no collapsed right rail on mobile — its actions move to the navbar */
   .ra-scope .right-rail{display:none;}
@@ -1863,7 +1873,9 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   .ra-scope .mobile-railnav{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:2px;
     position:fixed;top:0;right:0;z-index:60;
     background:transparent;
-    padding:8px 12px;}
+    /* Right padding lands the hamburger icon on the bubbles' right edge (14px):
+       3px + (40px btn - 18px icon)/2 = 14px. */
+    padding:8px 3px;}
   .ra-scope .mrail-btn{width:40px;height:40px;flex:0 0 auto;display:flex;align-items:center;
     justify-content:center;border-radius:12px;color:var(--text-2);border:1px solid transparent;}
   .ra-scope .mrail-btn:hover,.ra-scope .mrail-btn:active{background:var(--surface);color:var(--text);}
@@ -1878,7 +1890,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
        scrolls its own body); flick the grabber up for full height. */
     height:70vh;max-height:70vh;
     border-top:1px solid var(--line);border-radius:0;
-    box-shadow:0 -10px 40px -12px rgba(40,36,28,.45);
+    box-shadow:none;
     transition:transform .26s ease, max-height .26s ease, height .26s ease;}
   /* dragged/flicked up → full height */
   .ra-scope .obs-panel.full{max-height:100dvh;height:100dvh;border-radius:0;}
