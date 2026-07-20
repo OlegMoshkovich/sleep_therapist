@@ -1852,7 +1852,6 @@ function Thread({
   return (
     <div className="thread">
       <div className="thread-inner">
-        <div className="day-divider">TODAY</div>
         {messages.map((m, i) => (
           <MessageRow
             key={i}

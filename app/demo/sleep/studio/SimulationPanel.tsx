@@ -43,6 +43,50 @@ function relativeTime(iso?: string): string {
   return new Date(then).toLocaleDateString();
 }
 
+/** Ready-made patient scenarios shown in the Examples modal. */
+const SCENARIO_EXAMPLES: { title: string; text: string }[] = [
+  {
+    title: "Middle-of-the-night waking",
+    text: "A 45-year-old woman falls asleep fine but wakes around 3am most nights and can't fall back asleep. It started after a stressful job change a few months ago. She wants to understand why and what she can do.",
+  },
+  {
+    title: "Trouble falling asleep",
+    text: "A 29-year-old scrolls on their phone in bed and lies awake for over an hour most nights before falling asleep. They feel wired at bedtime and groggy in the morning, and want practical steps to fall asleep faster.",
+  },
+  {
+    title: "Shift worker, rotating schedule",
+    text: "A 38-year-old nurse rotates between day and night shifts every week and struggles to sleep during the day after nights. They feel constantly jet-lagged and want strategies to sleep better around an irregular schedule.",
+  },
+  {
+    title: "New parent, fragmented sleep",
+    text: "A parent of a 4-month-old is up two or three times a night and can't nap when the baby naps. They're exhausted and anxious about never feeling rested, and want realistic ways to get more sleep right now.",
+  },
+  {
+    title: "Waking too early",
+    text: "A 60-year-old consistently wakes at 4:30am, well before their alarm, and can't get back to sleep even though they feel tired. They want to know whether this is normal with age and how to shift their wake time later.",
+  },
+  {
+    title: "Racing mind at bedtime",
+    text: "A 34-year-old lies down and immediately starts replaying the day and worrying about tomorrow, which keeps them up for a couple of hours. They want techniques to quiet their mind and wind down before bed.",
+  },
+  {
+    title: "Jet lag after travel",
+    text: "A frequent traveler just flew across six time zones and can't align to the new schedule, waking at odd hours and feeling foggy all day. They want a plan to adjust faster on this trip and on the way home.",
+  },
+  {
+    title: "Too much caffeine and late workouts",
+    text: "A 41-year-old drinks coffee into the late afternoon and exercises hard around 9pm, then struggles to wind down. They suspect their habits are hurting their sleep and want to know what to change.",
+  },
+  {
+    title: "Snoring and daytime sleepiness",
+    text: "A 52-year-old sleeps a full eight hours but still feels exhausted during the day, and their partner reports loud snoring and pauses in breathing. They want to understand what might be going on and whether to seek help.",
+  },
+  {
+    title: "Weekend schedule whiplash",
+    text: "A 26-year-old keeps a strict weekday wake time but stays up hours later and sleeps in on weekends, then dreads Monday mornings. They want to fix the Sunday-night insomnia and their inconsistent schedule.",
+  },
+];
+
 /**
  * The live run controls, lifted out of the panel body so the drawer tab bar can
  * render Pause/Stop next to its × while a run is in progress. `null` when idle.
@@ -116,19 +160,23 @@ export function SimulationPanel({
   const [infoRun, setInfoRun] = useState<SimRun | null>(null);
   // How-to-use modal for the Simulation tab (same pattern as Observability).
   const [helpOpen, setHelpOpen] = useState(false);
+  // Examples modal: pick a ready-made patient scenario. `openExample` = expanded row.
+  const [examplesOpen, setExamplesOpen] = useState(false);
+  const [openExample, setOpenExample] = useState<number | null>(null);
   const abortRef = useRef(false);
   const pausedRef = useRef(false);
 
   useEffect(() => {
-    if (!infoRun && !helpOpen) return;
+    if (!infoRun && !helpOpen && !examplesOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (infoRun) setInfoRun(null);
+      else if (examplesOpen) setExamplesOpen(false);
       else setHelpOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [infoRun, helpOpen]);
+  }, [infoRun, helpOpen, examplesOpen]);
 
   // Resolves once the run is un-paused (or aborted). Called between turns so the
   // trace for the turn that just finished stays put while you inspect it.
@@ -275,7 +323,18 @@ export function SimulationPanel({
       </div>
 
       <div className="sim-setup">
-        <label className="sim-label" htmlFor="sim-scenario">Patient scenario</label>
+        <div className="sim-scenario-head">
+          <label className="sim-label" htmlFor="sim-scenario">Patient scenario</label>
+          <button
+            type="button"
+            className="sim-examples-btn"
+            onClick={() => setExamplesOpen(true)}
+            disabled={running}
+            title="Pick from example patient scenarios"
+          >
+            <Ic.Book size={13} /> Examples
+          </button>
+        </div>
         <textarea
           id="sim-scenario"
           className="sim-textarea"
@@ -417,6 +476,60 @@ export function SimulationPanel({
                 ? infoRun.scenario.trim() ||
                   "Improvised patient — no scenario was provided; the patient improvised."
                 : "No scenario was saved for this run."}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {examplesOpen && (
+        <div className="sim-examples-overlay" role="dialog" aria-modal="true" onClick={() => setExamplesOpen(false)}>
+          <div className="sim-examples" onClick={(e) => e.stopPropagation()}>
+            <div className="sim-examples-head">
+              <h3 className="sim-examples-title">Example patient scenarios</h3>
+              <button
+                type="button"
+                className="sim-info-close"
+                aria-label="Close"
+                title="Close"
+                onClick={() => setExamplesOpen(false)}
+              >
+                <Ic.Close size={18} />
+              </button>
+            </div>
+            <p className="sim-examples-sub">Pick a scenario, then use it to fill the Patient scenario field.</p>
+            <div className="sim-examples-list">
+              {SCENARIO_EXAMPLES.map((ex, i) => {
+                const open = openExample === i;
+                return (
+                  <div key={i} className={"sim-acc" + (open ? " open" : "")}>
+                    <button
+                      type="button"
+                      className="sim-acc-head"
+                      aria-expanded={open}
+                      onClick={() => setOpenExample((o) => (o === i ? null : i))}
+                    >
+                      <span className="sim-acc-num">{i + 1}</span>
+                      <span className="sim-acc-title">{ex.title}</span>
+                      <Ic.Chevron size={16} />
+                    </button>
+                    {open && (
+                      <div className="sim-acc-body">
+                        <p className="sim-acc-text">{ex.text}</p>
+                        <button
+                          type="button"
+                          className="sim-btn sim-btn-run"
+                          onClick={() => {
+                            setScenario(ex.text);
+                            setExamplesOpen(false);
+                          }}
+                        >
+                          Use this scenario
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

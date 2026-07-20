@@ -1395,7 +1395,10 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   background:var(--elevated);border:1px solid var(--line);border-radius:0;
   box-shadow:none;}
 .ra-scope .mobile-railnav .mrail-thread-controls{position:relative;flex:0 0 auto;}
-.ra-scope .mobile-railnav .thread-mobile-menu{top:calc(100% + 6px);bottom:auto;right:0;}
+/* Mobile: anchor the pop-up menu to the viewport's right edge with a little
+   padding (not to the sliders button, which sits left of the hamburger), and a
+   small gap below the fixed header (8px pad + 40px btn + 8px = 56px). */
+.ra-scope .mobile-railnav .thread-mobile-menu{position:fixed;top:56px;right:8px;left:auto;bottom:auto;}
 .ra-scope .mrail-btn.on{color:var(--text);background:var(--surface);}
 .ra-scope .thread-mobile-menu-div{height:1px;margin:4px 2px;background:var(--line-soft);}
 .ra-scope .thread-mobile-menu-label{font-family:inherit;font-size:11px;font-weight:500;letter-spacing:.4px;
@@ -1594,6 +1597,18 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   color:var(--text-2,#5a5a5a);background:transparent;border:none;padding:0 2px;cursor:pointer;}
 .ra-scope .trace-fs-close:hover,.trace-fs-close:hover{color:var(--text,#111);}
 .ra-scope .trace-fs-body,.trace-fs-body{flex:1 1 auto;min-height:0;overflow:auto;padding-right:4px;}
+@media (max-width:900px){
+  /* Mobile: the trace fullscreen overtakes the whole screen — no backdrop
+     padding, no centered card, no border. */
+  .ra-scope .trace-fs-overlay,.trace-fs-overlay{padding:0;}
+  .ra-scope .trace-fs,.trace-fs{width:100%;max-width:none;height:100dvh;max-height:100dvh;border:none;}
+  /* Model Setup canvas fullscreen portals outside .ra-scope with Tailwind
+     inset-4 + border + shadow; overtake the whole screen and drop the + (add
+     canvas) and i (help) buttons from its tab bar on mobile. */
+  .rf-canvas-fullscreen{inset:0 !important;border:none !important;border-radius:0 !important;box-shadow:none !important;}
+  .rf-canvas-fullscreen [aria-label="Add canvas"],
+  .rf-canvas-fullscreen [aria-label="How to use the canvas"]{display:none !important;}
+}
 .ra-scope .trace-fs,.trace-fs,
 .ra-scope .trace-fs *,.trace-fs *{
   font-family:inherit !important;
