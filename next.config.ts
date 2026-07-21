@@ -16,10 +16,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@airlab/openclaw-discovery", "@airlab/openclaw-runtime", "@airlab/canvas-core", "@airlab/canvas-compiler", "@airlab/canvas-planner", "@airlab/canvas-rules", "@airlab/canvas-ui", "@airlab/chat-ui", "@airlab/orchestration-core", "@airlab/orchestration-runtime"],
   // Keep the MCP SDK out of the bundled function chunks: load it from
   // node_modules at runtime instead. The SDK uses Node built-ins (child_process
-  // for the stdio transport, etc.) and is shared by several routes — bundling a
-  // copy into each function chunk bloats them and can fail the deploy upload.
-  // Combined with the literal dynamic import() in app/lib/tools/mcp.ts, Vercel's
-  // tracer still includes the package, so it's present at runtime.
+  // for the stdio transport, etc.) and can be pulled in via orchestration-runtime.
   serverExternalPackages: ["@modelcontextprotocol/sdk"],
   // Sleep used to ship standalone /input + /expert-dashboard pages; those now
   // live in the shared studio layout (same as law / analyst).
