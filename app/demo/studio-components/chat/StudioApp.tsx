@@ -1107,7 +1107,24 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 conversation row exists — otherwise a failed conversation
                 create would leave the user staring at the empty state. */}
             {activeId || messages.length > 0 ? (
-              <ThreadHeader config={config} />
+              <ThreadHeader
+                config={config}
+                showThreadControls={messages.length > 0}
+                hideBubbleControls={hideBubbleControls}
+                onToggleHideBubbleControls={() => setHideBubbleControls((v) => !v)}
+                allCollapsed={
+                  messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])
+                }
+                onToggleCollapseAll={() => {
+                  if (messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])) {
+                    setCollapsedByIdx({});
+                    return;
+                  }
+                  const next: Record<number, boolean> = {};
+                  for (let i = 0; i < messages.length; i++) next[i] = true;
+                  setCollapsedByIdx(next);
+                }}
+              />
             ) : null}
             {activeId || messages.length > 0 ? (
               <Thread
@@ -1162,20 +1179,6 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
               isSpeaking={isSpeaking}
               onStopSpeaking={stopSpeaking}
               showThreadControls={messages.length > 0}
-              hideBubbleControls={hideBubbleControls}
-              onToggleHideBubbleControls={() => setHideBubbleControls((v) => !v)}
-              allCollapsed={
-                messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])
-              }
-              onToggleCollapseAll={() => {
-                if (messages.length > 0 && messages.every((_, i) => !!collapsedByIdx[i])) {
-                  setCollapsedByIdx({});
-                  return;
-                }
-                const next: Record<number, boolean> = {};
-                for (let i = 0; i < messages.length; i++) next[i] = true;
-                setCollapsedByIdx(next);
-              }}
               onOpenThreadFullscreen={() => setThreadFullscreen(true)}
               selectedModel={selectedModel}
               onSelectModel={(model) => {

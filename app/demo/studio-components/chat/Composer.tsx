@@ -26,10 +26,6 @@ export function Composer({
   isSpeaking,
   onStopSpeaking,
   showThreadControls = false,
-  hideBubbleControls = true,
-  onToggleHideBubbleControls,
-  allCollapsed = false,
-  onToggleCollapseAll,
   onOpenThreadFullscreen,
   selectedModel = OPENAI_MODEL,
   onSelectModel,
@@ -50,10 +46,6 @@ export function Composer({
   isSpeaking: boolean;
   onStopSpeaking: () => void;
   showThreadControls?: boolean;
-  hideBubbleControls?: boolean;
-  onToggleHideBubbleControls?: () => void;
-  allCollapsed?: boolean;
-  onToggleCollapseAll?: () => void;
   onOpenThreadFullscreen?: () => void;
   selectedModel?: string;
   onSelectModel?: (model: ChatModelId) => void;
@@ -118,40 +110,6 @@ export function Composer({
           <div className="composer-thread-controls">
             <div className="composer-thread-controls-desktop">
               <div className="composer-thread-controls-left">
-                <button
-                  type="button"
-                  className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
-                  onClick={onToggleHideBubbleControls}
-                  title={
-                    hideBubbleControls
-                      ? "Show bubble nav and footer"
-                      : "Hide bubble nav and footer"
-                  }
-                >
-                  <span className="thread-pill-swap">
-                    <span className={hideBubbleControls ? "is-active" : ""} aria-hidden={!hideBubbleControls}>
-                      Show controls
-                    </span>
-                    <span className={!hideBubbleControls ? "is-active" : ""} aria-hidden={hideBubbleControls}>
-                      Hide controls
-                    </span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className="thread-collapse-all"
-                  onClick={onToggleCollapseAll}
-                  title={allCollapsed ? "Expand every message" : "Collapse every message to one line"}
-                >
-                  <span className="thread-pill-swap">
-                    <span className={allCollapsed ? "is-active" : ""} aria-hidden={!allCollapsed}>
-                      Expand all
-                    </span>
-                    <span className={!allCollapsed ? "is-active" : ""} aria-hidden={allCollapsed}>
-                      Collapse all
-                    </span>
-                  </span>
-                </button>
                 <button
                   type="button"
                   className="thread-collapse-all"

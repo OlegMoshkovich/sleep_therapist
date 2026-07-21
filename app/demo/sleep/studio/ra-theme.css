@@ -1517,21 +1517,14 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   color:var(--text-3); font-family:inherit; font-size:12px; font-weight:400;
   line-height:1; cursor:pointer; white-space:nowrap;}
 .ra-scope .bubble-collapse:hover{color:var(--text); background:transparent;}
-/* Collapsed: a single ellipsized line — markdown formatting stays active, but
-   block elements are flattened inline so the preview never breaks onto 2 lines. */
+/* Collapsed: hard one-line preview (plain text in JS + ellipsis shell). */
 .ra-scope .msg-user.is-collapsed .bubble-body,
 .ra-scope .msg-ai .bubble.is-collapsed .bubble-body{
   overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
-  line-height:1.5; display:block; max-height:none;
+  line-height:1.5; display:block; max-height:calc(1.5em + 20px);
   padding-top:10px; padding-bottom:10px;}
-.ra-scope .msg-user.is-collapsed .bubble-body *,
-.ra-scope .msg-ai .bubble.is-collapsed .bubble-body *{
-  display:inline; margin:0; padding:0; list-style:none; border:none;}
-/* Re-add a separating space between flattened blocks so paragraphs / list items
-   don't run together (e.g. "Hello.World.") on the collapsed one-liner. */
-.ra-scope .msg-user.is-collapsed .bubble-body :is(p,li,h1,h2,h3,h4,h5,h6,tr,blockquote)::after,
-.ra-scope .msg-ai .bubble.is-collapsed .bubble-body :is(p,li,h1,h2,h3,h4,h5,h6,tr,blockquote)::after{
-  content:" ";}
+.ra-scope .bubble-collapsed-preview,
+.ra-scope .bubble-form-collapsed{display:inline; white-space:nowrap;}
 .ra-scope .bubble-collapse-turn{font-weight:600; color:var(--text-2); margin-right:2px;}
 /* A message that has feedback left on it gets tinted. */
 .ra-scope .msg-ai .bubble.has-feedback{background:#D1E7F3;border-color:#b7d4e6;}

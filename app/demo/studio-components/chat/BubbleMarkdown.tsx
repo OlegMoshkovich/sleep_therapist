@@ -37,6 +37,27 @@ export function worksheetSectionCount(text: string): number {
 }
 
 /**
+ * One-line plain preview for collapsed bubbles. Strips markdown structure so
+ * lists / breaks can't force the collapsed shell taller than a single line.
+ */
+export function collapsedPlainPreview(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/^\s*[-*+]\s+/gm, "")
+    .replace(/^\s*\d+\.\s+/gm, "")
+    .replace(/[*_~|>]+/g, "")
+    .replace(/\$?_{3,}/g, "…")
+    .replace(/\[[^\]]*\]/g, "…")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * LLMs often jam the next numbered section onto the same line as a blank.
  * Pull those apart so the form can stack cleanly.
  */

@@ -5,7 +5,12 @@ import { Ic } from "../ra-icons";
 import type { FeedbackEntry } from "../FeedbackControls";
 import { AssistantMark } from "./AssistantMark";
 import { BubbleFullscreen } from "./BubbleFullscreen";
-import { BubbleMarkdown, looksLikeWorksheet, worksheetSectionCount } from "./BubbleMarkdown";
+import {
+  BubbleMarkdown,
+  collapsedPlainPreview,
+  looksLikeWorksheet,
+  worksheetSectionCount,
+} from "./BubbleMarkdown";
 import { VoiceFeedbackButton } from "./VoiceFeedbackButton";
 import type { Message, StudioChatConfig } from "./types";
 
@@ -250,7 +255,7 @@ export function Bubble({
               <span className="bubble-collapse-turn">{turnNumber}. </span>
             ) : null}
             {isUser ? (
-              m.text
+              <span className="bubble-collapsed-preview">{collapsedPlainPreview(m.text)}</span>
             ) : looksLikeWorksheet(m.text) ? (
               <span className="bubble-form-collapsed">
                 {(() => {
@@ -259,7 +264,7 @@ export function Bubble({
                 })()}
               </span>
             ) : (
-              <BubbleMarkdown>{m.text}</BubbleMarkdown>
+              <span className="bubble-collapsed-preview">{collapsedPlainPreview(m.text)}</span>
             )}
           </>
         ) : isUser ? (
