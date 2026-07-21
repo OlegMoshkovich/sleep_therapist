@@ -23,6 +23,7 @@ import {
   MOBILE_DRAWER_TAB_KEY,
   MONO_PREF_KEY,
   PANEL_TABS,
+  ROUND_PREF_KEY,
   SIM_TITLE_PREFIX,
   TTS_PREF_KEY,
 } from "./constants";
@@ -99,6 +100,24 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
       // ignore
     }
   }, [monoTheme]);
+  // Rounded UI preference (persisted). Default ON — adds `.ra-round` for pills /
+  // soft bubbles. Explicit "0" keeps the sharp / square chrome.
+  const [roundUi, setRoundUi] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem(ROUND_PREF_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(ROUND_PREF_KEY, roundUi ? "1" : "0");
+    } catch {
+      // ignore
+    }
+  }, [roundUi]);
   // Voice: TTS auto-play preference (persisted to localStorage) and hooks.
   const [autoSpeak, setAutoSpeak] = useState(false);
   const autoSpeakRef = useRef(autoSpeak);
@@ -1041,7 +1060,7 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
 
   return (
     <div
-      className={"ra-scope" + (monoTheme ? " ra-mono" : "")}
+      className={"ra-scope" + (monoTheme ? " ra-mono" : "") + (roundUi ? " ra-round" : "")}
       onClick={() => {
         if (menuOpen) setMenuOpen(false);
         if (infoOpen) setInfoOpen(false);
@@ -1087,6 +1106,8 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 feedbackMode={feedbackMode}
                 monoTheme={monoTheme}
                 onToggleMono={() => setMonoTheme((v) => !v)}
+                roundUi={roundUi}
+                onToggleRound={() => setRoundUi((v) => !v)}
                 userEmail={user?.email ?? ""}
                 userImage={user?.imageUrl}
                 isAdmin={isAdmin}
@@ -1304,6 +1325,8 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 feedbackMode={feedbackMode}
                 monoTheme={monoTheme}
                 onToggleMono={() => setMonoTheme((v) => !v)}
+                roundUi={roundUi}
+                onToggleRound={() => setRoundUi((v) => !v)}
                 onToggleFeedbackMode={() => { setFeedbackMode((m) => !m); closeDrawer("account"); }}
                 onSignOut={signOut}
               />

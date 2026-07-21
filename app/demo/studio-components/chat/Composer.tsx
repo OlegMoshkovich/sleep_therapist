@@ -152,7 +152,7 @@ export function Composer({
                   ? "Listening… tap the mic to stop"
                   : isTranscribing
                     ? "Transcribing…"
-                    : "Type a message or tap the mic to speak"
+                    : "Write a message..."
               }
               value={value}
               onChange={(e) => setValue(e.target.value)}

@@ -67,6 +67,8 @@ export function Sidebar({
   feedbackMode,
   monoTheme,
   onToggleMono,
+  roundUi,
+  onToggleRound,
   userEmail,
   userImage,
   isAdmin,
@@ -92,6 +94,8 @@ export function Sidebar({
   feedbackMode: boolean;
   monoTheme: boolean;
   onToggleMono: () => void;
+  roundUi: boolean;
+  onToggleRound: () => void;
   userEmail: string;
   userImage?: string;
   isAdmin: boolean;
@@ -212,6 +216,13 @@ export function Sidebar({
             >
               <span className="ic"><Ic.Moon size={17} /></span>
               Black &amp; white{monoTheme ? " ✓" : ""}
+            </button>
+            <button
+              className="pop-row"
+              onClick={() => { setMenuOpen(() => false); onToggleRound(); }}
+            >
+              <span className="ic"><Ic.Round size={17} /></span>
+              Rounded UI{roundUi ? " ✓" : ""}
             </button>
             <button
               className="pop-row danger"

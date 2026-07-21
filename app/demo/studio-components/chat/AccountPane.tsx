@@ -12,6 +12,8 @@ export function AccountPane({
   feedbackMode,
   monoTheme,
   onToggleMono,
+  roundUi,
+  onToggleRound,
   onToggleFeedbackMode,
   onSignOut,
 }: {
@@ -21,6 +23,8 @@ export function AccountPane({
   feedbackMode: boolean;
   monoTheme: boolean;
   onToggleMono: () => void;
+  roundUi: boolean;
+  onToggleRound: () => void;
   onToggleFeedbackMode: () => void;
   onSignOut: () => void;
 }) {
@@ -62,6 +66,10 @@ export function AccountPane({
       <button className="pop-row" onClick={onToggleMono}>
         <span className="ic"><Ic.Moon size={17} /></span>
         Black &amp; white{monoTheme ? " ✓" : ""}
+      </button>
+      <button className="pop-row" onClick={onToggleRound}>
+        <span className="ic"><Ic.Round size={17} /></span>
+        Rounded UI{roundUi ? " ✓" : ""}
       </button>
       <button className="pop-row danger" onClick={onSignOut}>
         <span className="ic"><Ic.SignOut size={17} /></span>Sign out

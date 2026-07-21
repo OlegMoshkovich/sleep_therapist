@@ -1413,23 +1413,32 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;}
 /* Shared header band with the right-drawer Model Setup / Observability tabs. */
 .ra-scope{--studio-head-h:60px;}
-.ra-scope .thread-head{display:flex;align-items:center;gap:13px;height:var(--studio-head-h);padding:0 0 0 22px;box-sizing:border-box;
-  width:max-content;max-width:100%;border-bottom:none;position:relative;}
-/* Underline from avatar through Collapse all, with a left gap from the accordion. */
-.ra-scope .thread-head::after{content:"";position:absolute;left:22px;right:0;bottom:0;height:1px;background:var(--line-soft);pointer-events:none;}
+/* Floating pill over the scrolling thread — same height/gaps/type as before. */
+.ra-scope .thread-head{display:flex;align-items:center;gap:13px;height:auto;padding:4px 16px 4px 4px;box-sizing:border-box;
+  width:max-content;max-width:calc(100% - 44px);border:none;border-radius:0;background:var(--frame);
+  position:absolute;top:12px;left:22px;z-index:25;pointer-events:auto;}
+/* Keep avatar padding identical so the photo doesn't jump when the pill expands. */
+.ra-scope .thread-head.is-avatar-only{padding:4px;gap:0;}
+.ra-scope .thread-head::after{display:none;}
+.ra-scope .th-avatar-toggle{flex:0 0 auto;display:flex;align-items:center;justify-content:center;padding:0;margin:0;
+  border:none;background:transparent;cursor:pointer;border-radius:50%;line-height:0;}
+.ra-scope .th-avatar-toggle:hover{opacity:.88;}
 .ra-scope .th-logo{flex:0 0 auto;width:28px;height:28px;object-fit:cover;display:block;border-radius:50%;background:#736766;}
-.ra-scope .th-meta{flex:0 0 auto;min-width:0;overflow:visible;display:flex;align-items:flex-end;gap:14px;}
+.ra-scope .th-meta{flex:0 0 auto;min-width:0;overflow:visible;display:flex;align-items:center;gap:14px;}
 .ra-scope .th-name{font-family:var(--serif);font-size:18px;font-weight:500;display:flex;align-items:center;gap:8px;white-space:nowrap;line-height:1.25;}
 .ra-scope .th-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12.5px;line-height:1.3;color:var(--text-3);font-style:italic;font-family:var(--serif);}
 .ra-scope .th-actions{display:flex;align-items:center;gap:4px;}
-/* Show controls / Collapse all — plain text, bottom-aligned with the title. */
-.ra-scope .thread-head-controls{display:flex;align-items:baseline;gap:12px;margin:0;padding:0 2px 1px 0;flex:0 0 auto;white-space:nowrap;}
+/* Show controls / Collapse all — plain text, vertically centered with the title. */
+.ra-scope .thread-head-controls{display:flex;align-items:center;gap:12px;margin:0;padding:0;flex:0 0 auto;white-space:nowrap;}
 @media (max-width:900px){
   .ra-scope .thread-head-controls{display:none;}
 }
 
-.ra-scope .thread{flex:1;overflow-y:auto;padding:26px 26px 0;display:flex;flex-direction:column;gap:22px;min-height:0;}
+.ra-scope .thread{flex:1;overflow-y:auto;padding:26px 26px 96px;display:flex;flex-direction:column;gap:22px;min-height:0;}
+/* Clearance so the first bubbles sit below the floating header pill. */
+.ra-scope .thread-head + .thread{padding-top:68px;}
 .ra-scope .thread.thread-loading{position:relative;align-items:stretch;justify-content:stretch;padding:0;overflow:hidden;}
+.ra-scope .thread-head + .thread.thread-loading{padding-top:0;}
 .ra-scope .thread.thread-loading > *{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
 .ra-scope .thread-inner{width:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
 .ra-scope .day-divider{display:flex;align-items:center;gap:14px;color:var(--text-4);font-size:11px;letter-spacing:1.6px;}
@@ -1456,7 +1465,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
    padding (not to the sliders button, which sits left of the hamburger), and a
    clear gap below the fixed header (8px pad + 40px btn + 20px = 68px). */
 .ra-scope .mobile-railnav .thread-mobile-menu{position:fixed;top:68px;right:8px;left:auto;bottom:auto;}
-.ra-scope .mrail-btn.on{color:var(--text);background:var(--surface);}
+.ra-scope button.mrail-btn.on{color:var(--text);background:var(--frame);}
 .ra-scope .thread-mobile-menu-div{height:1px;margin:4px 2px;background:var(--line-soft);}
 .ra-scope .thread-mobile-menu-label{font-family:inherit;font-size:11px;font-weight:500;letter-spacing:.4px;
   text-transform:uppercase;color:var(--text-4);padding:6px 10px 2px;}
@@ -1877,6 +1886,9 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 
 /* Client scenario label row + Examples button — match .sim-btn typography. */
 .ra-scope .sim-scenario-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ra-scope button.sim-scenario-toggle{display:inline-flex;align-items:center;gap:6px;min-width:0;background:transparent;border:none;padding:0;margin:0;cursor:pointer;color:var(--text);font-family:inherit;}
+.ra-scope button.sim-scenario-toggle .sim-label{cursor:pointer;}
+.ra-scope button.sim-scenario-toggle svg{color:var(--text-3);flex:0 0 auto;transition:transform .15s ease;}
 .ra-scope .sim-examples-btn{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:14px;font-weight:400;
   color:var(--text-2);background:transparent;border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer;white-space:nowrap;}
 .ra-scope .sim-examples-btn:hover{color:var(--text);background:var(--surface-2);border-color:var(--text-4);}
@@ -1905,7 +1917,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .sim-acc-body .sim-btn{align-self:flex-end;margin-bottom:4px;}
 
 /* empty state */
-.ra-scope .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:0;padding:30px;}
+.ra-scope .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:0;padding:30px 30px 96px;}
 .ra-scope .empty-orb{width:60px;height:60px;border-radius:50%;}
 .ra-scope .empty-logo{flex:0 0 auto;line-height:0;display:flex;align-items:center;justify-content:center;}
 .ra-scope .empty-logo a{display:block;line-height:0;}
@@ -1916,7 +1928,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 /* `button.sug-chip` beats the global `button { border:none }` reset. */
 .ra-scope button.sug-chip{display:inline-flex;align-items:center;justify-content:center;gap:5px;
   font-family:inherit;font-size:12px;font-weight:400;line-height:1;color:var(--text-2);
-  background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;
+  background:transparent;border:1px solid var(--line);border-radius:0;padding:6px 12px;
   box-sizing:border-box;cursor:pointer;white-space:nowrap;}
 .ra-scope button.sug-chip:hover{background:var(--surface-2);border-color:var(--text-4);color:var(--text);}
 .ra-scope button.sug-chip .ic{color:var(--text-3);display:flex;}
@@ -1924,43 +1936,45 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 /* Upload CTA sits with the empty-state cluster (below suggestion pills). */
 .ra-scope button.empty-upload{display:inline-flex;align-items:center;justify-content:center;gap:6px;
   font-family:inherit;font-size:11px;font-weight:500;line-height:1;color:var(--text);
-  background:var(--surface);border:1px solid var(--text-3);border-radius:999px;padding:9px 16px;
+  background:var(--surface);border:1px solid var(--text-3);border-radius:0;padding:9px 16px;
   box-sizing:border-box;cursor:pointer;white-space:nowrap;margin-top:24px;}
 .ra-scope button.empty-upload:hover{background:var(--surface-2);border-color:var(--text);color:var(--text);}
 .ra-scope button.empty-upload .ic{color:var(--text);display:flex;}
 
-/* composer */
-.ra-scope .composer-wrap{padding:0 26px 18px;border-top:none;display:flex;flex-direction:column;gap:8px;}
+/* composer — floating pill over the scrolling thread (mirrors thread-head). */
+.ra-scope .composer-wrap{position:absolute;left:0;right:0;bottom:0;z-index:24;padding:0 26px 18px;border-top:none;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none;background:transparent;overflow:visible;}
 .ra-scope .composer-inner{position:relative;width:100%;max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:8px;
-  border-top:none;padding-top:12px;box-sizing:border-box;}
+  border-top:none;padding-top:0;box-sizing:border-box;pointer-events:auto;overflow:visible;}
 .ra-scope .action-chips{display:flex;flex-wrap:wrap;gap:9px;}
 /* `button.act-chip` beats the global `button { border:none }` reset. */
-.ra-scope button.act-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;
+.ra-scope button.act-chip{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:0;
   padding:7px 14px;font-size:13px;color:var(--text-2);background:transparent;white-space:nowrap;cursor:pointer;}
 .ra-scope button.act-chip:hover{background:var(--surface);color:var(--text);}
 .ra-scope button.act-chip .ic{color:var(--text-3);display:flex;}
-.ra-scope .composer-row{display:flex;align-items:center;gap:11px;width:100%;}
-.ra-scope .composer{flex:1;width:100%;min-width:0;display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);
-  border-radius:999px;padding:6px 8px;box-sizing:border-box;}
-.ra-scope .composer:focus-within{background:var(--surface-2);}
+/* 20px past the AI bubble on each side (bubble starts after avatar 28 + gap 13). */
+.ra-scope .composer-row{display:flex;align-items:center;gap:11px;width:calc(100% - 41px + 40px);margin-left:21px;box-sizing:border-box;}
+.ra-scope .composer{flex:1;width:100%;min-width:0;display:flex;align-items:center;gap:9px;background:var(--frame);border:1px solid var(--line);
+  border-radius:0;padding:6px 8px;box-sizing:border-box;box-shadow:none;}
+.ra-scope .composer:focus-within{background:var(--frame);}
 .ra-scope .comp-model-wrap{position:relative;flex:0 0 auto;display:flex;align-items:center;}
 /* `button.comp-model` beats `.ra-scope button:not(.rf-canvas *){border:none}`. */
-.ra-scope button.comp-model{width:34px;height:34px;flex:0 0 auto;border-radius:50%;border:none;color:var(--text-2);
+.ra-scope button.comp-model{width:34px;height:34px;flex:0 0 auto;border-radius:0;border:none;color:var(--text-2);
   background:transparent;opacity:1;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:0;}
 .ra-scope button.comp-model:hover,.ra-scope button.comp-model.on{color:var(--text);background:var(--surface-2);}
 .ra-scope button.comp-model:disabled{opacity:.35;cursor:default;}
 .ra-scope .thread-model-menu-left{left:0;right:auto;}
-.ra-scope .comp-send{width:36px;height:36px;flex:0 0 auto;border-radius:50%;background:var(--surface-2);color:var(--text-2);
+.ra-scope .comp-send{width:36px;height:36px;flex:0 0 auto;border-radius:0;background:var(--surface-2);color:var(--text-2);
   display:flex;align-items:center;justify-content:center;}
 .ra-scope .comp-send:hover{background:#b3b1a3;color:var(--text);}
 .ra-scope .comp-send:disabled{opacity:.45;cursor:default;}
 .ra-scope .comp-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;padding:0 4px;min-width:0;}
 .ra-scope .comp-input::placeholder{color:var(--text-3);}
-.ra-scope .comp-speaker{width:34px;height:34px;flex:0 0 auto;border-radius:50%;color:var(--text-2);display:flex;align-items:center;justify-content:center;}
+.ra-scope .comp-speaker{width:34px;height:34px;flex:0 0 auto;border-radius:0;color:var(--text-2);display:flex;align-items:center;justify-content:center;}
 .ra-scope .comp-speaker:hover{color:var(--text);background:var(--surface-2);opacity:1;}
-.ra-scope .comp-mic{width:34px;height:34px;flex:0 0 auto;border-radius:50%;color:var(--text-2);opacity:.5;display:flex;align-items:center;justify-content:center;}
+.ra-scope .comp-mic{width:34px;height:34px;flex:0 0 auto;border-radius:0;color:var(--text-2);opacity:.5;display:flex;align-items:center;justify-content:center;}
 .ra-scope .comp-mic:hover{color:var(--text);background:var(--surface-2);opacity:1;}
-.ra-scope .voice-btn{width:46px;height:46px;flex:0 0 auto;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+.ra-scope .voice-btn{width:46px;height:46px;flex:0 0 auto;border-radius:0;background:var(--accent);color:var(--accent-ink);
   display:flex;align-items:center;justify-content:center;transition:transform .14s, box-shadow .2s;
   box-shadow:0 0 0 1px rgba(0,0,0,.2), 0 6px 18px -6px var(--accent);}
 .ra-scope .voice-btn:hover{transform:scale(1.06);}
@@ -1987,8 +2001,8 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
      top border color (var(--line), light grey). */
   /* Match the header to the message column: title left edge lines up with the
      bubble left edge, both at the thread's 14px inset (+28px avatar +13px gap). */
-  .ra-scope .thread-head{border-bottom:none;padding:0 14px;}
-  .ra-scope .thread-head::after{display:none;}
+  .ra-scope .thread-head{left:14px;max-width:calc(100% - 28px);padding:4px 14px 4px 4px;}
+  .ra-scope .thread-head.is-avatar-only{padding:4px;}
   /* Tighter tab spacing in the mobile bottom-sheet (all tabs shown at once). */
   .ra-scope .drawer-tabs{gap:14px;padding:0 12px;}
   /* Drop the redundant × on mobile — the sheet closes by flicking the grabber. */
@@ -2001,15 +2015,16 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
      the bottom drawer (there's no docked rail/sidebar on mobile). */
   /* float only the icons in the top-right so the Council header sits
      inline with them (no full-width bar, no background). */
-  .ra-scope .mobile-railnav{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:2px;
+  .ra-scope .mobile-railnav{display:flex;flex-direction:row;align-items:center;justify-content:flex-end;gap:6px;
     position:fixed;top:0;right:0;z-index:60;
     background:transparent;
-    /* Right padding lands the hamburger icon on the bubbles' right edge (14px):
-       3px + (40px btn - 18px icon)/2 = 14px. */
-    padding:8px 3px;}
-  .ra-scope .mrail-btn{width:40px;height:40px;flex:0 0 auto;display:flex;align-items:center;
-    justify-content:center;border-radius:12px;color:var(--text-2);border:1px solid transparent;}
-  .ra-scope .mrail-btn:hover,.ra-scope .mrail-btn:active{background:var(--surface);color:var(--text);}
+    /* Match thread-head inset (14px) so circular buttons sit with the chat column. */
+    padding:8px 8px;}
+  /* `button.mrail-btn` beats `.ra-scope button{background:none}`. Same --frame as the header pill. */
+  .ra-scope button.mrail-btn{width:36px;height:36px;flex:0 0 auto;display:flex;align-items:center;
+    justify-content:center;border-radius:0;color:var(--text-2);border:none;background:var(--frame);}
+  .ra-scope button.mrail-btn:hover,.ra-scope button.mrail-btn:active,
+  .ra-scope button.mrail-btn.on{background:var(--frame);color:var(--text);}
 
 
   /* the unified drawer (chats / observability / expert / upload / account)
@@ -2045,10 +2060,13 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   .ra-scope .empty-title{white-space:normal;text-align:center;font-size:14px;line-height:1.4;}
   .ra-scope .side-title,.ra-scope .empty-sub{white-space:normal;}
   .ra-scope .empty-sub{font-size:10px;line-height:1.45;}
-  .ra-scope .thread{padding:18px 14px 0;}
-  .ra-scope .composer-wrap{padding:0 14px 16px;}
-  .ra-scope .composer-inner{padding-top:16px;}
-  .ra-scope .empty{padding:24px 18px;}
+  .ra-scope .thread{padding:18px 14px 88px;}
+  /* Equal side insets — drop the desktop +41px overhang so the pill stays
+     symmetrical and the mic doesn't hang off the right edge. */
+  .ra-scope .composer-wrap{padding:0 14px calc(16px + env(safe-area-inset-bottom,0px));}
+  .ra-scope .composer-inner{padding-top:0;max-width:none;}
+  .ra-scope .composer-row{width:calc(100% - 41px + 40px);margin-left:21px;}
+  .ra-scope .empty{padding:24px 18px 88px;}
 
   /* Compact chat typography on narrow screens */
   .ra-scope{--bubble-font-size:12px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -2058,7 +2076,9 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   .ra-scope .msg-ai .bubble .bubble-body{font-size:12px;line-height:1.45;}
   .ra-scope .comp-input{font-size:12px;}
   .ra-scope .typing-status{font-size:12px;}
-  .ra-scope .sug-chip{font-size:12px;padding:6px 12px;}
+  /* Mobile: stack suggestion pills vertically so they never overflow the viewport. */
+  .ra-scope .suggests{flex-direction:column;flex-wrap:wrap;align-items:center;width:100%;}
+  .ra-scope .sug-chip{font-size:12px;padding:6px 12px;max-width:100%;white-space:normal;text-align:center;}
   .ra-scope .bubble-fs-body,.bubble-fs-body,
   .ra-scope .bubble-fs-textarea,.bubble-fs-textarea{font-size:12px;line-height:1.5;}
   .ra-scope .bubble-fs-title,.bubble-fs-title{font-size:16px;}
@@ -2572,7 +2592,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 }
 .ra-scope .fb-chip:hover{ border-color:var(--text-3); color:var(--text); }
 .ra-scope .fb-editor{
-  width:min(420px,100%); background:var(--elevated); border:1px solid var(--line);
+  width:min(420px,100%); background:var(--frame); border:1px solid var(--line);
   border-radius:0; padding:12px; display:flex; flex-direction:column; gap:10px;
   box-shadow:none;
 }
@@ -2639,3 +2659,42 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .fb-error-toast button{flex:0 0 auto;display:flex;align-items:center;justify-content:center;
   border:none;background:transparent;color:var(--danger);cursor:pointer;padding:2px;border-radius:5px;}
 .ra-scope .fb-error-toast button:hover{background:rgba(240,80,37,0.15);}
+
+/* ============================== ROUNDED UI ============================== */
+/* `.ra-round` softens chat chrome (pills, bubbles, circular controls). Toggle
+   from Account → Rounded UI. Default ON via StudioApp / localStorage. */
+.ra-scope.ra-round{
+  --radius-sm:8px;
+  --radius-md:12px;
+  --radius-pill:999px;
+}
+.ra-scope.ra-round .thread-head,
+.ra-scope.ra-round .composer,
+.ra-scope.ra-round button.act-chip,
+.ra-scope.ra-round button.sug-chip,
+.ra-scope.ra-round button.empty-upload,
+.ra-scope.ra-round .fb-chip,
+.ra-scope.ra-round .fb-add{border-radius:var(--radius-pill);}
+.ra-scope.ra-round .msg-ai .bubble,
+.ra-scope.ra-round .msg-user,
+.ra-scope.ra-round .msg-ai .bubble.bubble-traceable,
+.ra-scope.ra-round .fb-editor,
+.ra-scope.ra-round .fb-textarea,
+.ra-scope.ra-round .fb-btn,
+.ra-scope.ra-round .fb-banner,
+.ra-scope.ra-round .fb-error-toast{border-radius:var(--radius-sm);}
+.ra-scope.ra-round button.comp-model,
+.ra-scope.ra-round .comp-send,
+.ra-scope.ra-round .comp-speaker,
+.ra-scope.ra-round .comp-mic,
+.ra-scope.ra-round .voice-btn,
+.ra-scope.ra-round button.mrail-btn,
+.ra-scope.ra-round .th-avatar-toggle{border-radius:var(--radius-pill);}
+.ra-scope.ra-round .side-search,
+.ra-scope.ra-round .acct-chip,
+.ra-scope.ra-round .popover,
+.ra-scope.ra-round .help-popover,
+.ra-scope.ra-round .thread-model-menu,
+.ra-scope.ra-round .thread-mobile-menu,
+.ra-scope.ra-round .thread-mobile-actions-btn{border-radius:var(--radius-md);}
+.ra-scope.ra-round .bubble-form-section{border-radius:var(--radius-md);}

@@ -61,6 +61,8 @@ export const Ic = {
   Edit: mk(<><path d="M5 19h14" /><path d="M14.5 5.5l3 3L9 17l-4 1 1-4z" /></>),
   Clock: mk(<><circle cx="12" cy="12" r="8.5" /><path d="M12 7.5V12l3 2" /></>),
   Moon: mk(<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />),
+  /* Soft corner / rounded-UI toggle. */
+  Round: mk(<><rect x="4" y="4" width="16" height="16" rx="6" /><circle cx="12" cy="12" r="3.5" /></>),
   Panel: mk(<><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><line x1="9.5" y1="4.5" x2="9.5" y2="19.5" /></>),
   Close: mk(<><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></>),
   /* Square frame (no corner radius) — matches canvas step badges / sharp chrome. */

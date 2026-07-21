@@ -7,6 +7,8 @@ export const SIM_TITLE_PREFIX = "Simulation · ";
 export const TTS_PREF_KEY = "sleep-studio-tts-autoplay";
 /** v2: black & white is the default; old key auto-wrote "0" for greige. */
 export const MONO_PREF_KEY = "sleep-studio-mono-theme-v2";
+/** Rounded UI chrome (pills, soft bubbles). Default ON — explicit "0" keeps sharp corners. */
+export const ROUND_PREF_KEY = "sleep-studio-round-ui";
 /** Mobile bottom-sheet: which tab to reopen the drawer on. Remembered across
  *  opens/reloads; defaults to Model Setup the very first time. */
 export const MOBILE_DRAWER_TAB_KEY = "sleep-studio-mobile-drawer-tab";

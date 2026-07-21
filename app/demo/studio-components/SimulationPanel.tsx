@@ -132,6 +132,8 @@ export function SimulationPanel({
   slot?: HTMLElement | null;
 }) {
   const [scenario, setScenario] = useState("");
+  // Collapse toggle for the scenario field (its label acts as the header).
+  const [scenarioOpen, setScenarioOpen] = useState(true);
   // Kept as a string so the field can be cleared while editing (e.g. wiping "110"
   // to type a new value). Normalized to a valid count on blur and when a run starts.
   const [turns, setTurns] = useState("10");
@@ -310,7 +312,16 @@ export function SimulationPanel({
 
       <div className="sim-setup">
         <div className="sim-scenario-head">
-          <label className="sim-label" htmlFor="sim-scenario">{config.scenarioFieldLabel}</label>
+          <button
+            type="button"
+            className="sim-scenario-toggle"
+            onClick={() => setScenarioOpen((v) => !v)}
+            aria-expanded={scenarioOpen}
+            title={scenarioOpen ? "Collapse" : "Expand"}
+          >
+            <span className="sim-label">{config.scenarioFieldLabel}</span>
+            <Ic.Chevron size={13} style={scenarioOpen ? undefined : { transform: "rotate(-90deg)" }} />
+          </button>
           <button
             type="button"
             className="sim-examples-btn"
@@ -321,15 +332,17 @@ export function SimulationPanel({
             <Ic.Book size={13} /> Examples
           </button>
         </div>
-        <textarea
-          id="sim-scenario"
-          className="sim-textarea"
-          placeholder={config.scenarioPlaceholder}
-          value={scenario}
-          onChange={(e) => setScenario(e.target.value)}
-          disabled={running}
-          rows={4}
-        />
+        {scenarioOpen && (
+          <textarea
+            id="sim-scenario"
+            className="sim-textarea"
+            placeholder={config.scenarioPlaceholder}
+            value={scenario}
+            onChange={(e) => setScenario(e.target.value)}
+            disabled={running}
+            rows={4}
+          />
+        )}
         <div className="sim-row">
           <label className="sim-label" htmlFor="sim-turns">Turns</label>
           <input
