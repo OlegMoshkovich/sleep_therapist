@@ -1195,8 +1195,6 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
               onToggleAutoSpeak={() => setAutoSpeak((v) => !v)}
               isSpeaking={isSpeaking}
               onStopSpeaking={stopSpeaking}
-              showThreadControls={threadLoading || messages.length > 0}
-              onOpenThreadFullscreen={() => setThreadFullscreen(true)}
               selectedModel={selectedModel}
               onSelectModel={(model) => {
                 setSelectedModel(model);

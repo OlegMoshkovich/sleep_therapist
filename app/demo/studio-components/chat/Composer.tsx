@@ -25,8 +25,6 @@ export function Composer({
   onToggleAutoSpeak,
   isSpeaking,
   onStopSpeaking,
-  showThreadControls = false,
-  onOpenThreadFullscreen,
   selectedModel = OPENAI_MODEL,
   onSelectModel,
   onOpenV2Modal,
@@ -45,8 +43,6 @@ export function Composer({
   onToggleAutoSpeak: () => void;
   isSpeaking: boolean;
   onStopSpeaking: () => void;
-  showThreadControls?: boolean;
-  onOpenThreadFullscreen?: () => void;
   selectedModel?: string;
   onSelectModel?: (model: ChatModelId) => void;
   onOpenV2Modal?: () => void;
@@ -106,62 +102,48 @@ export function Composer({
           </div>
         )}
         <div className="composer-stack">
-        {showThreadControls && (
-          <div className="composer-thread-controls">
-            <div className="composer-thread-controls-desktop">
-              <div className="composer-thread-controls-left">
-                <button
-                  type="button"
-                  className="thread-collapse-all"
-                  onClick={onOpenThreadFullscreen}
-                  title="View conversation full screen from the first message"
-                >
-                  Fullscreen
-                </button>
-              </div>
-              <div className="composer-thread-controls-right" ref={modelMenuRef}>
-                <button
-                  type="button"
-                  className={"thread-collapse-all" + (modelMenuOpen ? " on" : "")}
-                  onClick={() => setModelMenuOpen((v) => !v)}
-                  title={`Chat model: ${selectedModelLabel}`}
-                  aria-haspopup="menu"
-                  aria-expanded={modelMenuOpen}
-                >
-                  Model
-                </button>
-                {modelMenuOpen && (
-                  <div className="thread-model-menu" role="menu">
-                    {CHAT_MODEL_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        role={opt.kind === "action" ? "menuitem" : "menuitemradio"}
-                        aria-checked={opt.kind === "model" ? selectedModel === opt.id : undefined}
-                        className={
-                          "thread-model-option" +
-                          (opt.kind === "model" && selectedModel === opt.id ? " selected" : "")
-                        }
-                        onClick={() => {
-                          setModelMenuOpen(false);
-                          if (opt.kind === "action") {
-                            onOpenV2Modal?.();
-                            return;
-                          }
-                          onSelectModel?.(opt.id);
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
         <div className="composer-row">
           <div className="composer">
+            <div className="comp-model-wrap" ref={modelMenuRef}>
+              <button
+                type="button"
+                className={"comp-model" + (modelMenuOpen ? " on" : "")}
+                title={`Chat model: ${selectedModelLabel}`}
+                aria-label={`Chat model: ${selectedModelLabel}`}
+                aria-haspopup="menu"
+                aria-expanded={modelMenuOpen}
+                onClick={() => setModelMenuOpen((v) => !v)}
+                disabled={isRecording || isTranscribing}
+              >
+                <Ic.Dots size={16} />
+              </button>
+              {modelMenuOpen && (
+                <div className="thread-model-menu thread-model-menu-left" role="menu">
+                  {CHAT_MODEL_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role={opt.kind === "action" ? "menuitem" : "menuitemradio"}
+                      aria-checked={opt.kind === "model" ? selectedModel === opt.id : undefined}
+                      className={
+                        "thread-model-option" +
+                        (opt.kind === "model" && selectedModel === opt.id ? " selected" : "")
+                      }
+                      onClick={() => {
+                        setModelMenuOpen(false);
+                        if (opt.kind === "action") {
+                          onOpenV2Modal?.();
+                          return;
+                        }
+                        onSelectModel?.(opt.id);
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <input
               ref={inputRef}
               className="comp-input"
