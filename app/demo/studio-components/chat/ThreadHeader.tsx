@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { AssistantMark } from "./AssistantMark";
 import type { StudioChatConfig } from "./types";
 
@@ -32,6 +33,17 @@ export function ThreadHeader({
   highlightFeedback?: boolean;
   onToggleHighlightFeedback?: () => void;
 }) {
+  // On mobile, Feedback is a round button in MobileNav — keep it out of the pill.
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const sync = () => setIsMobile(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
   return (
     <div className={"thread-head" + (avatarOnly ? " is-avatar-only" : "")}>
       <button
@@ -51,22 +63,16 @@ export function ThreadHeader({
             <div className="thread-head-controls">
               <button
                 type="button"
-                className={"thread-collapse-all" + (hideBubbleControls ? " on" : "")}
+                className={"thread-collapse-all" + (!hideBubbleControls ? " on" : "")}
                 onClick={onToggleHideBubbleControls}
+                aria-pressed={!hideBubbleControls}
                 title={
                   hideBubbleControls
                     ? "Show bubble nav and footer"
                     : "Hide bubble nav and footer"
                 }
               >
-                <span className="thread-pill-swap">
-                  <span className={hideBubbleControls ? "is-active" : ""} aria-hidden={!hideBubbleControls}>
-                    Show controls
-                  </span>
-                  <span className={!hideBubbleControls ? "is-active" : ""} aria-hidden={hideBubbleControls}>
-                    Hide controls
-                  </span>
-                </span>
+                Controls
               </button>
               <button
                 type="button"
@@ -85,7 +91,7 @@ export function ThreadHeader({
               </button>
             </div>
           )}
-          {showFeedbackToggle ? (
+          {showFeedbackToggle && !isMobile ? (
             <button
               type="button"
               className={"thread-collapse-all thread-feedback-toggle" + (highlightFeedback ? " on" : "")}

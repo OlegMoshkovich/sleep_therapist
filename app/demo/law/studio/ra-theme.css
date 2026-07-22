@@ -274,6 +274,10 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .right-rail{width:64px;flex:0 0 64px;background:var(--panel);border-left:none;
   display:flex;flex-direction:column;align-items:center;
   padding:calc((var(--studio-head-h,60px) - 44px) / 2) 0 14px;gap:8px;min-height:0;}
+/* Avatar-only: hide rail chrome but keep the 64px flex footprint so .main
+   (and centered bubbles) don't shift when the header pill collapses. */
+.ra-scope.is-avatar-only .sidebar.rail,
+.ra-scope.is-avatar-only .right-rail{visibility:hidden;pointer-events:none;}
 /* When a right drawer is open, the rail floats at the drawer's left edge (its
    `right` is set inline to the live drawer width, so it tracks resizing). It's
    out of the flex flow, transparent, and click-through except on the icons, and
@@ -1515,6 +1519,9 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .thread-head-controls{display:flex;align-items:center;gap:12px;margin:0;padding:0;flex:0 0 auto;white-space:nowrap;}
 @media (max-width:900px){
   .ra-scope .thread-head-controls{display:none;}
+  /* Must beat `.ra-scope button.thread-collapse-all{display:inline-flex}` below.
+     Feedback lives as a round mrail button before the three-dots on mobile. */
+  .ra-scope button.thread-collapse-all.thread-feedback-toggle{display:none !important;}
 }
 
 .ra-scope .thread{flex:1;overflow-y:auto;padding:26px 26px 96px;display:flex;flex-direction:column;gap:22px;min-height:0;}
@@ -1574,15 +1581,22 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .thread-pill-swap > span{grid-area:1/1;visibility:hidden;}
 .ra-scope .thread-pill-swap > span.is-active{visibility:visible;}
 .ra-scope button.thread-collapse-all:hover{color:var(--text);background:transparent;border:none;}
-.ra-scope button.thread-collapse-all.on{color:var(--text-2);}
-.ra-scope button.thread-collapse-all.on:hover{color:var(--text);background:transparent;}
+.ra-scope button.thread-collapse-all:focus,
+.ra-scope button.thread-collapse-all:focus-visible{outline:none;box-shadow:none;color:var(--text);}
+.ra-scope button.thread-collapse-all.on{color:var(--text);font-weight:400;}
+.ra-scope button.thread-collapse-all.on:hover,
+.ra-scope button.thread-collapse-all.on:focus,
+.ra-scope button.thread-collapse-all.on:focus-visible{color:var(--text);background:transparent;}
 
-.ra-scope .msg-ai{display:flex;gap:13px;align-self:stretch;animation:ra-fadeUp .35s ease both;}
+.ra-scope .msg-ai{display:flex;gap:13px;align-items:flex-start;align-self:stretch;animation:ra-fadeUp .35s ease both;}
 .ra-scope .msg-ai .avatar{width:28px;height:28px;margin-top:2px;}
 .ra-scope .bubble-logo{flex:0 0 auto;width:28px;height:28px;margin-top:2px;object-fit:cover;display:block;border-radius:50%;background:#736766;}
 .ra-scope .typing .bubble-logo{margin-top:0;}
-.ra-scope button.bubble-avatar-toggle{flex:0 0 auto;display:flex;align-items:flex-start;justify-content:center;
-  margin:0;padding:0;border:none;background:transparent;cursor:pointer;border-radius:50%;line-height:0;}
+/* align-self + fixed box so the 50% radius never stretches into a tall spike beside tall bubbles. */
+.ra-scope button.bubble-avatar-toggle{flex:0 0 auto;align-self:flex-start;width:28px;height:28px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0;padding:0;border:none;background:transparent;cursor:pointer;border-radius:50%;line-height:0;
+  overflow:hidden;}
 .ra-scope button.bubble-avatar-toggle:hover{opacity:.88;}
 .ra-scope button.bubble-avatar-toggle.on .avatar,
 .ra-scope button.bubble-avatar-toggle.on .bubble-logo{box-shadow:0 0 0 1.5px var(--text-3);}
@@ -1745,9 +1759,15 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .trace-act{display:inline-flex;align-items:center;justify-content:center;gap:0;
   width:28px;height:28px;padding:0;font-family:inherit;font-size:12px;font-weight:400;
   color:var(--text-3);background:transparent;border:none;border-radius:0;
-  cursor:pointer;white-space:nowrap;transition:color .12s ease;}
+  cursor:pointer;white-space:nowrap;transition:color .12s ease, box-shadow .12s ease;}
 .ra-scope .trace-act:hover{color:var(--text);background:transparent;border-color:transparent;}
 .ra-scope .trace-act svg{opacity:0.85;}
+/* Circle only the top-nav Feedback icon once this bubble has feedback.
+   Drawn inset so the ring sits inside the 28px hit target with a top gap. */
+.ra-scope .bubble-fb-wrap:not(.bubble-fb-wrap--foot) > .trace-act.has-feedback{border-radius:50%;color:var(--text-2);opacity:1;
+  box-shadow:none;position:relative;}
+.ra-scope .bubble-fb-wrap:not(.bubble-fb-wrap--foot) > .trace-act.has-feedback::before{content:"";position:absolute;inset:4px;
+  border-radius:50%;box-shadow:0 0 0 1.5px var(--accent);pointer-events:none;}
 /* Bubble action tooltips — open below the icon on hover. */
 .ra-scope .trace-act[data-tip],
 .ra-scope .bubble-collapse[data-tip]{position:relative;}

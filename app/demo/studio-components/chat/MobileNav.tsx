@@ -24,6 +24,9 @@ export function MobileNav({
   selectedModel = OPENAI_MODEL,
   onSelectModel,
   onOpenV2Modal,
+  showFeedbackToggle = false,
+  highlightFeedback = false,
+  onToggleHighlightFeedback,
   hidden = false,
 }: {
   onOpen: () => void;
@@ -37,6 +40,10 @@ export function MobileNav({
   selectedModel?: string;
   onSelectModel?: (model: ChatModelId) => void;
   onOpenV2Modal?: () => void;
+  /** Show when this conversation has feedback — sits before the hamburger. */
+  showFeedbackToggle?: boolean;
+  highlightFeedback?: boolean;
+  onToggleHighlightFeedback?: () => void;
   /** When the header pill collapses to avatar-only, hide the whole rail. */
   hidden?: boolean;
 }) {
@@ -104,6 +111,25 @@ export function MobileNav({
           >
             <Ic.Expand size={18} />
           </button>
+          {showFeedbackToggle ? (
+            <button
+              type="button"
+              className={"mrail-btn" + (highlightFeedback ? " on" : "")}
+              title={
+                highlightFeedback
+                  ? "Hide feedback highlight on bubbles"
+                  : "Highlight bubbles that have feedback"
+              }
+              aria-label="Feedback"
+              aria-pressed={highlightFeedback}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleHighlightFeedback?.();
+              }}
+            >
+              <Ic.Edit size={18} />
+            </button>
+          ) : null}
           <div className="mrail-thread-controls" ref={threadMenuRef}>
             <button
               type="button"

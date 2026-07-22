@@ -199,7 +199,11 @@ export function Bubble({
     <div className="bubble-fb-wrap" ref={fbNavRef}>
       <button
         type="button"
-        className={"trace-act" + (feedbackEditing && feedbackAnchor === "nav" ? " on" : "")}
+        className={
+          "trace-act" +
+          (feedbackEditing && feedbackAnchor === "nav" ? " on" : "") +
+          (hasFeedback ? " has-feedback" : "")
+        }
         data-tip={feedbackEditing && feedbackAnchor === "nav" ? undefined : "Feedback"}
         aria-label="Feedback"
         aria-expanded={feedbackEditing && feedbackAnchor === "nav"}
@@ -216,7 +220,11 @@ export function Bubble({
     <div className="bubble-fb-wrap bubble-fb-wrap--foot" ref={fbFootRef}>
       <button
         type="button"
-        className={"trace-act" + (feedbackEditing && feedbackAnchor === "foot" ? " on" : "")}
+        className={
+          "trace-act" +
+          (feedbackEditing && feedbackAnchor === "foot" ? " on" : "") +
+          (hasFeedback ? " has-feedback" : "")
+        }
         data-tip={feedbackEditing && feedbackAnchor === "foot" ? undefined : "Feedback"}
         aria-label="Feedback"
         aria-expanded={feedbackEditing && feedbackAnchor === "foot"}

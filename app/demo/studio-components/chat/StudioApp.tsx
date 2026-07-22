@@ -1133,7 +1133,12 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
 
   return (
     <div
-      className={"ra-scope" + (monoTheme ? " ra-mono" : "") + (roundUi ? " ra-round" : "")}
+      className={
+        "ra-scope" +
+        (monoTheme ? " ra-mono" : "") +
+        (roundUi ? " ra-round" : "") +
+        (avatarOnly ? " is-avatar-only" : "")
+      }
       style={{ ["--bubble-font-size" as string]: BUBBLE_FONT_PX[bubbleFontSize] }}
       onClick={() => {
         if (menuOpen) setMenuOpen(false);
@@ -1200,7 +1205,7 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 def={300}
               />
             </>
-          ) : avatarOnly ? null : (
+          ) : (
             <SidebarRail onExpand={() => setSidebarOpen(true)} onNew={onNew} />
           )}
           <main className="main">
@@ -1328,20 +1333,18 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
           {/* Right rail: Workflow launcher; admins also get Model Setup.
               Docked at the right edge when no drawer is open; when a drawer IS
               open it floats at the drawer's left edge and tracks its width.
-              Hidden with the left rail when the header collapses to avatar-only. */}
-          {!avatarOnly ? (
-            <RightRail
-              panelOpen={openDrawers.length > 0}
-              onTogglePanel={() =>
-                openDrawers.length > 0 ? closeAllDrawers() : openDrawer("modelsetup")
-              }
-              isAdmin={isAdmin}
-              canvasOpen={canvasOpen}
-              onToggleCanvas={() => setCanvasOpen((v) => !v)}
-              floating={openDrawers.length > 0}
-              rightOffset={obsWidth ?? obsBounds.def}
-            />
-          ) : null}
+              Avatar-only hides rails via CSS (keeps flex space so bubbles don't shift). */}
+          <RightRail
+            panelOpen={openDrawers.length > 0}
+            onTogglePanel={() =>
+              openDrawers.length > 0 ? closeAllDrawers() : openDrawer("modelsetup")
+            }
+            isAdmin={isAdmin}
+            canvasOpen={canvasOpen}
+            onToggleCanvas={() => setCanvasOpen((v) => !v)}
+            floating={openDrawers.length > 0}
+            rightOffset={obsWidth ?? obsBounds.def}
+          />
           {openDrawers.length === 0 && (
             <MobileNav
               onOpen={openMobileDrawer}
@@ -1369,6 +1372,9 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 }
               }}
               onOpenV2Modal={() => openV2Modal(v2Training)}
+              showFeedbackToggle={hasThreadFeedback}
+              highlightFeedback={highlightFeedback}
+              onToggleHighlightFeedback={() => setHighlightFeedback((v) => !v)}
               hidden={avatarOnly}
             />
           )}
