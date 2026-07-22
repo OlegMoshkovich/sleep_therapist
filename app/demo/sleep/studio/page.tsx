@@ -29,18 +29,18 @@ function deriveWorkflowStage(turn: Turn | null | undefined): string | null {
 }
 
 const studioChatConfig: StudioChatConfig = {
-  productName: "Sleep Assistant",
+  productName: "Therapist",
   studioPath: "/demo/sleep/studio",
   assistantMark: "avatar",
   avatarMono: "SA",
   emptyStateHref: "/demo/sleep/studio",
   emptyStateBody: (
     <>
-      Sleep Assistant can review your sleep logs, summarise guidance, and help you
+      Therapist can review your sleep logs, summarise guidance, and help you
       build a routine that sticks.
     </>
   ),
-  emptyStatePrimaryAgent: "Primary agent: Sleep Assistant",
+  emptyStatePrimaryAgent: "Primary agent: Therapist",
   subjectNoun: "patient",
   apiTopic: "sleep",
   suggestions: SUGGESTIONS,

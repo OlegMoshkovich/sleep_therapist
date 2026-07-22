@@ -2133,9 +2133,20 @@ export function EditorInner<TOutput>({
   // Inspector-tab Fullscreen: overlay with the inspector filling the shell
   // (canvas hidden). Distinct from the canvas tab-bar Fullscreen (side-by-side).
   const [inspectorMaximized, setInspectorMaximized] = useState(false);
-  // Fullscreen uses the same canvas | inspector chrome as the workflow bottom
-  // drawer (side-by-side + drag resize), even when the host is a stacked pane.
-  const splitChrome = splitPanels || canvasFullscreen;
+  // Narrow viewports stack fullscreen canvas above the inspector (same as the
+  // docked State/Policy column). Desktop fullscreen stays side-by-side.
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const sync = () => setIsNarrowViewport(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+  // Desktop fullscreen / workflow split share a width key; stacked layouts
+  // (including mobile fullscreen) share the height key.
+  const splitChrome = splitPanels || (canvasFullscreen && !isNarrowViewport);
   // Collapse the graph surface (docked column layout) so the inspector below
   // gets the reclaimed height.
   const [canvasCollapsed, setCanvasCollapsed] = useState(false);
@@ -3617,7 +3628,11 @@ export function EditorInner<TOutput>({
     );
   };
 
-  const renderEditorWorkspace = (fullscreen: boolean) => (
+  const renderEditorWorkspace = (fullscreen: boolean) => {
+    // Side-by-side only for workflow split + desktop fullscreen. Mobile
+    // fullscreen stacks the inspector under the canvas.
+    const sideBySide = splitPanels || (fullscreen && !isNarrowViewport);
+    return (
     <div
       className={
         fullscreen || fillHeight
@@ -3737,9 +3752,9 @@ export function EditorInner<TOutput>({
       <div
         ref={fullscreen || fillHeight ? canvasBodyRef : undefined}
         className={
-          fullscreen || splitPanels
+          sideBySide
             ? "rf-canvas-body flex min-h-0 flex-1 flex-row"
-            : fillHeight
+            : fillHeight || fullscreen
               ? "rf-canvas-body flex min-h-0 flex-1 flex-col"
               : "rf-canvas-body flex flex-col gap-4 lg:flex-row"
         }
@@ -3780,16 +3795,16 @@ export function EditorInner<TOutput>({
           renderCanvasSurface(fullscreen)
         )}
 
-        {/* Drag handle: vertical in stacked side drawer; horizontal in
-            workflow split + fullscreen (same interaction). */}
+        {/* Drag handle: vertical in stacked layouts (side drawer + mobile
+            fullscreen); horizontal in workflow split + desktop fullscreen. */}
         {(fullscreen || fillHeight) && !hideInspector && !canvasIsCollapsed && (
           <div
             className={
-              (fullscreen || splitPanels ? "rf-hsplit" : "rf-vsplit") +
+              (sideBySide ? "rf-hsplit" : "rf-vsplit") +
               (splitDragging ? " active" : "")
             }
             role="separator"
-            aria-orientation={fullscreen || splitPanels ? "vertical" : "horizontal"}
+            aria-orientation={sideBySide ? "vertical" : "horizontal"}
             aria-label="Resize canvas and inspector (double-click to reset)"
             title="Drag to resize · double-click to reset"
             onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
@@ -3798,7 +3813,7 @@ export function EditorInner<TOutput>({
               const body = canvasBodyRef.current;
               if (!body) return;
               const rect = body.getBoundingClientRect();
-              const horizontal = fullscreen || splitPanels;
+              const horizontal = sideBySide;
               const axisSize = horizontal ? rect.width : rect.height;
               if (axisSize <= 0) return;
               const startPos = horizontal ? e.clientX : e.clientY;
@@ -3852,6 +3867,14 @@ export function EditorInner<TOutput>({
                   minWidth: 0,
                   overflow: "hidden",
                 }
+              : fullscreen && !sideBySide
+                ? {
+                    maxHeight: "none",
+                    flex: "1 1 0",
+                    minHeight: 46,
+                    minWidth: 0,
+                    overflow: "hidden",
+                  }
               : fullscreen || fillHeight
                 ? {
                     maxHeight: "none",
@@ -4153,6 +4176,7 @@ export function EditorInner<TOutput>({
       </div>
     </div>
   );
+  };
 
   return (
     <div

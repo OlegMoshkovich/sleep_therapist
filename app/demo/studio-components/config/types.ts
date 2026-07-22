@@ -31,7 +31,7 @@ export interface GuidelineTopic {
 export type StudioSetupConfig = {
   /** e.g. "/api/admin/setup/law" */
   setupEndpoint: string;
-  /** e.g. "Council" | "Sleep Assistant" | "Financial Analyst" */
+  /** e.g. "Council" | "Therapist" | "Analyst" */
   productName: string;
   /** e.g. "/demo/law/studio" — the studio chat route the config page links back to. */
   studioPath: string;

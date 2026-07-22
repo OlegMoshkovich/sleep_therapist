@@ -1457,7 +1457,7 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .thread-mobile-actions-btn:hover,.ra-scope .thread-mobile-actions-btn.on{color:var(--text);background:var(--surface-2);border-color:var(--text-4);}
 .ra-scope .thread-mobile-menu{position:absolute;right:0;bottom:calc(100% + 6px);z-index:40;min-width:180px;
   display:flex;flex-direction:column;gap:2px;padding:6px;box-sizing:border-box;
-  background:var(--elevated);border:1px solid var(--line);border-radius:0;
+  background:var(--frame);border:1px solid var(--line);border-radius:0;
   box-shadow:none;}
 .ra-scope .mobile-railnav .mrail-thread-controls{position:relative;flex:0 0 auto;}
 /* Mobile: anchor the pop-up menu to the viewport's right edge with a little
@@ -1685,8 +1685,11 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   background:rgba(0,0,0,0.35);padding:24px;animation:ra-fadeUp .18s ease both;}
 .ra-scope .trace-fs,.trace-fs{position:relative;display:flex;flex-direction:column;width:min(1100px,100%);
   max-height:calc(100vh - 48px);overflow:hidden;
-  background:var(--elevated,#fff);border:1px solid var(--line,#dcdcdc);border-radius:0;
+  /* Match the Observability drawer (--panel / --frame). Portaled outside
+     .ra-scope so the fallback is the sepia frame; mono overrides below. */
+  background:var(--frame,#d8d6c7);border:1px solid var(--line,#a8a698);border-radius:0;
   padding:16px 20px 20px;box-shadow:none;font-family:inherit;}
+body:has(.ra-scope.ra-mono) .trace-fs{background:#ffffff;border-color:#dcdcdc;}
 .ra-scope .trace-fs-head,.trace-fs-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin:0 0 14px;min-height:34px;padding-bottom:12px;border-bottom:1px solid var(--line-soft,#ededed);}
 .ra-scope .trace-fs-close,.trace-fs-close{
@@ -1720,8 +1723,11 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   background:rgba(0,0,0,0.35);padding:32px;animation:ra-fadeUp .18s ease both;}
 .ra-scope .bubble-fs,.bubble-fs{position:relative;display:flex;flex-direction:column;width:min(820px,100%);
   height:min(720px,calc(100vh - 64px));max-height:calc(100vh - 64px);overflow:hidden;
-  background:var(--elevated,#fff);border:1px solid var(--line,#dcdcdc);border-radius:0;
+  /* Match studio chrome (--frame). Portaled outside .ra-scope so the fallback
+     is the sepia frame; mono overrides below. */
+  background:var(--frame,#d8d6c7);border:1px solid var(--line,#a8a698);border-radius:0;
   padding:16px 20px 20px;box-shadow:none;font-family:inherit;}
+body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
 .ra-scope .bubble-fs-head,.bubble-fs-head{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin:0 0 14px;min-height:34px;padding-bottom:12px;border-bottom:1px solid var(--line-soft,#ededed);}
 .ra-scope .bubble-fs-head-left,.bubble-fs-head-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1 1 auto;}
@@ -1761,19 +1767,19 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
 .ra-scope .bubble-fs-nav-btn:disabled,.bubble-fs-nav-btn:disabled{opacity:.35;cursor:default;}
 .ra-scope .bubble-fs-nav-count,.bubble-fs-nav-count{font-family:inherit;font-size:12px;font-weight:400;color:var(--text-3);
   min-width:3.25em;text-align:center;font-variant-numeric:tabular-nums;user-select:none;}
-/* Desktop: prev/next stay in the footer. Mobile: title off, nav moves to header. */
+/* Prev/next live in the footer; the head slot stays unused (mobile included). */
 .ra-scope .bubble-fs-nav-slot--head,.bubble-fs-nav-slot--head{display:none;}
 .ra-scope .bubble-fs-nav-slot--foot,.bubble-fs-nav-slot--foot{display:flex;}
 @media (max-width:900px){
   .ra-scope .bubble-fs-overlay,.bubble-fs-overlay{padding:0;align-items:stretch;justify-content:stretch;}
   .ra-scope .bubble-fs,.bubble-fs{width:100%;height:100%;max-height:none;border:none;padding:12px 14px 16px;}
-  .ra-scope .bubble-fs-nav-slot--head,.bubble-fs-nav-slot--head{display:flex;align-items:center;flex:0 0 auto;order:0;}
-  .ra-scope .bubble-fs-nav-slot--foot,.bubble-fs-nav-slot--foot{display:none;}
-  .ra-scope .bubble-fs-head-left,.bubble-fs-head-left{display:contents;}
-  .ra-scope .bubble-fs-title-block,.bubble-fs-title-block{display:flex;min-width:0;flex:1 1 auto;order:1;
-    justify-content:center;text-align:center;}
-  .ra-scope .bubble-fs-title,.bubble-fs-title{text-align:center;}
-  .ra-scope .bubble-fs-head-right,.bubble-fs-head-right{order:2;flex:0 0 auto;}
+  /* Mobile: keep title + close in the header; prev/next stay in the footer. */
+  .ra-scope .bubble-fs-nav-slot--head,.bubble-fs-nav-slot--head{display:none;}
+  .ra-scope .bubble-fs-nav-slot--foot,.bubble-fs-nav-slot--foot{display:flex;}
+  .ra-scope .bubble-fs-title-block,.bubble-fs-title-block{display:flex;min-width:0;flex:1 1 auto;
+    justify-content:flex-start;text-align:left;}
+  .ra-scope .bubble-fs-title,.bubble-fs-title{text-align:left;}
+  .ra-scope .bubble-fs-head,.bubble-fs-head{border-bottom:none;padding-bottom:0;}
 }
 .ra-scope .bubble-fs-foot,.bubble-fs-foot{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft,#ededed);min-height:34px;}
@@ -1993,9 +1999,9 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   .ra-scope .main{min-width:0;}
   /* Mobile: hairline under the chat header, matching the composer input's
      top border color (var(--line), light grey). */
-  /* Match the header to the message column: title left edge lines up with the
-     bubble left edge, both at the thread's 14px inset (+28px avatar +13px gap). */
-  .ra-scope .thread-head{left:14px;max-width:calc(100% - 28px);padding:4px 14px 4px 4px;}
+  /* Align title-pill avatar with message avatars: thread pad 14px − pill
+     pad-left 4px (same formula as desktop: 26 − 4 → left 22). */
+  .ra-scope .thread-head{left:10px;max-width:calc(100% - 28px);padding:4px 14px 4px 4px;}
   .ra-scope .thread-head.is-avatar-only{padding:4px;}
   /* Tighter tab spacing in the mobile bottom-sheet (all tabs shown at once). */
   .ra-scope .drawer-tabs{gap:14px;padding:0 12px;}
@@ -2062,8 +2068,13 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   /* Drop desktop avatar-offset overhang — keep equal insets with the thread. */
   .ra-scope .composer-row{width:100%;margin-left:0;}
   .ra-scope .composer,
+  .ra-scope .thread-mobile-menu{border:none;}
+  .ra-scope .composer,
   .ra-scope .thread-head,
-  .ra-scope button.mrail-btn{box-shadow:0 8px 24px rgba(31,29,24,.14);}
+  .ra-scope button.mrail-btn,
+  .ra-scope .thread-mobile-menu{box-shadow:0 8px 24px rgba(31,29,24,.14);}
+  .ra-scope .thread-mobile-menu .thread-model-option{font-size:15px;}
+  .ra-scope .thread-mobile-menu-label{font-size:12px;}
   .ra-scope .empty{padding:24px 18px 88px;}
 
   /* Compact chat typography on narrow screens */

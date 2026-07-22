@@ -29,12 +29,12 @@ function deriveWorkflowStage(turn: Turn | null | undefined): string | null {
 }
 
 const studioChatConfig: StudioChatConfig = {
-  productName: "Legal Assistant",
+  productName: "Council",
   studioPath: "/demo/law/studio",
   assistantMark: "logo",
   avatarSrc: "/lawyer.png",
   emptyStateHref: "/demo/law/studio",
-  emptyStateTitle: "Mergers and Acquisitions council",
+  emptyStateTitle: "Council",
   emptyStateBody: (
     <>
       Council can take down the facts of your deal, walk through M&A and

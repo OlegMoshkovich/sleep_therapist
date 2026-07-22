@@ -1226,6 +1226,7 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 }
               }}
               onOpenV2Modal={() => openV2Modal(v2Training)}
+              onNew={onNew}
             />
             {threadFullscreen && messages.length > 0 ? (
               <BubbleFullscreen

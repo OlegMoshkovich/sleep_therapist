@@ -6,9 +6,9 @@ import { useEffect } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 
 const OPTIONS = [
-  { label: "Financial Analyst", href: "/demo/analyst/studio" },
-  { label: "Legal Counsel", href: "/demo/law/studio" },
-  { label: "Sleep Therapist", href: "/demo/sleep/studio" },
+  { label: "Analyst", href: "/demo/analyst/studio" },
+  { label: "Council", href: "/demo/law/studio" },
+  { label: "Therapist", href: "/demo/sleep/studio" },
 ] as const;
 
 function ChooseContent() {

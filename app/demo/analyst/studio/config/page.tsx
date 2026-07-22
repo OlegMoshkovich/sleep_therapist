@@ -10,7 +10,7 @@ import {
 
 const config: StudioSetupConfig = {
   setupEndpoint: "/api/admin/setup/analyst",
-  productName: "Financial Analyst",
+  productName: "Analyst",
   studioPath: "/demo/analyst/studio",
   assistantNoun: "analyst",
   coachNoun: "client",

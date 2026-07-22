@@ -4,7 +4,7 @@ import type { Turn } from "../../../components/trace/TraceView";
 import { SetupBar } from "./config/page";
 
 /**
- * Model Setup content for the Sleep Assistant — the Knowledge / State / Policy
+ * Model Setup content for the Therapist — the Knowledge / State / Policy
  * editors (the SetupBar). Rendered as its own tab inside the shared RightDrawer,
  * moved here out of the Observability tab (which now shows only the trace).
  *

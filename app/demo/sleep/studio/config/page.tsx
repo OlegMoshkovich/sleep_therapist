@@ -10,9 +10,9 @@ import {
 
 const config: StudioSetupConfig = {
   setupEndpoint: "/api/admin/setup/sleep",
-  productName: "Sleep Assistant",
+  productName: "Therapist",
   studioPath: "/demo/sleep/studio",
-  assistantNoun: "sleep assistant",
+  assistantNoun: "therapist",
   coachNoun: "sleeper",
   subjectNoun: "patient",
 };
