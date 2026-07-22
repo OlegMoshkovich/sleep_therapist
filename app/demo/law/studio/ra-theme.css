@@ -807,7 +807,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);
   z-index:40;min-width:9.5rem;max-width:15rem;width:max-content;
   padding:6px 9px;border-radius:0 !important;
-  background:#1f1d18;color:#f6f7f2;
+  background:#948E87;color:#111;
   font-family:inherit;font-size:12px;font-weight:400;line-height:1.35;
   text-align:center;white-space:normal;
   opacity:0;visibility:hidden;pointer-events:none;
@@ -819,7 +819,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   opacity:1;visibility:visible;}
 .ra-scope.ra-mono .rf-canvas-tools .rf-tool-tip,
 body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
-  background:#222;color:#f5f5f5;}
+  background:#948E87;color:#111;}
 /* fillHeight board + inspector: flush panels; only the drag split separates them. */
 .ra-scope .obs-docked .rf-canvas-body,
 .ra-scope .bottom-drawer .rf-canvas-body{gap:0;}
@@ -1651,12 +1651,19 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   content:attr(data-tip);
   position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);
   z-index:30;padding:5px 8px;border-radius:0;
-  background:var(--text,#111);color:var(--elevated,#fff);
+  background:#948E87;color:#111;
   font-family:inherit;font-size:11px;font-weight:400;line-height:1.2;
   white-space:nowrap;pointer-events:none;
   opacity:0;visibility:hidden;transition:opacity .12s ease, visibility .12s ease;}
 .ra-scope .trace-act[data-tip]:hover::after,
 .ra-scope .bubble-collapse[data-tip]:hover::after{opacity:1;visibility:visible;}
+/* No hover tooltips on touch — they stick after tap and cover the UI. */
+@media (max-width:900px){
+  .ra-scope .trace-act[data-tip]::after,
+  .ra-scope .bubble-collapse[data-tip]::after{display:none !important;}
+  .ra-scope .rf-canvas-tools .rf-tool-tip,
+  .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{display:none !important;}
+}
 .ra-scope .bubble-nav{overflow:visible;}
 .ra-scope .msg-ai .bubble,
 .ra-scope .msg-user{overflow:visible;}
@@ -2742,3 +2749,9 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
 .ra-scope.ra-round .thread-mobile-menu,
 .ra-scope.ra-round .thread-mobile-actions-btn{border-radius:var(--radius-md);}
 .ra-scope.ra-round .bubble-form-section{border-radius:var(--radius-md);}
+/* Tooltips (State / Policy / Copy / canvas tools). */
+.ra-scope.ra-round .trace-act[data-tip]::after,
+.ra-scope.ra-round .bubble-collapse[data-tip]::after{border-radius:var(--radius-sm);}
+.ra-scope.ra-round .rf-canvas-tools .rf-tool-tip,
+body:has(.ra-scope.ra-round) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
+  border-radius:var(--radius-sm, 8px) !important;}

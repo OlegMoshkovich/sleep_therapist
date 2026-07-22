@@ -77,8 +77,13 @@ export default async function RootLayout({
 
   return (
     <ClerkProvider publishableKey={publishableKey}>
-      <html lang="en">
-        <body className={`${archivo.variable} ${inter.variable} antialiased font-sans`}>
+      <html lang="en" suppressHydrationWarning>
+        {/* suppressHydrationWarning: demo THEME_BOOT_SCRIPT sets data-ra-mono +
+            background on <html> before React hydrates (avoids sepia flash). */}
+        <body
+          className={`${archivo.variable} ${inter.variable} antialiased font-sans`}
+          suppressHydrationWarning
+        >
           <ThemeProvider>
             <NavigationOverlay />
             <PostSignInRedirect />
