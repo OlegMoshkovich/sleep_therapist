@@ -40,13 +40,13 @@ export const DRAWER_LABEL: Record<DrawerId, string> = {
 // can switch between them, regardless of which icon opened it. On desktop it
 // keeps the "open subset as tabs" model.
 const ALL_TABS: DrawerId[] = [
-  "account",
-  "chats",
-  "observability",
   "modelsetup",
   "simulation",
+  "observability",
+  "chats",
+  "account",
   // "expert",
-  "upload",
+  // "upload",
 ];
 
 // Panels that expose internal wiring (model/prompt setup, step-by-step traces).

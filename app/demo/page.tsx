@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { AuthProvider, useAuth } from "../context/AuthContext";
+import SiteLogo from "../components/SiteLogo";
 
 const OPTIONS = [
   { label: "Analyst", href: "/demo/analyst/studio" },
@@ -36,10 +37,10 @@ function ChooseContent() {
       <main
         className="flex min-h-[100dvh] items-center justify-center"
         style={{ backgroundColor: SEPIA.bg }}
+        aria-busy="true"
+        aria-label="Loading"
       >
-        <p className="text-sm" style={{ color: SEPIA.textMuted }}>
-          Loading…
-        </p>
+        <SiteLogo size={120} href={false} />
       </main>
     );
   }
