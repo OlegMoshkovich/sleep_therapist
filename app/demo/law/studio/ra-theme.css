@@ -1929,7 +1929,7 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
 .ra-scope .empty-logo a{display:block;line-height:0;}
 .ra-scope .empty-logo-sq{width:96px;height:96px;object-fit:cover;display:block;border-radius:50%;background:#736766;}
 .ra-scope .empty-title{font-family:var(--serif);font-size:20px;color:var(--text);font-weight:500;letter-spacing:.2px;white-space:nowrap;}
-.ra-scope .empty-sub{color:var(--text-3);font-size:14px;font-weight:400;max-width:380px;text-align:center;margin:2px 0 4px;line-height:1.5;}
+.ra-scope .empty-sub{color:var(--text-3);font-size:12px;font-weight:400;max-width:284px;text-align:center;margin:2px 0 4px;line-height:1.35;}
 .ra-scope .suggests{display:flex;flex-direction:row;flex-wrap:nowrap;gap:8px;justify-content:center;max-width:100%;}
 /* `button.sug-chip` beats the global `button { border:none }` reset. */
 .ra-scope button.sug-chip{display:inline-flex;align-items:center;justify-content:center;gap:5px;
@@ -1942,7 +1942,7 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
 /* Upload CTA sits with the empty-state cluster (below suggestion pills). */
 .ra-scope button.empty-upload{display:inline-flex;align-items:center;justify-content:center;gap:6px;
   font-family:inherit;font-size:11px;font-weight:500;line-height:1;color:var(--text);
-  background:var(--surface);border:1px solid var(--text-3);border-radius:0;padding:9px 16px;
+  background:transparent;border:1px solid var(--text-3);border-radius:0;padding:9px 16px;
   box-sizing:border-box;cursor:pointer;white-space:nowrap;margin-top:24px;}
 .ra-scope button.empty-upload:hover{background:var(--surface-2);border-color:var(--text);color:var(--text);}
 .ra-scope button.empty-upload .ic{color:var(--text);display:flex;}
@@ -1974,7 +1974,7 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
   display:flex;align-items:center;justify-content:center;}
 .ra-scope .comp-send:hover{background:#b3b1a3;color:var(--text);}
 .ra-scope .comp-send:disabled{opacity:.45;cursor:default;}
-.ra-scope .comp-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:15px;padding:0 4px;min-width:0;}
+.ra-scope .comp-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:12px;padding:0 4px;min-width:0;}
 .ra-scope .comp-input::placeholder{color:var(--text-3);}
 .ra-scope .comp-speaker{width:34px;height:34px;flex:0 0 auto;border-radius:0;color:var(--text-2);display:flex;align-items:center;justify-content:center;}
 .ra-scope .comp-speaker:hover{color:var(--text);background:var(--surface-2);opacity:1;}
@@ -2065,7 +2065,7 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
   /* let headings wrap instead of forcing width */
   .ra-scope .empty-title{white-space:normal;text-align:center;font-size:14px;line-height:1.4;}
   .ra-scope .side-title,.ra-scope .empty-sub{white-space:normal;}
-  .ra-scope .empty-sub{font-size:10px;line-height:1.45;}
+  .ra-scope .empty-sub{font-size:12px;max-width:261px;line-height:1.35;}
   .ra-scope .thread{padding:18px 14px 88px;}
   /* Equal side insets — drop the desktop +41px overhang so the pill stays
      symmetrical and the mic doesn't hang off the right edge. */
