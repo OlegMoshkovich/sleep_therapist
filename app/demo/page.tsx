@@ -11,6 +11,16 @@ const OPTIONS = [
   { label: "Therapist", href: "/demo/sleep/studio" },
 ] as const;
 
+/* Match studio sepia tokens (--frame / --line / --text). */
+const SEPIA = {
+  bg: "#d8d6c7",
+  line: "#a8a698",
+  text: "#1f1d18",
+  textMuted: "#86806f",
+  hover: "#1f1d18",
+  hoverInk: "#f6f7f2",
+} as const;
+
 function ChooseContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -25,9 +35,11 @@ function ChooseContent() {
     return (
       <main
         className="flex min-h-[100dvh] items-center justify-center"
-        style={{ backgroundColor: "#ffffff" }}
+        style={{ backgroundColor: SEPIA.bg }}
       >
-        <p className="text-sm text-gray-400">Loading…</p>
+        <p className="text-sm" style={{ color: SEPIA.textMuted }}>
+          Loading…
+        </p>
       </main>
     );
   }
@@ -35,15 +47,16 @@ function ChooseContent() {
   return (
     <main
       className="flex min-h-[100dvh] flex-col items-center px-6 pb-12 pt-24"
-      style={{ backgroundColor: "#ffffff" }}
+      style={{ backgroundColor: SEPIA.bg, color: SEPIA.text }}
     >
       <p
-        className="font-normal text-black"
+        className="font-normal"
         style={{
           fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
           letterSpacing: "normal",
           fontSize: "16px",
           fontWeight: 400,
+          color: SEPIA.text,
         }}
       >
         The AI Research lab
@@ -54,16 +67,25 @@ function ChooseContent() {
           <Link
             key={opt.href}
             href={opt.href}
-            className="block w-full border border-[#d1d5db] bg-transparent px-4 py-3 text-center text-sm font-normal text-gray-900 transition-colors hover:bg-black hover:text-white"
+            className="demo-choose-link block w-full bg-transparent px-4 py-3 text-center text-sm font-normal transition-colors"
             style={{
               fontFamily: "var(--font-inter), Inter, system-ui, sans-serif",
               letterSpacing: "normal",
+              color: SEPIA.text,
+              border: `1px solid ${SEPIA.line}`,
             }}
           >
             {opt.label}
           </Link>
         ))}
       </div>
+      <style jsx>{`
+        .demo-choose-link:hover {
+          background: ${SEPIA.hover};
+          color: ${SEPIA.hoverInk};
+          border-color: ${SEPIA.hover};
+        }
+      `}</style>
     </main>
   );
 }

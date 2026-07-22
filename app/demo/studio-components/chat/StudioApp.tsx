@@ -1413,9 +1413,27 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
   );
 }
 
+function readMonoPref(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    return window.localStorage.getItem(MONO_PREF_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+/** Splash / auth-loading backdrop — white in mono, frame greige in sepia. */
+function splashBg(mono: boolean): string {
+  return mono ? "#ffffff" : "#d8d6c7";
+}
+
 function StudioLoading({ studioPath }: { studioPath: string }) {
+  const [mono] = useState(readMonoPref);
   return (
-    <div className="flex flex-1 items-center justify-center bg-white">
+    <div
+      className="flex flex-1 items-center justify-center"
+      style={{ backgroundColor: splashBg(mono) }}
+    >
       <SiteLogo size={120} href={studioPath} />
     </div>
   );
@@ -1425,6 +1443,7 @@ function StudioSplash({ ready, studioPath }: { ready: boolean; studioPath: strin
   const [phase, setPhase] = useState<"hold" | "fading" | "gone">("hold");
   const [minElapsed, setMinElapsed] = useState(false);
   const [entered, setEntered] = useState(false);
+  const [mono] = useState(readMonoPref);
 
   useEffect(() => {
     const r = requestAnimationFrame(() => setEntered(true));
@@ -1451,7 +1470,7 @@ function StudioSplash({ ready, studioPath }: { ready: boolean; studioPath: strin
         "fixed inset-0 z-[200] flex items-center justify-center transition-opacity duration-700 " +
         (phase === "fading" ? "pointer-events-none opacity-0" : "opacity-100")
       }
-      style={{ backgroundColor: "#ffffff" }}
+      style={{ backgroundColor: splashBg(mono) }}
     >
       <div
         className={

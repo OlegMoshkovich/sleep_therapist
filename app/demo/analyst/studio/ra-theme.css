@@ -861,6 +861,16 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
 .rf-vsplit:hover::before,.rf-vsplit.active::before,
 .sc-vsplit:hover::before,.sc-vsplit.active::before{
   background:var(--accent, #c2611f);height:2px;}
+/* Stacked inspector navbar grabber (right of Inspector/Compiler tabs). */
+.rf-inspector-grabber-bar{background:var(--line, #c8c4b4);}
+.rf-inspector-grabber:hover .rf-inspector-grabber-bar,
+.rf-inspector-grabber.active .rf-inspector-grabber-bar{background:var(--accent, #c2611f);}
+.ra-scope.ra-mono .rf-inspector-grabber-bar{background:#e4e4e4;}
+.ra-scope.ra-mono .rf-inspector-grabber:hover .rf-inspector-grabber-bar,
+.ra-scope.ra-mono .rf-inspector-grabber.active .rf-inspector-grabber-bar{background:#111;}
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-inspector-grabber-bar{background:#e4e4e4;}
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-inspector-grabber:hover .rf-inspector-grabber-bar,
+body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-inspector-grabber.active .rf-inspector-grabber-bar{background:#111;}
 /* Inspector panel — flatten every text run to one uniform style: same family
    (Inter, killing the monospace node-kind / stepType spans and default <pre>
    monospace), 14px body size, normal case, and base tracking. Removes the
@@ -1756,10 +1766,27 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
   font-size:13px;font-weight:400;padding:6px 12px;border:1px solid var(--line);background:transparent;color:var(--text-2);
   border-radius:0;cursor:pointer;white-space:nowrap;}
 .ra-scope .bubble-fs-fb,.bubble-fs-fb{display:inline-flex;align-items:center;justify-content:center;gap:0;font-family:inherit;
-  width:32px;height:32px;padding:0;border:1px solid var(--line);background:transparent;color:var(--text-2);
-  border-radius:0;cursor:pointer;white-space:nowrap;}
+  width:32px;height:32px;padding:0;border:1px solid transparent;background:transparent;color:var(--text-2);
+  border-radius:0;cursor:pointer;white-space:nowrap;font-size:14px;line-height:1;}
 .ra-scope .bubble-fs-fb:hover,.bubble-fs-fb:hover,
 .ra-scope .bubble-fs-cancel:hover,.bubble-fs-cancel:hover{background:var(--surface-2);color:var(--text);border-color:var(--text-3);}
+.ra-scope .bubble-fs-fb.active,.bubble-fs-fb.active,
+.ra-scope .bubble-fs-fb.filled,.bubble-fs-fb.filled{color:var(--text);border-color:var(--line);}
+.ra-scope .bubble-fs-editor,.bubble-fs-editor{display:flex;flex-direction:column;gap:10px;height:100%;min-height:0;}
+.ra-scope .bubble-fs-types,.bubble-fs-types{display:flex;flex-wrap:wrap;align-items:center;gap:14px;flex:0 0 auto;}
+/* Note / Text correction / Ideal — selected = 2px underline (match .fb-type).
+   Scoped under `.bubble-fs-types` so we out-specify `.ra-scope button{border:none}`. */
+.ra-scope .bubble-fs-types .bubble-fs-type,.bubble-fs-types .bubble-fs-type{
+  font-family:inherit;font-size:13px;font-weight:400;line-height:1.2;
+  color:var(--text-3);background:transparent;border:none;border-bottom:2px solid transparent;border-radius:0;
+  padding:0 2px 4px;cursor:pointer;box-shadow:none;outline:none;}
+.ra-scope .bubble-fs-types .bubble-fs-type:hover,.bubble-fs-types .bubble-fs-type:hover{color:var(--text);background:transparent;}
+.ra-scope .bubble-fs-types .bubble-fs-type:focus,.bubble-fs-types .bubble-fs-type:focus,
+.ra-scope .bubble-fs-types .bubble-fs-type:focus-visible,.bubble-fs-types .bubble-fs-type:focus-visible{outline:none;box-shadow:none;}
+.ra-scope .bubble-fs-types .bubble-fs-type.active,.bubble-fs-types .bubble-fs-type.active{
+  color:var(--text);border-bottom:2px solid var(--text);background:transparent;}
+.ra-scope .bubble-fs-types .bubble-fs-type.filled:not(.active),.bubble-fs-types .bubble-fs-type.filled:not(.active){color:var(--text-2);}
+.ra-scope .bubble-fs-editor .bubble-fs-textarea,.bubble-fs-editor .bubble-fs-textarea{flex:1 1 auto;min-height:120px;}
 .ra-scope .bubble-fs-close,.bubble-fs-close{display:flex;align-items:center;justify-content:center;
   width:28px;height:28px;border:none;background:transparent;color:var(--text-3);border-radius:0;cursor:pointer;padding:0;}
 .ra-scope .bubble-fs-close:hover,.bubble-fs-close:hover{background:var(--surface-2);color:var(--text);}
@@ -2333,8 +2360,10 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
 .sysconf .sc-curstate-row.unset{opacity:.5;}
 .sysconf .sc-curstate-row.unset .sc-curstate-v{font-weight:400;}
 /* Fields a specific turn extracted, highlighted when opened from a reply's State button. */
-.sysconf .sc-curstate-row.extracted{opacity:1;border:1px solid #D1E7F3;background:#D1E7F3;box-shadow:none;}
-.sysconf .sc-curstate-row.extracted .sc-curstate-k{color:#2a6f8f;}
+.sysconf .sc-curstate-row.extracted{opacity:1;border:1px solid #B0BEA5;background:#B0BEA5;box-shadow:none;}
+.sysconf .sc-curstate-row.extracted .sc-curstate-k{color:#3d4a35;}
+.ra-scope.ra-mono .sysconf .sc-curstate-row.extracted{border-color:#D1E7F3;background:#D1E7F3;}
+.ra-scope.ra-mono .sysconf .sc-curstate-row.extracted .sc-curstate-k{color:#2a6f8f;}
 /* Edit / Done / + Add — same chrome as Policy tab-bar actions (Fullscreen / Save). */
 .sysconf .sc-curstate-actions{display:flex;align-items:center;gap:4px;margin:0 0 0 auto;padding:0;flex:0 0 auto;}
 .sysconf .sc-var-edit{

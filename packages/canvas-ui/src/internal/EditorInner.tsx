@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   type ComponentType,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type TextareaHTMLAttributes,
 } from "react";
@@ -3632,6 +3633,43 @@ export function EditorInner<TOutput>({
     // Side-by-side only for workflow split + desktop fullscreen. Mobile
     // fullscreen stacks the inspector under the canvas.
     const sideBySide = splitPanels || (fullscreen && !isNarrowViewport);
+    const beginSplitResize = (e: ReactPointerEvent, horizontal: boolean) => {
+      e.preventDefault();
+      const body = canvasBodyRef.current;
+      if (!body) return;
+      const rect = body.getBoundingClientRect();
+      const axisSize = horizontal ? rect.width : rect.height;
+      if (axisSize <= 0) return;
+      const startPos = horizontal ? e.clientX : e.clientY;
+      const startShare = canvasShare;
+      const resizeClass = horizontal ? "ra-resizing-h" : "ra-resizing-v";
+      setSplitDragging(true);
+      document.body.classList.add(resizeClass);
+      const onMove = (ev: PointerEvent) => {
+        const delta = (horizontal ? ev.clientX : ev.clientY) - startPos;
+        const next = startShare + delta / axisSize;
+        // Stacked: keep ≥46px for Inspector/Compiler tabs.
+        if (!horizontal && axisSize > 0) {
+          const minInspector = 46 + 7;
+          const maxShare = Math.max(
+            0.15,
+            Math.min(0.85, 1 - minInspector / axisSize)
+          );
+          const minShare = Math.min(0.2, maxShare);
+          setCanvasShare(Math.max(minShare, Math.min(maxShare, next)));
+          return;
+        }
+        setCanvasShare(Math.max(0.2, Math.min(0.8, next)));
+      };
+      const onUp = () => {
+        setSplitDragging(false);
+        document.body.classList.remove(resizeClass);
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    };
     return (
     <div
       className={
@@ -3808,44 +3846,7 @@ export function EditorInner<TOutput>({
             aria-label="Resize canvas and inspector (double-click to reset)"
             title="Drag to resize · double-click to reset"
             onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              const body = canvasBodyRef.current;
-              if (!body) return;
-              const rect = body.getBoundingClientRect();
-              const horizontal = sideBySide;
-              const axisSize = horizontal ? rect.width : rect.height;
-              if (axisSize <= 0) return;
-              const startPos = horizontal ? e.clientX : e.clientY;
-              const startShare = canvasShare;
-              const resizeClass = horizontal ? "ra-resizing-h" : "ra-resizing-v";
-              setSplitDragging(true);
-              document.body.classList.add(resizeClass);
-              const onMove = (ev: PointerEvent) => {
-                const delta = (horizontal ? ev.clientX : ev.clientY) - startPos;
-                const next = startShare + delta / axisSize;
-                // Stacked: keep ≥46px for Inspector/Compiler tabs.
-                if (!horizontal && axisSize > 0) {
-                  const minInspector = 46 + 7;
-                  const maxShare = Math.max(
-                    0.15,
-                    Math.min(0.85, 1 - minInspector / axisSize)
-                  );
-                  const minShare = Math.min(0.2, maxShare);
-                  setCanvasShare(Math.max(minShare, Math.min(maxShare, next)));
-                  return;
-                }
-                setCanvasShare(Math.max(0.2, Math.min(0.8, next)));
-              };
-              const onUp = () => {
-                setSplitDragging(false);
-                document.body.classList.remove(resizeClass);
-                window.removeEventListener("pointermove", onMove);
-                window.removeEventListener("pointerup", onUp);
-              };
-              window.addEventListener("pointermove", onMove);
-              window.addEventListener("pointerup", onUp);
-            }}
+            onPointerDown={(e) => beginSplitResize(e, sideBySide)}
           />
         )}
 
@@ -3905,13 +3906,35 @@ export function EditorInner<TOutput>({
                 {label}
               </button>
             ))}
-            <div className="ml-auto flex min-w-0 items-center gap-1">
+            <div className="ml-auto flex min-w-0 items-center gap-2">
               {inspectorSelectionKind ? (
                 <span className="min-w-0 max-w-[12rem] truncate text-[14px] font-sans font-normal text-[#1c1b16] sm:max-w-[16rem]">
                   {inspectorSelectionKind}
                 </span>
               ) : null}
-              {/* Inspector Fullscreen / Expand control removed per request. */}
+              {/* Stacked fullscreen / docked: visible grabber on the right of
+                  Inspector/Compiler — same resize as the hairline split above. */}
+              {(fullscreen || fillHeight) &&
+                !sideBySide &&
+                !canvasIsCollapsed && (
+                  <div
+                    className={
+                      "rf-inspector-grabber flex h-full shrink-0 items-center px-1 touch-none cursor-row-resize" +
+                      (splitDragging ? " active" : "")
+                    }
+                    role="separator"
+                    aria-orientation="horizontal"
+                    aria-label="Resize canvas and inspector (double-click to reset)"
+                    title="Drag to resize · double-click to reset"
+                    onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
+                    onPointerDown={(e) => beginSplitResize(e, false)}
+                  >
+                    <span
+                      className="rf-inspector-grabber-bar block h-1 w-10 rounded-none"
+                      aria-hidden
+                    />
+                  </div>
+                )}
             </div>
           </div>
 

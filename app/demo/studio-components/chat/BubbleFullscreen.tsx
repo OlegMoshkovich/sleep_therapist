@@ -1,18 +1,33 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Ic } from "../ra-icons";
-import type { FeedbackEntry } from "../FeedbackControls";
+import type { FeedbackEntry, FeedbackSignal } from "../FeedbackControls";
 import { BubbleMarkdown } from "./BubbleMarkdown";
 import { VoiceFeedbackButton } from "./VoiceFeedbackButton";
 import type { Message } from "./types";
 
+const SWIPE_MIN_DX = 56;
+const SWIPE_MAX_DY = 72;
+
+const NOTE_TYPES: Array<{ key: Exclude<FeedbackSignal, "score">; label: string; placeholder: string }> = [
+  { key: "comment", label: "Note", placeholder: "Leave a note…" },
+  { key: "text_correction", label: "Text correction", placeholder: "How should this have been worded?" },
+  { key: "correct_output", label: "Ideal output", placeholder: "What would the ideal response have been?" },
+];
+
+function textOf(entries: FeedbackEntry[], signal: FeedbackSignal): string {
+  return entries.find((e) => e.signal === signal)?.comment ?? "";
+}
+
+function ratingOf(entries: FeedbackEntry[]): 1 | -1 | null {
+  return entries.find((e) => e.signal === "score")?.rating ?? null;
+}
+
 /**
- * Fullscreen overlay for a reply — mirrors the canvas full mode. It has its own
- * Feedback button: pressing it turns the reply into an editable input with a
- * Submit button; submitting saves the edited text as the "ideal output" feedback
- * signal, which tints the bubble and shows in the message's feedback component.
+ * Fullscreen overlay for a reply — mirrors the canvas full mode. Footer exposes
+ * every feedback signal (thumbs, note, text correction, ideal) as icon actions.
  */
 export function BubbleFullscreen({
   productName,
@@ -38,12 +53,23 @@ export function BubbleFullscreen({
   const text = m?.text ?? "";
   const initialEntries = feedbackByIdx?.[index] ?? [];
   const canFeedback = !!onSubmitFeedbackAt;
-  const existingIdeal = initialEntries.find((e) => e.signal === "correct_output")?.comment ?? "";
-  const existingRating = initialEntries.find((e) => e.signal === "score")?.rating ?? null;
-  // Feedback edit mode: opened by the Feedback button (or straight away when the
-  // studio's global feedback mode is on). Prefill with a prior correction if any.
+  const existingRating = ratingOf(initialEntries);
+  const existingIdeal = textOf(initialEntries, "correct_output");
+  const existingNote = textOf(initialEntries, "comment");
+  const existingCorrection = textOf(initialEntries, "text_correction");
+
   const [editing, setEditing] = useState(!!feedbackMode && canFeedback);
+  const [noteType, setNoteType] = useState<Exclude<FeedbackSignal, "score">>(() => {
+    if (existingIdeal.trim()) return "correct_output";
+    if (existingCorrection.trim()) return "text_correction";
+    return "comment";
+  });
   const [draft, setDraft] = useState(existingIdeal || text);
+  const [texts, setTexts] = useState({
+    comment: existingNote,
+    text_correction: existingCorrection,
+    correct_output: existingIdeal || (feedbackMode ? text : ""),
+  });
   const [rating, setRating] = useState<1 | -1 | null>(existingRating);
   const [saved, setSaved] = useState(false);
 
@@ -76,17 +102,56 @@ export function BubbleFullscreen({
   const canNext = index < messages.length - 1;
   const goPrev = () => setIndex((i) => Math.max(0, i - 1));
   const goNext = () => setIndex((i) => Math.min(messages.length - 1, i + 1));
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  const onSwipeStart = (e: React.TouchEvent) => {
+    if (editing) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest("button, a, textarea, input, [role='button']")) return;
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const onSwipeEnd = (e: React.TouchEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start || editing) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_MIN_DX || Math.abs(dy) > SWIPE_MAX_DY) return;
+    if (Math.abs(dx) <= Math.abs(dy)) return;
+    if (dx < 0) goNext();
+    else goPrev();
+  };
+
+  const syncFromEntries = (entries: FeedbackEntry[], body: string, forceEdit: boolean) => {
+    const ideal = textOf(entries, "correct_output");
+    const note = textOf(entries, "comment");
+    const correction = textOf(entries, "text_correction");
+    const score = ratingOf(entries);
+    setEditing(forceEdit);
+    setRating(score);
+    setTexts({
+      comment: note,
+      text_correction: correction,
+      correct_output: ideal || (forceEdit ? body : ""),
+    });
+    setDraft(ideal || body);
+    setNoteType(
+      ideal.trim() ? "correct_output" : correction.trim() ? "text_correction" : "comment"
+    );
+    setSaved(false);
+  };
 
   // Reset editor state when cycling to another message.
   useEffect(() => {
     const entries = feedbackByIdx?.[index] ?? [];
-    const ideal = entries.find((e) => e.signal === "correct_output")?.comment ?? "";
-    const score = entries.find((e) => e.signal === "score")?.rating ?? null;
     const body = messages[index]?.text ?? "";
-    setEditing(!!feedbackMode && canFeedback);
-    setDraft(ideal || body);
-    setRating(score);
-    setSaved(false);
+    syncFromEntries(entries, body, !!feedbackMode && canFeedback);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, feedbackMode, canFeedback, feedbackByIdx, messages]);
 
   useEffect(() => {
@@ -109,27 +174,65 @@ export function BubbleFullscreen({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, messages.length]);
 
+  const buildEntries = (
+    nextRating: 1 | -1 | null,
+    nextTexts: { comment: string; text_correction: string; correct_output: string }
+  ): FeedbackEntry[] => {
+    const entries: FeedbackEntry[] = [];
+    if (nextRating !== null) entries.push({ rating: nextRating, signal: "score", comment: "" });
+    for (const t of NOTE_TYPES) {
+      const c = nextTexts[t.key].trim();
+      if (c) entries.push({ rating: null, signal: t.key, comment: c });
+    }
+    return entries;
+  };
+
+  const persist = (entries: FeedbackEntry[]) => {
+    onSubmitFeedbackAt?.(index, entries);
+  };
+
+  const toggleRating = (value: 1 | -1) => {
+    const next = rating === value ? null : value;
+    setRating(next);
+    persist(
+      buildEntries(next, {
+        comment: existingNote,
+        text_correction: existingCorrection,
+        correct_output: existingIdeal,
+      })
+    );
+  };
+
+  const openEditor = (type: Exclude<FeedbackSignal, "score">) => {
+    setNoteType(type);
+    setTexts({
+      comment: existingNote,
+      text_correction: existingCorrection,
+      correct_output:
+        existingIdeal || (type === "correct_output" ? text : existingIdeal),
+    });
+    setDraft(existingIdeal || text);
+    setRating(existingRating);
+    setEditing(true);
+  };
+
   const submit = () => {
     if (!onSubmitFeedbackAt) return;
-    // Preserve any other signals already on this message; replace score + ideal.
-    const kept = (feedbackByIdx?.[index] ?? []).filter(
-      (e) => e.signal !== "score" && e.signal !== "correct_output"
-    );
-    const entries: FeedbackEntry[] = [...kept];
-    if (rating !== null) entries.push({ rating, signal: "score", comment: "" });
-    const corrected = draft.trim();
-    if (corrected && corrected !== text.trim()) {
-      entries.push({ rating: null, signal: "correct_output", comment: corrected });
+    const nextTexts = { ...texts };
+    // Keep the legacy draft field in sync when editing ideal from the body textarea.
+    if (noteType === "correct_output" && editing) {
+      nextTexts.correct_output = draft;
     }
-    onSubmitFeedbackAt(index, entries);
+    const entries = buildEntries(rating, nextTexts);
+    persist(entries);
+    setTexts(nextTexts);
     setSaved(true);
     setTimeout(() => setSaved(false), 1600);
+    setEditing(false);
   };
 
   const roleTitle = m?.role === "user" ? "You" : productName;
 
-  // Mount inside `.ra-scope` so theme tokens (mono accent, surfaces) apply —
-  // portaling to <body> left the modal on the fallback orange accent.
   const host =
     (typeof document !== "undefined" &&
       (document.querySelector(".ra-scope") as HTMLElement | null)) ||
@@ -163,9 +266,17 @@ export function BubbleFullscreen({
     </div>
   );
 
+  const activePlaceholder =
+    NOTE_TYPES.find((t) => t.key === noteType)?.placeholder ?? "Leave a note…";
+
   return createPortal(
     <div className="bubble-fs-overlay" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="bubble-fs" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="bubble-fs"
+        onClick={(e) => e.stopPropagation()}
+        onTouchStart={onSwipeStart}
+        onTouchEnd={onSwipeEnd}
+      >
         <div className="bubble-fs-head">
           <div className="bubble-fs-head-left">
             <div className="bubble-fs-title-block">
@@ -187,13 +298,49 @@ export function BubbleFullscreen({
         </div>
         <div className="bubble-fs-body">
           {editing ? (
-            <textarea
-              className="bubble-fs-textarea"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              spellCheck
-              autoFocus
-            />
+            <div className="bubble-fs-editor">
+              <div className="bubble-fs-types">
+                {NOTE_TYPES.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    className={
+                      "bubble-fs-type" +
+                      (noteType === t.key ? " active" : "") +
+                      (texts[t.key].trim() ? " filled" : "")
+                    }
+                    onClick={() => {
+                      if (noteType === "correct_output") {
+                        setTexts((prev) => ({ ...prev, correct_output: draft }));
+                      }
+                      setNoteType(t.key);
+                      if (t.key === "correct_output") {
+                        setDraft(texts.correct_output || text);
+                      }
+                    }}
+                  >
+                    {t.label}
+                    {texts[t.key].trim() ? " ·" : ""}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                className="bubble-fs-textarea"
+                value={noteType === "correct_output" ? draft : texts[noteType]}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (noteType === "correct_output") {
+                    setDraft(v);
+                    setTexts((prev) => ({ ...prev, correct_output: v }));
+                  } else {
+                    setTexts((prev) => ({ ...prev, [noteType]: v }));
+                  }
+                }}
+                placeholder={activePlaceholder}
+                spellCheck
+                autoFocus
+              />
+            </div>
           ) : m?.role === "user" ? (
             text
           ) : (
@@ -222,7 +369,9 @@ export function BubbleFullscreen({
                     👎
                   </button>
                 </div>
-                <span className="bubble-fs-hint">Edit the answer, then submit it as the ideal response.</span>
+                <span className="bubble-fs-hint">
+                  {saved ? "Saved" : "Edit feedback, then save."}
+                </span>
               </div>
               <div className="bubble-fs-foot-right">
                 <button
@@ -230,13 +379,13 @@ export function BubbleFullscreen({
                   className="bubble-fs-cancel"
                   onClick={() => {
                     setEditing(false);
-                    setDraft(existingIdeal || text);
+                    syncFromEntries(initialEntries, text, false);
                   }}
                 >
                   Cancel
                 </button>
                 <button type="button" className="bubble-fs-submit" onClick={submit}>
-                  {saved ? "Saved" : "Submit feedback"}
+                  {saved ? "Saved" : "Save"}
                 </button>
               </div>
             </>
@@ -245,13 +394,57 @@ export function BubbleFullscreen({
               <div className="bubble-fs-foot-left bubble-fs-nav-slot bubble-fs-nav-slot--foot">{nav}</div>
               {canFeedback ? (
                 <div className="bubble-fs-foot-right">
+                  <button
+                    type="button"
+                    className={"bubble-fs-fb" + (existingRating === 1 ? " active" : "")}
+                    title="Thumbs up"
+                    aria-label="Thumbs up"
+                    aria-pressed={existingRating === 1}
+                    onClick={() => toggleRating(1)}
+                  >
+                    👍
+                  </button>
+                  <button
+                    type="button"
+                    className={"bubble-fs-fb" + (existingRating === -1 ? " active" : "")}
+                    title="Thumbs down"
+                    aria-label="Thumbs down"
+                    aria-pressed={existingRating === -1}
+                    onClick={() => toggleRating(-1)}
+                  >
+                    👎
+                  </button>
+                  <button
+                    type="button"
+                    className={"bubble-fs-fb" + (existingNote.trim() ? " filled" : "")}
+                    title="Note"
+                    aria-label="Note"
+                    onClick={() => openEditor("comment")}
+                  >
+                    <Ic.Memo size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className={"bubble-fs-fb" + (existingCorrection.trim() ? " filled" : "")}
+                    title="Text correction"
+                    aria-label="Text correction"
+                    onClick={() => openEditor("text_correction")}
+                  >
+                    <Ic.Edit size={15} />
+                  </button>
+                  <button
+                    type="button"
+                    className={"bubble-fs-fb" + (existingIdeal.trim() ? " filled" : "")}
+                    title="Ideal output"
+                    aria-label="Ideal output"
+                    onClick={() => openEditor("correct_output")}
+                  >
+                    <Ic.Sparkle size={15} />
+                  </button>
                   <VoiceFeedbackButton
                     existing={initialEntries}
                     onSubmit={(entries) => onSubmitFeedbackAt?.(index, entries)}
                   />
-                  <button type="button" className="bubble-fs-fb" title="Feedback" aria-label="Feedback" onClick={() => setEditing(true)}>
-                    <Ic.Edit size={15} />
-                  </button>
                 </div>
               ) : null}
             </>
