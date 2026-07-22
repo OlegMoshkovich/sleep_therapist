@@ -1895,12 +1895,12 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
 .ra-scope .sim-runs-empty{padding:4px 16px 16px;color:var(--text-4);font-family:inherit;font-size:13px;}
 .ra-scope .sim-runs-list{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding:0 8px 12px;}
 .ra-scope .sim-run{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:9px;cursor:pointer;
-  border:1px solid transparent;transition:background .12s ease,border-color .12s ease;}
+  border:1px solid var(--line);background:var(--surface);transition:background .12s ease,border-color .12s ease;}
 .ra-scope .sim-run:hover{background:var(--surface-2);}
-.ra-scope .sim-run.active{background:var(--surface-2);border-color:var(--line);}
-.ra-scope .sim-run.has-feedback{background:#D1E7F3;}
+.ra-scope .sim-run.active{background:var(--surface-2);border-color:var(--text-3);}
+.ra-scope .sim-run.has-feedback{background:#D1E7F3;border-color:#b7d4e6;}
 .ra-scope .sim-run.has-feedback:hover,
-.ra-scope .sim-run.has-feedback.active{background:#D1E7F3;}
+.ra-scope .sim-run.has-feedback.active{background:#D1E7F3;border-color:#b7d4e6;}
 .ra-scope .sim-run-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
 .ra-scope .sim-run-scenario{font-family:inherit;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .ra-scope .sim-run-meta{display:flex;align-items:center;gap:6px;font-family:inherit;font-size:12px;color:var(--text-3);}
@@ -2117,12 +2117,13 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
   .ra-scope .thread-mobile-menu-label{font-size:12px;}
   .ra-scope .empty{padding:24px 18px 88px;}
 
-  /* Compact chat typography on narrow screens */
-  .ra-scope{--bubble-font-size:12px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+  /* Compact chat typography on narrow screens. Bubble size follows
+     --bubble-font-size (account → Text size); default Medium unless overridden. */
+  .ra-scope{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   .ra-scope .th-name{font-size:16px;}
   .ra-scope .bubble-body,
   .ra-scope .msg-user .bubble-body,
-  .ra-scope .msg-ai .bubble .bubble-body{font-size:12px;line-height:1.45;}
+  .ra-scope .msg-ai .bubble .bubble-body{font-size:var(--bubble-font-size, 16.5px);line-height:1.45;}
   .ra-scope .comp-input{font-size:12px;}
   .ra-scope .typing-status{font-size:12px;}
   /* Mobile: stack suggestion pills vertically so they never overflow the viewport. */

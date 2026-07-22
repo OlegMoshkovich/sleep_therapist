@@ -20,6 +20,8 @@ import { Ic } from "../ra-icons";
 import { stripMarkdownForSpeech } from "./helpers";
 import {
   ADMIN_ONLY_DRAWERS,
+  BUBBLE_FONT_PX,
+  BUBBLE_FONT_PREF_KEY,
   MOBILE_DRAWER_TAB_KEY,
   MONO_PREF_KEY,
   SPLASH_BG_MONO,
@@ -28,6 +30,9 @@ import {
   ROUND_PREF_KEY,
   SIM_TITLE_PREFIX,
   TTS_PREF_KEY,
+  nextBubbleFontSize,
+  readBubbleFontSize,
+  type BubbleFontSize,
 } from "./constants";
 import { AccountPane } from "./AccountPane";
 import {
@@ -125,6 +130,16 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
       // ignore
     }
   }, [roundUi]);
+  // Bubble body type size (persisted). Cycles Small → Medium → Large.
+  const [bubbleFontSize, setBubbleFontSize] = useState<BubbleFontSize>(readBubbleFontSize);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(BUBBLE_FONT_PREF_KEY, bubbleFontSize);
+    } catch {
+      // ignore
+    }
+  }, [bubbleFontSize]);
   // Voice: TTS auto-play preference (persisted to localStorage) and hooks.
   const [autoSpeak, setAutoSpeak] = useState(false);
   const autoSpeakRef = useRef(autoSpeak);
@@ -1069,6 +1084,7 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
   return (
     <div
       className={"ra-scope" + (monoTheme ? " ra-mono" : "") + (roundUi ? " ra-round" : "")}
+      style={{ ["--bubble-font-size" as string]: BUBBLE_FONT_PX[bubbleFontSize] }}
       onClick={() => {
         if (menuOpen) setMenuOpen(false);
         if (infoOpen) setInfoOpen(false);
@@ -1116,6 +1132,8 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 onToggleMono={() => setMonoTheme((v) => !v)}
                 roundUi={roundUi}
                 onToggleRound={() => setRoundUi((v) => !v)}
+                bubbleFontSize={bubbleFontSize}
+                onCycleBubbleFont={() => setBubbleFontSize((s) => nextBubbleFontSize(s))}
                 userEmail={user?.email ?? ""}
                 userImage={user?.imageUrl}
                 isAdmin={isAdmin}
@@ -1339,6 +1357,8 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
                 onToggleMono={() => setMonoTheme((v) => !v)}
                 roundUi={roundUi}
                 onToggleRound={() => setRoundUi((v) => !v)}
+                bubbleFontSize={bubbleFontSize}
+                onCycleBubbleFont={() => setBubbleFontSize((s) => nextBubbleFontSize(s))}
                 onToggleFeedbackMode={() => { setFeedbackMode((m) => !m); closeDrawer("account"); }}
                 onSignOut={signOut}
               />

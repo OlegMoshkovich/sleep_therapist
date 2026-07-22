@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Ic } from "../ra-icons";
 import { Avatar } from "../ra-shared";
+import { BUBBLE_FONT_LABELS, type BubbleFontSize } from "./constants";
 import { ADMIN_ITEMS } from "./Sidebar";
 
 export function AccountPane({
@@ -14,6 +15,8 @@ export function AccountPane({
   onToggleMono,
   roundUi,
   onToggleRound,
+  bubbleFontSize,
+  onCycleBubbleFont,
   onToggleFeedbackMode,
   onSignOut,
 }: {
@@ -25,6 +28,8 @@ export function AccountPane({
   onToggleMono: () => void;
   roundUi: boolean;
   onToggleRound: () => void;
+  bubbleFontSize: BubbleFontSize;
+  onCycleBubbleFont: () => void;
   onToggleFeedbackMode: () => void;
   onSignOut: () => void;
 }) {
@@ -70,6 +75,10 @@ export function AccountPane({
       <button className="pop-row" onClick={onToggleRound}>
         <span className="ic"><Ic.Round size={17} /></span>
         Rounded UI{roundUi ? " ✓" : ""}
+      </button>
+      <button className="pop-row" onClick={onCycleBubbleFont}>
+        <span className="ic"><Ic.Type size={17} /></span>
+        Text size · {BUBBLE_FONT_LABELS[bubbleFontSize]}
       </button>
       <button className="pop-row danger" onClick={onSignOut}>
         <span className="ic"><Ic.SignOut size={17} /></span>Sign out

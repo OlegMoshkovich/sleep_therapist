@@ -63,6 +63,8 @@ export const Ic = {
   Moon: mk(<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />),
   /* Soft corner / rounded-UI toggle. */
   Round: mk(<><rect x="4" y="4" width="16" height="16" rx="6" /><circle cx="12" cy="12" r="3.5" /></>),
+  /* Text size (Aa) — bubble font control in account menu. */
+  Type: mk(<><path d="M4 7V5h16v2" /><path d="M12 5v14" /><path d="M9 19h6" /></>),
   Panel: mk(<><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><line x1="9.5" y1="4.5" x2="9.5" y2="19.5" /></>),
   Close: mk(<><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></>),
   /* Square frame (no corner radius) — matches canvas step badges / sharp chrome. */

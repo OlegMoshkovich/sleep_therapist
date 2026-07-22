@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { Ic } from "../ra-icons";
 import { Avatar } from "../ra-shared";
+import { BUBBLE_FONT_LABELS, type BubbleFontSize } from "./constants";
 import { ConvList } from "./ConvList";
 import type { Conversation } from "./types";
 
@@ -69,6 +70,8 @@ export function Sidebar({
   onToggleMono,
   roundUi,
   onToggleRound,
+  bubbleFontSize,
+  onCycleBubbleFont,
   userEmail,
   userImage,
   isAdmin,
@@ -96,6 +99,8 @@ export function Sidebar({
   onToggleMono: () => void;
   roundUi: boolean;
   onToggleRound: () => void;
+  bubbleFontSize: BubbleFontSize;
+  onCycleBubbleFont: () => void;
   userEmail: string;
   userImage?: string;
   isAdmin: boolean;
@@ -223,6 +228,13 @@ export function Sidebar({
             >
               <span className="ic"><Ic.Round size={17} /></span>
               Rounded UI{roundUi ? " ✓" : ""}
+            </button>
+            <button
+              className="pop-row"
+              onClick={() => { setMenuOpen(() => false); onCycleBubbleFont(); }}
+            >
+              <span className="ic"><Ic.Type size={17} /></span>
+              Text size · {BUBBLE_FONT_LABELS[bubbleFontSize]}
             </button>
             <button
               className="pop-row danger"
