@@ -312,14 +312,15 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .side-search:focus{background:var(--surface-2);}
 
 .ra-scope .recent-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;margin:18px 0 8px;
-  font-size:14px;font-weight:400;color:var(--text-2);letter-spacing:normal;text-transform:none;}
+  font-size:14px;font-weight:400;color:var(--text-2);letter-spacing:normal;text-transform:none;
+  scrollbar-gutter:stable;}
 .ra-scope .recent-head .recent-label{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
 .ra-scope .recent-head .chev{margin-left:2px;opacity:.7;}
 
 /* Multi-select: Select sits on the Recent row; actions expand to the right. */
 .ra-scope .conv-select-bar{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;margin:0 0 0 auto;}
 .ra-scope .conv-select-action{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-2);
-  background:transparent;border:none;border-radius:8px;padding:4px 8px;cursor:pointer;white-space:nowrap;}
+  background:transparent;border:none;border-radius:8px;padding:4px 0;cursor:pointer;white-space:nowrap;}
 .ra-scope .conv-select-action:hover:not(:disabled){background:var(--surface);color:var(--text);}
 .ra-scope .conv-select-action.danger{color:var(--danger);}
 .ra-scope .conv-select-action.danger:hover:not(:disabled){background:rgba(224,130,111,.12);color:var(--danger);}
@@ -333,14 +334,14 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope button.conv-check svg{width:10px;height:10px;}
 .ra-scope .conv-item.selected{background:var(--surface);}
 
-/* Right padding + stable gutter so the scrollbar never covers the ⋯ menu. */
+/* Titles share the same left/right inset as Recent / Select (no per-row offsets). */
 .ra-scope .conv-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;min-height:0;
-  margin:0;padding:0 10px 0 0;scrollbar-gutter:stable;}
+  margin:0;padding:0;scrollbar-gutter:stable;}
 .ra-scope .conv-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;text-align:center;color:var(--text-3);padding:20px 0;}
 .ra-scope .conv-empty .ce-orb{width:38px;height:38px;border-radius:50%;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--text-4);}
 .ra-scope .conv-empty p{margin:0;font-size:14px;line-height:1.35;}
 
-.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 8px 9px 8px;border-radius:8px;cursor:pointer;
+.ra-scope .conv-item{display:flex;align-items:center;gap:8px;padding:9px 0;border-radius:8px;cursor:pointer;
   position:relative;color:var(--text-2);}
 .ra-scope .conv-item:hover{background:var(--surface);color:var(--text);}
 .ra-scope .conv-item.active{background:var(--surface);color:var(--text);}
@@ -348,9 +349,10 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .conv-item.has-feedback:hover,
 .ra-scope .conv-item.has-feedback.active{background:#B0BEA5;}
 .ra-scope .conv-item.active::before{content:"";position:absolute;left:-10px;top:9px;bottom:9px;width:2.5px;border-radius:3px;background:var(--accent);}
-.ra-scope .conv-title{flex:1;min-width:0;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ra-scope .conv-rename{flex:1;min-width:0;font:inherit;font-size:14px;color:var(--text);
-  background:var(--elevated);border:1px solid var(--accent);border-radius:6px;padding:3px 7px;outline:none;}
+.ra-scope .conv-title{flex:1;min-width:0;font-size:14px;font-weight:400;line-height:1.25;letter-spacing:normal;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ra-scope .conv-rename{flex:1;min-width:0;font:inherit;font-size:14px;font-weight:400;color:var(--text);
+  background:var(--elevated);border:1px solid var(--accent);border-radius:6px;padding:3px 0;outline:none;}
 .ra-scope .conv-kebab{flex:0 0 auto;opacity:1;color:var(--text-3);display:flex;border-radius:6px;padding:2px;}
 .ra-scope .conv-kebab:hover{background:var(--surface-2);color:var(--text);}
 .ra-scope .conv-kebab.open{background:var(--surface-2);color:var(--text);}
@@ -388,7 +390,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
 .ra-scope .acct-chip:hover{background:var(--surface-2);}
 .ra-scope .acct-chip .chev{margin-left:auto;color:var(--text-3);transition:transform .18s;}
 .ra-scope .acct-chip.open .chev{transform:rotate(180deg);}
-.ra-scope .popover{position:absolute;left:0;right:0;bottom:72px;background:var(--elevated);border:1px solid var(--line);
+.ra-scope .popover{position:absolute;left:0;right:0;bottom:72px;background:var(--frame);border:1px solid var(--line);
   border-radius:0;box-shadow:none;padding:0 0 8px;z-index:30;animation:ra-popIn .16s ease;
   display:flex;flex-direction:column;overflow:hidden;}
 .ra-scope .pop-label{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:400;letter-spacing:normal;text-transform:uppercase;
@@ -1310,8 +1312,8 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-chrome .rf-canvas-t
   background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .ra-scope .drawer-pane > .newbtn:hover{background:var(--accent);filter:brightness(.96);}
 .ra-scope .drawer-pane > .newbtn .nb-ic{color:var(--accent-ink);}
-.ra-scope .drawer-pane > .conv-list{flex:1;min-height:0;overflow-y:auto;margin-left:14px;margin-right:8px;
-  padding:0 10px 0 0;scrollbar-gutter:stable;}
+.ra-scope .drawer-pane > .conv-list{flex:1;min-height:0;overflow-y:auto;margin-left:14px;margin-right:14px;
+  padding:0;scrollbar-gutter:stable;}
 /* Same 46px band + 16px inset as Knowledge / State / Policy (.obs-setup). */
 .ra-scope .drawer-subhead{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:18px;
   height:46px;padding:0 16px;box-sizing:border-box;border-bottom:1px solid var(--line-soft);}

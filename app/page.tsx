@@ -95,6 +95,7 @@ function HomeContent() {
           fontSize: "16px",
           fontWeight: 400,
           color: SEPIA_TEXT,
+          transform: "translateY(-30px)",
         }}
       >
         The AI Research lab
