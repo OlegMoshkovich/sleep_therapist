@@ -68,19 +68,6 @@ export function MobileNav({
         <>
           <button
             type="button"
-            className={"mrail-btn" + (!hideBubbleControls ? " on" : "")}
-            title={showControlsLabel}
-            aria-label={showControlsLabel}
-            aria-pressed={!hideBubbleControls}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleHideBubbleControls?.();
-            }}
-          >
-            <Ic.Sliders size={18} />
-          </button>
-          <button
-            type="button"
             className={"mrail-btn" + (allCollapsed ? " on" : "")}
             title={collapseLabel}
             aria-label={collapseLabel}
@@ -91,6 +78,19 @@ export function MobileNav({
             }}
           >
             <Ic.Chevron size={18} style={allCollapsed ? undefined : { transform: "rotate(180deg)" }} />
+          </button>
+          <button
+            type="button"
+            className={"mrail-btn" + (!hideBubbleControls ? " on" : "")}
+            title={showControlsLabel}
+            aria-label={showControlsLabel}
+            aria-pressed={!hideBubbleControls}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleHideBubbleControls?.();
+            }}
+          >
+            <Ic.Sliders size={18} />
           </button>
           <button
             type="button"
