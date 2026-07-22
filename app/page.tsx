@@ -138,7 +138,7 @@ function HomeContent() {
               appearance={homeAppearance}
             />
           )}
-          <p className="text-sm" style={{ color: SEPIA_MUTED }}>
+          <p style={{ color: SEPIA_MUTED, fontSize: "12px" }}>
             {mode === "signin" ? (
               <>
                 Don&apos;t have an account?{" "}

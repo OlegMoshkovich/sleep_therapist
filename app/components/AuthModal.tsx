@@ -160,7 +160,7 @@ export default function AuthModal({ redirectAfterLogin }: AuthModalProps) {
             appearance={clerkAppearance}
           />
         )}
-        <p className="text-sm font-serif" style={{ color: SEPIA.textMuted }}>
+        <p style={{ color: SEPIA.textMuted, fontSize: "12px" }}>
           {mode === "signin" ? (
             <>
               Don&apos;t have an account?{" "}
