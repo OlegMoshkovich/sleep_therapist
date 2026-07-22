@@ -2204,8 +2204,8 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
     justify-content:center;border-radius:0;color:var(--text-2);border:none;background:var(--frame);}
   .ra-scope button.mrail-btn:hover,.ra-scope button.mrail-btn:active,
   .ra-scope button.mrail-btn.on{background:var(--frame);color:var(--text);}
-  /* Feedback toggle — orange ring while highlight mode is on. */
-  .ra-scope button.mrail-btn.mrail-feedback.on{box-shadow:0 0 0 1.5px var(--accent);}
+  /* Feedback toggle — sage feedback ring while highlight mode is on. */
+  .ra-scope button.mrail-btn.mrail-feedback.on{box-shadow:0 0 0 1.5px #96a58a;}
 
 
   /* the unified drawer (chats / observability / expert / upload / account)

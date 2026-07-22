@@ -197,7 +197,8 @@ export function BottomCanvasDrawer({
       // the drawer can't ride under Chrome's URL / bookmark bar on mobile.
       const minH = 80;
       const visible = window.visualViewport?.height ?? window.innerHeight;
-      const maxH = Math.max(minH, Math.round(visible - 20));
+      // +20px past the default top gap so a fully extended drawer reaches higher.
+      const maxH = Math.max(minH, Math.round(visible - 20 + 20));
       setHeight(Math.round(Math.max(minH, Math.min(maxH, next))));
     };
     const onUp = () => {

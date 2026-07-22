@@ -11,6 +11,8 @@ const SHEET_DEFAULT_FRAC = 0.7;
 const SHEET_MIN_FRAC = 0.18;
 /** Leave a top gap so the sheet can't ride under Chrome's URL / bookmark bar. */
 const SHEET_TOP_GAP_PX = 20;
+/** Extra room past the default top gap when the sheet is dragged fully open. */
+const SHEET_MAX_EXTRA_PX = 20;
 /** Release below this fraction to dismiss the sheet. */
 const SHEET_DISMISS_FRAC = 0.28;
 
@@ -21,7 +23,7 @@ function visibleViewportHeight(): number {
 }
 
 function sheetMaxPx(): number {
-  return Math.max(120, visibleViewportHeight() - SHEET_TOP_GAP_PX);
+  return Math.max(120, visibleViewportHeight() - SHEET_TOP_GAP_PX + SHEET_MAX_EXTRA_PX);
 }
 
 /**
