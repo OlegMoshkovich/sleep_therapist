@@ -1332,8 +1332,7 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
 
           {/* Right rail: Workflow launcher; admins also get Model Setup.
               Docked at the right edge when no drawer is open; when a drawer IS
-              open it floats at the drawer's left edge and tracks its width.
-              Avatar-only hides rails via CSS (keeps flex space so bubbles don't shift). */}
+              open it floats at the drawer's left edge and tracks its width. */}
           <RightRail
             panelOpen={openDrawers.length > 0}
             onTogglePanel={() =>
@@ -1375,7 +1374,6 @@ export function StudioApp({ config }: { config: StudioChatConfig }) {
               showFeedbackToggle={hasThreadFeedback}
               highlightFeedback={highlightFeedback}
               onToggleHighlightFeedback={() => setHighlightFeedback((v) => !v)}
-              hidden={avatarOnly}
             />
           )}
           {openDrawers.length > 0 && (

@@ -225,6 +225,13 @@ body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .border-\[\#c8c4b4\]{
 .ra-scope .resize-handle:hover::before,.ra-scope .resize-handle.active::before{background:var(--accent);}
 /* during an active drag, lock the cursor and suppress selection document-wide */
 body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:none !important;}
+/* Bubble width edges: hover either side → both border edges turn 1px orange. */
+.ra-scope .bubble-edge-resize{position:absolute;top:0;bottom:0;width:10px;z-index:3;
+  cursor:col-resize;touch-action:none;background:transparent;border:none;outline:none;}
+.ra-scope .bubble-edge-resize--left{left:0;}
+.ra-scope .bubble-edge-resize--right{right:0;}
+.ra-scope .msg-ai .bubble.is-edge-hot,
+.ra-scope .msg-user.is-edge-hot{border-left-color:var(--accent);border-right-color:var(--accent);}
 
 /* ---------- sidebar ---------- */
 .ra-scope .sidebar{width:var(--side-w,300px);flex:0 0 var(--side-w,300px);background:var(--panel);border-right:none;
@@ -276,8 +283,7 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   padding:calc((var(--studio-head-h,60px) - 44px) / 2) 0 14px;gap:8px;min-height:0;}
 /* Avatar-only: hide rail chrome but keep the 64px flex footprint so .main
    (and centered bubbles) don't shift when the header pill collapses. */
-.ra-scope.is-avatar-only .sidebar.rail,
-.ra-scope.is-avatar-only .right-rail{visibility:hidden;pointer-events:none;}
+/* Avatar-only collapses the title pill only — keep side rails clickable. */
 /* When a right drawer is open, the rail floats at the drawer's left edge (its
    `right` is set inline to the live drawer width, so it tracks resizing). It's
    out of the flex flow, transparent, and click-through except on the icons, and
@@ -1990,6 +1996,8 @@ body:has(.ra-scope.ra-mono) .bubble-fs{background:#ffffff;border-color:#dcdcdc;}
    (0,2,1, wins by order) so Examples and Run simulation read as bordered buttons. */
 .ra-scope button.sim-examples-btn,
 .ra-scope button.sim-btn{border:1px solid var(--line);}
+/* Keep Run simulation on accent — the button.sim-btn rule above would otherwise force a gray border. */
+.ra-scope button.sim-btn.sim-btn-run{border-color:var(--accent);}
 .ra-scope .sim-status{font-family:inherit;font-size:14px;font-weight:400;color:var(--text-3);}
 .ra-scope .sim-error{font-family:inherit;font-size:14px;font-weight:400;color:var(--danger);}
 /* Past simulation runs. Fills the panel below the setup form and scrolls independently. */

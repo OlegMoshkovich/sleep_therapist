@@ -555,6 +555,8 @@ export function SimulationPanel({
                           onClick={() => {
                             setScenario(ex.text);
                             setExamplesOpen(false);
+                            setOpenExample(null);
+                            setScenarioOpen(true);
                           }}
                         >
                           Use this scenario

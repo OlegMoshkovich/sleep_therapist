@@ -77,6 +77,9 @@ export function Bubble({
   const [widthPx, setWidthPx] = useState<number | null>(null);
   // Left offset within thread-inner while custom-sized (keeps the opposite edge stable).
   const [leftPx, setLeftPx] = useState<number | null>(null);
+  /** Hover/drag on either edge lights up both sides. */
+  const [edgeHot, setEdgeHot] = useState(false);
+  const edgeDraggingRef = useRef(false);
   /** Natural/default width to magnet-snap back to while dragging. */
   const defaultWidthRef = useRef<number | null>(null);
   /** For AI rows: distance from msg-ai left → bubble left (avatar + gap). */
@@ -404,7 +407,6 @@ export function Bubble({
     // Anchor coords in thread-inner space (fallback: viewport).
     const originLeft = inner?.getBoundingClientRect().left ?? 0;
     const startLeft = leftPx ?? Math.round(startRect.left - originLeft);
-    const startRight = startLeft + startW;
     if (leftPx == null) setLeftPx(startLeft);
 
     if (widthPx == null || defaultWidthRef.current == null) {
@@ -427,35 +429,28 @@ export function Bubble({
     }
     const SNAP = 18;
     const minW = 180;
+    const maxW = Math.max(minW, Math.floor(maxRight - minLeft));
+    const startCenter = startRect.left + startW / 2;
     let lastW = startW;
+    edgeDraggingRef.current = true;
+    setEdgeHot(true);
     document.body.classList.add("ra-resizing");
     const onMove = (ev: PointerEvent) => {
       const dx = ev.clientX - startX;
-      let nextW: number;
-      let nextLeft = startLeft;
-      if (edge === "right") {
-        // Left edge fixed; right edge follows the pointer.
-        nextW = startW + dx;
-        const maxW = Math.floor(maxRight - startRect.left);
-        nextW = Math.max(minW, Math.min(maxW, nextW));
-      } else {
-        // Right edge fixed; left edge follows the pointer.
-        nextW = startW - dx;
-        const maxW = Math.floor(startRect.right - minLeft);
-        nextW = Math.max(minW, Math.min(maxW, nextW));
-        nextLeft = startRight - nextW;
-      }
-      nextW = Math.round(nextW);
-      nextLeft = Math.round(nextLeft);
-      if (Math.abs(nextW - correctW) <= SNAP) {
-        nextW = correctW;
-        if (edge === "left") nextLeft = startRight - nextW;
-      }
+      // Either edge: grow/shrink equally from the center.
+      const growth = edge === "right" ? dx : -dx;
+      let nextW = Math.round(Math.max(minW, Math.min(maxW, startW + 2 * growth)));
+      if (Math.abs(nextW - correctW) <= SNAP) nextW = correctW;
+      let nextLeftAbs = startCenter - nextW / 2;
+      nextLeftAbs = Math.max(minLeft, Math.min(maxRight - nextW, nextLeftAbs));
+      const nextLeft = Math.round(nextLeftAbs - originLeft);
       lastW = nextW;
       setWidthPx(nextW);
       setLeftPx(nextLeft);
     };
     const onUp = () => {
+      edgeDraggingRef.current = false;
+      setEdgeHot(false);
       document.body.classList.remove("ra-resizing");
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
@@ -473,16 +468,11 @@ export function Bubble({
   const edgeHit = (edge: "left" | "right") => (
     <div
       aria-hidden
+      className={"bubble-edge-resize bubble-edge-resize--" + edge}
       onPointerDown={onWidthDrag(edge)}
-      style={{
-        position: "absolute",
-        top: 0,
-        bottom: 0,
-        width: 10,
-        [edge]: 0,
-        cursor: "col-resize",
-        touchAction: "none",
-        zIndex: 3,
+      onPointerEnter={() => setEdgeHot(true)}
+      onPointerLeave={() => {
+        if (!edgeDraggingRef.current) setEdgeHot(false);
       }}
     />
   );
@@ -495,7 +485,11 @@ export function Bubble({
   const shell = (
     <div
       ref={bubbleRef}
-      className={shellClass + (!controlsVisible ? " hide-controls" : "")}
+      className={
+        shellClass +
+        (!controlsVisible ? " hide-controls" : "") +
+        (edgeHot ? " is-edge-hot" : "")
+      }
       style={{
         position: "relative",
         ...widthStyle,
