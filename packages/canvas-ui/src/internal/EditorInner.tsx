@@ -1879,24 +1879,15 @@ function titleCaseKindLabel(kind: string): string {
     .join(" / ");
 }
 
-/** Hover tip rendered under a Tools toolbar control. */
+/** Hover tips disabled — canvas chrome stays quiet. */
 function ToolTipWrap({
-  tip,
+  tip: _tip,
   children,
 }: {
   tip: string;
   children: ReactNode;
 }) {
-  return (
-    <span className="rf-tool-tip-wrap">
-      {children}
-      {tip ? (
-        <span className="rf-tool-tip" role="tooltip">
-          {tip}
-        </span>
-      ) : null}
-    </span>
-  );
+  return <>{children}</>;
 }
 
 /** Compact markdown styles shared by inspector label + compiler preview. */
@@ -2007,7 +1998,6 @@ function InspectorMarkdownField({
         }}
         role={readOnly ? undefined : "button"}
         tabIndex={readOnly ? undefined : 0}
-        title={readOnly ? undefined : "Click to edit markdown source"}
       >
         {value.trim() ? (
           <ReactMarkdown>{value}</ReactMarkdown>
@@ -3517,7 +3507,6 @@ export function EditorInner<TOutput>({
                                     key={k.kind}
                                     type="button"
                                     onClick={() => addNode(k)}
-                                    title={k.toolbarDescription}
                                     className="flex w-full items-center justify-between rounded-none px-2 py-2 text-left text-[14px] font-sans text-gray-700 hover:bg-[#ece7d6]"
                                     role="menuitem"
                                   >
@@ -3596,7 +3585,6 @@ export function EditorInner<TOutput>({
                       setCanvasFullscreen(true);
                     }}
                     aria-label="Fullscreen"
-                    title="Fullscreen"
                     className="rf-canvas-tab-btn"
                   >
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -3612,7 +3600,6 @@ export function EditorInner<TOutput>({
                       setInspectorMaximized(false);
                     }}
                     aria-label="Exit fullscreen"
-                    title="Exit fullscreen (Esc)"
                     className="rf-canvas-tab-btn"
                   >
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -3645,7 +3632,6 @@ export function EditorInner<TOutput>({
                 }}
                 aria-expanded={canvasMenusOpen}
                 aria-label={canvasMenusOpen ? "Hide canvas menus" : "Show canvas menus"}
-                title={canvasMenusOpen ? "Hide menus" : "Show menus"}
                 className="rf-canvas-tab-btn"
               >
                 <svg
@@ -3752,7 +3738,6 @@ export function EditorInner<TOutput>({
                   }`}
                   onClick={() => selectCanvas(c.id)}
                   onDoubleClick={() => setRenamingId(c.id)}
-                  title="Double-click to rename"
                 >
                   {isRenaming ? (
                     <input
@@ -3794,7 +3779,6 @@ export function EditorInner<TOutput>({
             type="button"
             onClick={addCanvas}
             aria-label="Add canvas"
-            title="Add canvas"
             className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
@@ -3807,7 +3791,6 @@ export function EditorInner<TOutput>({
             type="button"
             onClick={() => setHelpOpen(true)}
             aria-label="How to use the canvas"
-            title="How to use the canvas"
             className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
           >
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true">
@@ -3825,7 +3808,6 @@ export function EditorInner<TOutput>({
                 setInspectorMaximized(false);
               }}
               aria-label="Exit fullscreen"
-              title="Exit fullscreen (Esc)"
               className="rf-canvas-tab-btn rf-canvas-tab-btn--icon h-[46px]"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -3894,7 +3876,6 @@ export function EditorInner<TOutput>({
             role="separator"
             aria-orientation={sideBySide ? "vertical" : "horizontal"}
             aria-label="Resize canvas and inspector (double-click to reset)"
-            title="Drag to resize · double-click to reset"
             onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
             onPointerDown={(e) => beginSplitResize(e, sideBySide)}
           />
@@ -3975,8 +3956,7 @@ export function EditorInner<TOutput>({
                     role="separator"
                     aria-orientation="horizontal"
                     aria-label="Resize canvas and inspector (double-click to reset)"
-                    title="Drag to resize · double-click to reset"
-                    onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
+                            onDoubleClick={() => setCanvasShare(defaultCanvasShare)}
                     onPointerDown={(e) => beginSplitResize(e, false)}
                   >
                     <span
@@ -4156,7 +4136,6 @@ export function EditorInner<TOutput>({
                               1200
                             );
                           }}
-                          title="Click to copy"
                           className="w-full text-left text-[11px] font-serif leading-snug text-sky-900 hover:text-sky-700 hover:underline"
                         >
                           {copiedQuestion === q ? "Copied!" : `→ ${q}`}
@@ -4178,7 +4157,6 @@ export function EditorInner<TOutput>({
                         1200
                       );
                     }}
-                    title="Click to copy"
                     className="w-full text-left text-[11px] font-serif leading-snug text-sky-900 hover:text-sky-700 hover:underline mt-1"
                   >
                     {copiedQuestion === CORPUS_DEMO_QUESTIONS.control

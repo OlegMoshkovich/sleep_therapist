@@ -747,7 +747,6 @@ function StatePane({
                 className="sc-curstate-head"
                 onClick={() => setStateOpen((o) => !o)}
                 aria-expanded={stateOpen}
-                title={stateOpen ? "Collapse" : "Expand"}
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -852,7 +851,6 @@ function StatePane({
             role="separator"
             aria-orientation="horizontal"
             aria-label="Resize state variables (double-click to reset)"
-            title={stateOpen ? "Drag to resize · double-click to reset" : undefined}
             onDoubleClick={() => {
               if (stateOpen) setVarsHeight(null);
             }}
@@ -2397,8 +2395,8 @@ function buildSetupBar(useSleepSetup: () => SleepSetupReturn) {
                 type="button"
                 className={"obs-setup-chip" + (on ? " on" : "")}
                 aria-pressed={on}
+                aria-label={on ? `Close ${o.label}` : `Open ${o.label}`}
                 onClick={() => (on ? close() : setActive(o.id))}
-                title={on ? `Close ${o.label}` : `Open ${o.label}`}
               >
                 <span>{o.label}</span>
               </button>
@@ -2410,7 +2408,6 @@ function buildSetupBar(useSleepSetup: () => SleepSetupReturn) {
               type="button"
               className="obs-setup-info"
               aria-label="How each turn reaches the model"
-              title="How each turn reaches the model — full prompts & order"
               onClick={() => setCompileInfoOpen(true)}
             >
               <Ic.Info size={16} />

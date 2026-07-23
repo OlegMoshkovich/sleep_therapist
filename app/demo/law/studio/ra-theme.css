@@ -820,28 +820,9 @@ body.ra-resizing,body.ra-resizing *{cursor:col-resize !important;user-select:non
   padding:6px 10px !important;
   border-radius:0 !important;
   white-space:nowrap;}
-/* Tools hover tips — short description under each toolbar control. */
-.ra-scope .rf-canvas-tools .rf-tool-tip-wrap,
-.rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip-wrap{
-  position:relative;display:inline-flex;align-items:center;}
+/* Tools hover tips — disabled. */
 .ra-scope .rf-canvas-tools .rf-tool-tip,
-.rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
-  position:absolute;left:50%;top:calc(100% + 7px);transform:translateX(-50%);
-  z-index:40;min-width:9.5rem;max-width:15rem;width:max-content;
-  padding:6px 9px;border-radius:0 !important;
-  background:#948E87;color:#111;
-  font-family:inherit;font-size:12px;font-weight:400;line-height:1.35;
-  text-align:center;white-space:normal;
-  opacity:0;visibility:hidden;pointer-events:none;
-  box-shadow:0 4px 14px rgba(0,0,0,.18);}
-.ra-scope .rf-canvas-tools .rf-tool-tip-wrap:hover > .rf-tool-tip,
-.ra-scope .rf-canvas-tools .rf-tool-tip-wrap:focus-within > .rf-tool-tip,
-.rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip-wrap:hover > .rf-tool-tip,
-.rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip-wrap:focus-within > .rf-tool-tip{
-  opacity:1;visibility:visible;}
-.ra-scope.ra-mono .rf-canvas-tools .rf-tool-tip,
-body:has(.ra-scope.ra-mono) .rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{
-  background:#948E87;color:#111;}
+.rf-canvas-fullscreen .rf-canvas-tools .rf-tool-tip{display:none !important;}
 /* fillHeight board + inspector: flush panels; only the drag split separates them. */
 .ra-scope .obs-docked .rf-canvas-body,
 .ra-scope .bottom-drawer .rf-canvas-body{gap:0;}
